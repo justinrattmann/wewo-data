@@ -8,9 +8,14 @@
   "mySkripte": {},
   "testAnswers": {},
   "quizDone": false,
-  "_sha": null,
+  "_sha": "82514a98c1d33bd15dd975c965ee0f5dcf0a6dc3",
   "checks": {
     "termin_2": false
   },
-  "lastSaved": "2026-05-20T12:45:15.841Z"
+  "lastSaved": "2026-05-20T12:45:53.085Z",
+  "quizAnswers": {
+    "ankern": {
+      "0": true
+    }
+  }
 }
