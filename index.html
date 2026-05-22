@@ -1815,16 +1815,7 @@ async function renderEmployeeDetail() {
     `;
   }).join('');
   
-  const sessionRows = sessions.slice(0,3).map(s => `
-    <div class="flex items-center gap-12 mb-12">
-      <div style="font-size:20px">${s.type === 'ad' ? '🚗' : '📱'}</div>
-      <div class="flex-1">
-        <div style="font-size:13px;font-weight:600">${formatDate(s.date)} — ${escHtml(s.sessionType||'Coaching')}</div>
-        <div class="text-sm text-dim">${escHtml(s.commitment||'Kein Commitment')}</div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="viewSession('${s.id}','${emp.id}')">Details</button>
-    </div>
-  `).join('') || '<div class="text-dim text-sm">Noch keine Sessions</div>';
+  const sessionRows = await renderCommitmentTimeline(emp.id);
   
   return `
     <div class="page-header">
@@ -1835,6 +1826,7 @@ async function renderEmployeeDetail() {
       </div>
       <div class="flex gap-8" style="margin-left:auto">
         <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">Coaching starten</button>
+        <button class="btn btn-outline btn-sm" onclick="exportEmployeePDF('${emp.id}')">📄 PDF Export</button>
         <button class="btn btn-outline btn-sm" onclick="openEditEmployee('${emp.id}')">Profil bearbeiten</button>
       </div>
     </div>
@@ -2897,6 +2889,7 @@ async function renderEmployeePortal() {
         ${empNavItem('roleplay', '🎭', 'Live Roleplay', page)}
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
         ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
+        ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
       </nav>
       <div class="sidebar-footer">
         <div class="user-chip" onclick="logout()">
@@ -2915,6 +2908,7 @@ async function renderEmployeePortal() {
     case 'roleplay': content = renderRoleplaySelection(scenarios, role); break;
     case 'active_roleplay': content = renderActiveRoleplay(); break;
     case 'progress': content = await renderEmpProgress(user, prog, modules, empData); break;
+    case 'types': content = await renderTypesPage(user.empId); break;
     default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
   }
 
@@ -3157,8 +3151,25 @@ async function renderModuleContent(user, prog, modules, role) {
         ${actionBar}
         ${quizHtml}
       </div>
+      ${await getModuleTypeTipBox(mod.id, user.empId)}
     </div>
-  `;
+  \`;
+}
+
+async function getModuleTypeTipBox(moduleId, empId) {
+  const tipData = await getModuleTypeTip(moduleId, empId);
+  if (!tipData) return '';
+  return \`
+    <div class="card mt-24" style="border-color:\${typeColor(tipData.type)}44;background:\${typeColor(tipData.type)}08">
+      <div class="card-header" style="border-bottom-color:\${typeColor(tipData.type)}22">
+        <span style="font-size:20px">\${TYPES[tipData.type].emoji}</span>
+        <span class="card-title">Für dich als \${typeName(tipData.type)} (\${tipData.types[tipData.type]}%)</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:14px;line-height:1.7;color:#d0d0d0;margin:0">\${escHtml(tipData.tip)}</p>
+      </div>
+    </div>
+  \`;
 }
 
 function answerQuiz(chosen, correct, qi, total) {
@@ -3289,6 +3300,780 @@ async function renderEmpProgress(user, prog, modules, empData) {
       </div>
     </div>
   `;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  PERSÖNLICHKEITSTYPEN-SEITE + "FÜR DEINEN TYP"-BOXEN
+// ══════════════════════════════════════════════════════════════
+
+// ── Typ-spezifische Tipps pro Modul ───────────────────────────
+const TYPE_MODULE_TIPS = {
+  // AD Module
+  haltung_ad: {
+    C: 'Deine Stärke ist dein Drive — deine Falle ist sichtbare Ungeduld. Übe den "3-Sekunden-Reset" vor jedem Termin: tief einatmen, innerlich sagen "Ich habe Alternativen." Das signalisiert Souveränität, nicht Hunger.',
+    I: 'Du baust Rapport natürlich auf — aber pass auf dass deine Energie nicht als Verzweiflung gelesen wird. Connector-Verkäufer wirken manchmal zu very — dosiere Begeisterung bewusst.',
+    S: 'Du wirkst authentisch und vertrauenswürdig — das ist enorm wertvoll. Deine Baustelle: Raum einnehmen. Übe, aufrecht zu stehen, Pausen auszuhalten, Nein zu sagen ohne dich zu entschuldigen.',
+    G: 'Deine Vorbereitung ist deine Stärke. Aber: im Termin nicht alles erklären. Weniger ist mehr. Formuliere deine Kernaussage in einem Satz — dann schweig.'
+  },
+  vorbereitung_ad: {
+    C: 'Du bereitest dich ungern lange vor — das kostet dich Marge. Mach es kurz und gezielt: 5-Minuten-Checkliste, BATNA in 3 Minuten, Ziel in einem Satz. Schnell, aber nicht blind.',
+    I: 'Recherchiere den Menschen, nicht nur das Unternehmen. LinkedIn-Profil, Werdegang, gemeinsame Kontakte — das sind deine Türöffner. Du liebst persönliche Anknüpfungspunkte, also suche sie gezielt.',
+    S: 'Erstelle eine feste Vorbereitungs-Routine und halte sie immer gleich durch. Verlässliche brauchen Struktur — eine Checkliste die du nie änderst gibt dir die Sicherheit die du brauchst.',
+    G: 'BATNA ausrechnen, Faktenblatt erstellen, Einwände vorbereiten — das machst du sowieso. Achte aber darauf, dass du nicht so tief in die Vorbereitung gehst dass du keine Zeit mehr für den Termin hast.'
+  },
+  telefonakquise_ad: {
+    C: 'Du kommst natürlich zum Punkt — nutze das. Die "Arme-Sau-Technik" ist genau dein Stil. Aber pass auf: manchmal brichst du den Widerstand bevor du Rapport aufgebaut hast. Gib dem Türöffner 10 Sekunden mehr.',
+    I: 'Die Freunde-Taktik ist deine stärkste Waffe — du klingst von Natur aus wie ein Bekannter. Übe aber, die Energie am Telefon zu dosieren. Zu viel Begeisterung beim Erstanruf wirkt unprofessionell.',
+    S: 'Kaltakquise ist deine größte Herausforderung — du magst Ablehnung nicht. Tipp: Betrachte jedes Nein als neutrale Information, nicht als persönliche Zurückweisung. Du brauchst ein Script das du auswendig kannst.',
+    G: 'Du bist gut vorbereitet bevor du anrufst — nutze das. Dein Risiko: Du erklärst zu viel am Telefon. Kürze dein Einstiegs-Script auf das Minimum. Am Telefon entscheidet der erste Satz.'
+  },
+  einwandbehandlung_ad: {
+    C: 'Du magst direkte Techniken — 180°, Hop oder Top, direkte Gegenfrage. Das passt zu dir. Aber beim Verlässlich-Kunden und beim Analyst-Kunden brauchst du mehr Geduld. Passe die Technik dem Kundentyp an.',
+    I: 'Lob + 180° ist deine natürliche Technik — du bestätigst erst und lenkst dann um. Das funktioniert gut. Dein Risiko: Du gibst zu schnell nach wenn der Kunde emotional reagiert. Halte deine Position.',
+    S: 'Du neigst dazu, Einwände zu akzeptieren statt zu behandeln. Denke daran: Ein Einwand ist keine Absage, er ist eine Frage. Dein Script: "Das ist ein berechtigter Punkt..." — dann Technik. Die Sicherheitsgeste hilft.',
+    G: 'Du analysierst den Einwand bevor du antwortest — das ist gut. Aber manchmal denkst du so lange dass der Moment vorbei ist. Übe schnelle Kurzreaktionen: Einwand → Anerkennung → Gegenfrage. Keine langen Pausen.'
+  },
+  verhandlungsmacht_ad: {
+    C: 'Ankern liegt dir — du nennst Zahlen ohne zu zögern. Deine Schwachstelle: Du verhandelst manchmal zu hart und verlierst dabei den Kunden. BATNA berechnen und dann entspannt verhandeln — das ist dein Weg.',
+    I: 'Kein Interesse zeigen fällt dir extrem schwer — du willst gefallen. Das kostet dich Verhandlungsmacht. Übe Poker Face: Flinch anwenden, schweigen, nicht sofort zustimmen wenn der Kunde etwas sagt.',
+    S: 'Deine BATNA auf einen Zettel schreiben und in die Tasche stecken — buchstäblich. Du brauchst die physische Sicherheit dieser Zahl um bei Druck standhaft zu bleiben. Ohne BATNA brichst du zu früh ein.',
+    G: 'Die Sowjet-Methode ist perfekt für dich: Position nennen, schweigen. Du erklärst normalerweise zu viel. Übe, eine Zahl zu nennen und dann nichts zu sagen — das ist unbequem aber extrem wirkungsvoll.'
+  },
+  koerpersprache_ad: {
+    C: 'Du hast natürliche Präsenz — nutze sie, übertreibe sie nicht. Dominante Körpersprache kann beim Verlässlich-Kunden einschüchternd wirken. Passe deine Energie dem Gegenüber an.',
+    I: 'Deine Körpersprache ist lebendig und einladend — das ist eine Stärke. Aber: zu viele Gesten, zu viel Nicken signalisiert Zustimmungsbedürftigkeit. Reduziere bewusst auf das Wesentliche.',
+    S: 'Mehr Raum einnehmen ist deine wichtigste Übung. Schultern zurück, Brust raus, Blickkontakt halten. Das fühlt sich unnatürlich an — aber es verändert wie andere dich wahrnehmen sofort.',
+    G: 'Hände sichtbar auf dem Tisch, nicht verschränkt. Analytiker signalisieren oft Distanz ohne es zu merken. Öffne deine Körpersprache bewusst — das senkt die Abwehrhaltung des Kunden.'
+  },
+  spin_ad: {
+    C: 'Need-Payoff-Fragen sind ideal für dich — der Kunde sagt selbst was er braucht, du musst nur nicken. Übung: Stelle 2 Implication-Fragen bevor du das Produkt auch nur erwähnst.',
+    I: 'Du fragst natürlich viel — aber oft Situations-Fragen (Smalltalk). Trainiere Problem- und Implication-Fragen. Der Wechsel von "Wie läuft das bei Ihnen?" zu "Was kostet Sie das?" ist dein Upgrade.',
+    S: 'SPIN gibt dir Struktur — das liebst du. Lerne die 4 Fragetypen auswendig und arbeite sie in fester Reihenfolge ab. Deine Stärke: Du hörst wirklich zu. Das macht deine Need-Payoff-Fragen besonders glaubwürdig.',
+    G: 'Du stellst präzise Fragen — aber manchmal zu viele Situations-Fragen weil du alle Fakten sammeln willst. Wechsle früher zu Problem-Fragen. Der Kunde will sich verstanden fühlen, nicht befragt werden.'
+  },
+  abschluss_ad: {
+    C: 'Die direkte Abschlussfrage ist dein Stil — "Was brauchen Sie noch um heute zu entscheiden?" Nutze sie. Dein Risiko: Du fragst manchmal zu früh bevor der Wert klar ist.',
+    I: 'Der Alternativ-Abschluss ist perfekt für dich und für deine Connector-Kunden: "Wollen wir ab dem 1. oder ab dem 15. starten?" Beide Optionen sind Ja. Du gibst die Wahl, gewinnst den Abschluss.',
+    S: 'Der Nächster-Schritt-Abschluss ist dein Weg: "Der nächste logische Schritt wäre jetzt X." Es fühlt sich nicht wie eine Entscheidung an — es ist nur der nächste Schritt. Perfekt für deinen Stil.',
+    G: 'Zusammenfassung + Abschluss: "Ich fasse kurz zusammen was wir vereinbart haben — sind wir damit einig?" Das gibt dir und dem Kunden die Sicherheit dass alles klar ist. Dann schweigen.'
+  },
+  preisverhandlung_ad: {
+    C: 'Du nennst Zahlen gerne direkt — gut. Aber pass auf den Flinch auf: Auch wenn du den Anker setzt, muss der Kunde erst zusammenzucken. Warte auf seine Reaktion, erkläre nicht sofort.',
+    I: 'Rabatt ohne Gegenleistung ist deine größte Preis-Falle — du willst den Kunden glücklich machen. Übe: "Was geben Sie mir dafür?" als Reflex. Jeder Rabatt ist ein Tausch, kein Geschenk.',
+    S: 'Preisdruck macht dich nervös — du gibst nach um den Konflikt zu beenden. Schreibe deine Untergrenze (BATNA) auf einen Zettel. Solange das Angebot darüber liegt: entspannt bleiben, es ist genug.',
+    G: 'Du argumentierst gerne mit Zahlen — gut. Aber beim Preisgespräch: nicht zu viele Fakten auf einmal. Ein starkes Argument ist besser als zehn schwache. Wähle das wichtigste und halte es durch.'
+  },
+  // ID Module
+  haltung_id: {
+    C: 'Du kommst schnell zum Punkt — am Telefon ist das eine Stärke. Aber: steh auf während du telefonierst, das macht deine Stimme präsenter. Und lass den Kunden ausreden — Zuhören ist auch Verkauf.',
+    I: 'Du bist von Natur aus warm und engagiert am Telefon — das hört man. Nutze das. Aber dosiere Energie beim 15. Anruf genauso wie beim ersten. Mental Reset zwischen Gesprächen: 5 Sekunden, tief atmen.',
+    S: 'Telefonieren liegt dir wenn du den Kunden kennst. Bei Neukunden: Script auswendig lernen. Die Sicherheit eines festen Scripts gibt dir die Ruhe die du brauchst um trotzdem natürlich zu klingen.',
+    G: 'Deine präzise Ausdrucksweise ist am Telefon ein Vorteil bei Analytiker-Kunden. Aber bei Connector-Kunden: mehr Wärme einbauen, Namen verwenden, kurz persönlich werden bevor du zum Punkt kommst.'
+  },
+  crossselling_id: {
+    C: 'Direktes Cross-Selling liegt dir: "Haben Sie auch X im Bedarf?" Kein Drumherumreden. Aber wähle den richtigen Moment — nach der Lösung, nicht mitten im Problem.',
+    I: 'Das Bündelungsargument ist perfekt für dich: "Viele unserer Kunden bündeln das bei uns — das macht das Leben einfacher." Du verkaufst über Beziehung und Vereinfachung, nicht über Zahlen.',
+    S: 'Warte auf das Dankbarkeitsfenster: Direkt nachdem du ein Problem gelöst hast ist die beste Zeit für Cross-Selling. Du bist dann in deiner Stärke — du hast geholfen, jetzt kannst du anbieten.',
+    G: 'Das Prozesskosten-Argument ist dein stärkstes Cross-Selling-Werkzeug: "Eine Bestellung kostet intern 50-150€ unabhängig vom Warenwert. Wenn wir bündeln..." Zahlen überzeugen Analytiker-Kunden sofort.'
+  },
+  einwand_id: {
+    C: 'Kurz, direkt, Lösung nennen: "Stimmt, hier ist was wir tun können: [Zahl/Lösung]." Kein Drumherumreden. Beim Closer-Kunden perfekt — bei anderen Typen etwas mehr Empathie einbauen.',
+    I: 'Erst bestätigen, dann umlenken — und den Namen des Kunden nutzen. "Das verstehe ich gut, Herr Müller — und gerade weil wir schon so lange zusammenarbeiten..." Connector-Kunden wollen sich gehört fühlen.',
+    S: 'Sicherheit geben bevor du den Einwand behandelst: "Das ist ein völlig berechtigter Punkt..." Dann Technik. Deine ruhige, geduldige Art ist beim Verlässlich-Kunden und beim Analyst-Kunden ein riesiger Vorteil.',
+    G: 'Fakten liefern, Vergleichstabelle anbieten: "Ich schicke Ihnen die Zahlen dazu — dann können Sie das genau nachvollziehen." Analytiker-Kunden brauchen Substanz, keine Charme-Offensive.'
+  },
+  normteile_id: {
+    C: 'Direktes Nutzenargument: "Das spart Ihnen intern X€ pro Bestellung — konkret." Closer-Kunden brauchen keine langen Erklärungen, sie brauchen den Wert in einer Zahl.',
+    I: 'Bündelung als Vereinfachungsargument: "Alles auf einer Rechnung, ein Liefertermin, ein Ansprechpartner — das macht Ihren Alltag einfacher." Du verkaufst den emotionalen Vorteil.',
+    S: 'Liefersicherheitsargument: "Wir sind Hersteller und Händler — wenn Normteile am Markt knapp werden, können wir selbst produzieren. Das ist Verlässlichkeit die kein anderer Händler bieten kann."',
+    G: 'Qualitätssicherheitsargument mit Daten: "Günstigere Alternativen haben oft andere Materialgüte, Toleranzen außerhalb der Norm, fehlende Zertifikate. Die Ausschusskosten übersteigen den Preisunterschied in jedem Fall."'
+  }
+};
+
+// Get tip for current employee's type for a given module
+async function getModuleTypeTip(moduleId, empId) {
+  if (!empId) return null;
+  const emp = await getEmployee(empId);
+  if (!emp?.types) return null;
+  const dt = dominantType(emp.types);
+  if (!dt) return null;
+  const tips = TYPE_MODULE_TIPS[moduleId];
+  if (!tips || !tips[dt]) return null;
+  return { type: dt, tip: tips[dt], types: emp.types };
+}
+
+// ── Persönlichkeitstypen-Seite ─────────────────────────────────
+async function renderTypesPage(empId) {
+  const emp = empId ? await getEmployee(empId) : null;
+  const myTypes = emp?.types || null;
+  const myDominant = dominantType(myTypes);
+
+  const typeDetails = {
+    C: {
+      title: 'Der Closer',
+      subtitle: 'Dominant · Ergebnisorientiert · Direkt',
+      strengths: ['Trifft Entscheidungen schnell und steht dazu', 'Bringt Verhandlungen zum Abschluss', 'Setzt Anker und hält Druck stand', 'Verliert keine Zeit mit Nebensächlichkeiten', 'Zielorientiert — weiß immer was er will'],
+      weaknesses: ['Hört manchmal zu wenig zu', 'Übersieht emotionale Signale', 'Drängt zu früh zum Abschluss', 'Wirkt auf Verlässlich-Kunden einschüchternd', 'Schwächelt beim Kein-Interesse-Zeigen'],
+      verhandlung: 'Ankern, Hop oder Top, direkte Abschlussfrage. Ungeduld ist die größte Gefahr — wer zu schnell schließt, lässt Marge liegen.',
+      kundentyp: 'Kommt sofort zum Punkt, kurze Sätze, keine Smalltalk-Toleranz. Will sofort eine Zahl. Reagiert auf direkte, knappe Kommunikation.',
+      tipp: 'Dein Drive ist deine Stärke — kontrolliere ihn, lass ihn nicht sichtbar werden. Entspannte Stärke gewinnt mehr als sichtbarer Hunger.',
+      icon: '🔴'
+    },
+    I: {
+      title: 'Der Connector',
+      subtitle: 'Initiativ · Beziehungsorientiert · Begeisternd',
+      strengths: ['Baut Rapport natürlich und schnell auf', 'Überzeugend und mitreißend', 'Öffnet Türen die andere nicht öffnen', 'Dreht schwierige Stimmungen', 'Wird gemocht — Vertrauen entsteht schnell'],
+      weaknesses: ['Gibt zu früh Konzessionen', 'Vergisst Fakten hinter der Beziehung', 'Kein-Interesse-Zeigen fällt extrem schwer', 'Verhandlungsmacht durch zu viel Offenheit verspielt', 'Zu gefällig wenn Ablehnung droht'],
+      verhandlung: 'Rapport aufbauen, Stimmung drehen, Alternativ-Abschluss. Vorsicht: Beziehungswunsch kostet Verhandlungsposition wenn er sichtbar wird.',
+      kundentyp: 'Plaudert, geht auf persönlicher Ebene ein, fragt nach deinem Namen. Reagiert auf Wärme, persönliche Verbindung und Anerkennung.',
+      tipp: 'Deine Beziehungsstärke ist einzigartig — kombiniere sie mit mehr Poker Face in Preisverhandlungen. Lächeln und schweigen ist deine mächtigste Kombination.',
+      icon: '🟠'
+    },
+    S: {
+      title: 'Der Verlässliche',
+      subtitle: 'Stetig · Loyal · Vertrauenswürdig',
+      strengths: ['Langfristige Kundenbindung auf höchstem Niveau', 'Authentisch — kein Fake, kein Druck', 'Geduldig auch in schwierigen Situationen', 'Verlässlich in Aussagen und Zusagen', 'Schafft echtes, tiefes Vertrauen'],
+      weaknesses: ['Gibt bei Druck zu früh nach', 'Meidet Konflikte auch wenn sie nötig wären', 'BATNA-Disziplin fällt schwer', 'Nimmt Ablehnung persönlich', 'Braucht lange um Kaltakquise zu starten'],
+      verhandlung: 'BATNA schriftlich festhalten, Bleistifttermin, nächste-Schritt-Abschluss. Die physische Sicherheit einer aufgeschriebenen Untergrenze ist der Schlüssel.',
+      kundentyp: 'Spricht ruhig, braucht Zeit, sagt "ich muss das prüfen". Reagiert auf Sicherheit, Verlässlichkeit und klare Prozesse — kein Druck.',
+      tipp: 'Deine Authentizität ist unbezahlbar. Baue sie durch Konsequenz auf — und lerne Nein zu sagen ohne dich zu entschuldigen. Das macht dich unschlagbar.',
+      icon: '🟢'
+    },
+    G: {
+      title: 'Der Analyst',
+      subtitle: 'Gewissenhaft · Präzise · Faktenbasiert',
+      strengths: ['Beste Vorbereitung im Team', 'Findet Schwächen im Angebot des anderen', 'BATNA/ZOPA immer berechnet', 'Liefert Argumente mit Substanz', 'Qualität in allem was er tut'],
+      weaknesses: ['Entscheidet zu langsam', 'Erklärt zu viel in Verhandlungen', 'Over-Analysis verhindert Abschlüsse', 'Wirkt manchmal kalt oder distanziert', 'Unterschätzt emotionale Ebene von Verhandlungen'],
+      verhandlung: 'Sowjet-Methode, objektive Kriterien, schriftliche Zusammenfassung. Weniger erklären, mehr schweigen — eine starke Aussage ist stärker als zehn Argumente.',
+      kundentyp: 'Sachlich, stellt technische Detailfragen, will Specs und Normen. Reagiert auf Fakten, Zahlen, Dokumentation — keine Übertreibungen.',
+      tipp: 'Deine Stärke ist Substanz — nutze sie gezielt. Übe Schweigen nach einer Aussage: Position nennen, dann 5 Sekunden warten. Das ist unbequem und extrem wirksam.',
+      icon: '🔵'
+    }
+  };
+
+  const cards = ['C', 'I', 'S', 'G'].map(k => {
+    const t = typeDetails[k];
+    const isMe = k === myDominant;
+    const myPct = myTypes?.[k];
+    return `
+      <div class="card mb-16" style="border-color:${isMe ? typeColor(k) + '66' : 'var(--border)'};${isMe ? `background:${typeColor(k)}08` : ''}">
+        <div class="card-header" style="border-bottom-color:${typeColor(k)}33">
+          <span style="font-size:28px">${t.icon}</span>
+          <div class="flex-1">
+            <div style="font-size:17px;font-weight:800;color:${typeColor(k)}">${t.title}</div>
+            <div class="text-dim text-sm">${t.subtitle}</div>
+          </div>
+          ${isMe ? `<span class="badge" style="background:${typeColor(k)}22;color:${typeColor(k)};border:1px solid ${typeColor(k)}44;font-size:13px">Dein Haupttyp · ${myPct}%</span>` : (myPct ? `<span class="badge badge-gray">${myPct}%</span>` : '')}
+        </div>
+        <div class="card-body">
+          <div class="grid-2 mb-16">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px">✅ STÄRKEN</div>
+              ${t.strengths.map(s => `<div style="font-size:13px;margin-bottom:5px;display:flex;gap:8px"><span style="color:var(--green)">+</span><span>${escHtml(s)}</span></div>`).join('')}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px">⚠️ FALLEN</div>
+              ${t.weaknesses.map(w => `<div style="font-size:13px;margin-bottom:5px;display:flex;gap:8px"><span style="color:var(--red)">−</span><span>${escHtml(w)}</span></div>`).join('')}
+            </div>
+          </div>
+          <div class="script-box mb-12">
+            <div class="script-label">VERHANDLUNG</div>
+            <p>${escHtml(t.verhandlung)}</p>
+          </div>
+          <div class="info-box mb-12">
+            <p>👁️ <strong>Kunden dieses Typs erkennen:</strong> ${escHtml(t.kundentyp)}</p>
+          </div>
+          <div class="tip-box">
+            <p>💡 <strong>Dein persönlicher Entwicklungstipp:</strong> ${escHtml(t.tipp)}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">🧠 Persönlichkeitstypen</div>
+        <div class="page-sub">Die 4 Verhandler-Profile — Stärken, Fallen und wie du damit umgehst</div>
+      </div>
+      ${!myTypes ? `<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_ad'})">Test starten →</button>` : ''}
+    </div>
+    <div class="page-content">
+      ${myTypes ? `
+        <div class="card mb-20" style="border-color:rgba(245,200,0,0.3);background:rgba(245,200,0,0.04)">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px">Deine Typ-Verteilung</div>
+            <div class="type-bars">${renderTypeBars(myTypes)}</div>
+          </div>
+        </div>
+      ` : `<div class="info-box mb-20"><p>💡 Du hast den Persönlichkeitstest noch nicht gemacht. <strong onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_ad'})" style="color:var(--yellow);cursor:pointer">Jetzt starten →</strong></p></div>`}
+      ${cards}
+    </div>
+  `;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  SESSION-TYPEN + COMMITMENT-TRACKING + ENTWICKLUNGSKURVE
+// ══════════════════════════════════════════════════════════════
+
+// ── Session-Typ Beobachtungsfelder ─────────────────────────────
+const SESSION_TYPE_FIELDS = {
+  feldbegleitung_akquise: {
+    label: 'Feldbegleitung — Akquise',
+    icon: '📞',
+    fields: [
+      { id: 'vorbereitung', label: 'Vorbereitung & Recherche', group: 'Vorbereitung' },
+      { id: 'tueroffner', label: 'Türöffner / Sekretariat', group: 'Vorbereitung' },
+      { id: 'einstieg', label: 'Einstieg beim Entscheider', group: 'Gespräch' },
+      { id: 'einwandbehandlung', label: 'Einwandbehandlung', group: 'Gespräch' },
+      { id: 'terminabschluss', label: 'Terminabschluss', group: 'Abschluss' },
+      { id: 'nachverfolgung', label: 'Nachverfolgung & Dokumentation', group: 'Nachbereitung' }
+    ]
+  },
+  feldbegleitung_termin: {
+    label: 'Feldbegleitung — Vor-Ort-Termin',
+    icon: '🤝',
+    fields: [
+      { id: 'vorbereitung', label: 'Vorbereitung', group: 'Vorbereitung' },
+      { id: 'haltung_auftreten', label: 'Haltung & Auftreten', group: 'Wirkung' },
+      { id: 'einstieg', label: 'Gesprächseinstieg', group: 'Gespräch' },
+      { id: 'bedarfsermittlung', label: 'Bedarfsermittlung & SPIN', group: 'Gespräch' },
+      { id: 'einwandbehandlung', label: 'Einwandbehandlung', group: 'Gespräch' },
+      { id: 'preisverhandlung', label: 'Preisverhandlung & Ankern', group: 'Verhandlung' },
+      { id: 'abschluss', label: 'Abschlusstechnik', group: 'Abschluss' },
+      { id: 'koerpersprache', label: 'Körpersprache & Stimme', group: 'Wirkung' },
+      { id: 'nachbereitung', label: 'Nachbereitung', group: 'Nachbereitung' }
+    ]
+  },
+  feldbegleitung_online: {
+    label: 'Feldbegleitung — Online-Termin',
+    icon: '💻',
+    fields: [
+      { id: 'tech_vorbereitung', label: 'Technische Vorbereitung', group: 'Vorbereitung' },
+      { id: 'haltung_kamera', label: 'Haltung & Kamera', group: 'Wirkung' },
+      { id: 'einstieg', label: 'Gesprächseinstieg', group: 'Gespräch' },
+      { id: 'bedarfsermittlung', label: 'Bedarfsermittlung', group: 'Gespräch' },
+      { id: 'einwandbehandlung', label: 'Einwandbehandlung', group: 'Gespräch' },
+      { id: 'preisverhandlung', label: 'Preisverhandlung', group: 'Verhandlung' },
+      { id: 'abschluss', label: 'Abschlusstechnik', group: 'Abschluss' },
+      { id: 'medieneinsatz', label: 'Medieneinsatz & Präsentation', group: 'Wirkung' },
+      { id: 'nachbereitung', label: 'Nachbereitung', group: 'Nachbereitung' }
+    ]
+  },
+  telefon_coaching: {
+    label: 'Telefon-Coaching',
+    icon: '📲',
+    fields: [
+      { id: 'telefonhaltung', label: 'Haltung am Telefon', group: 'Haltung' },
+      { id: 'einstieg_telefon', label: 'Gesprächseinstieg', group: 'Gespräch' },
+      { id: 'bedarfsermittlung_id', label: 'Bedarfsermittlung', group: 'Gespräch' },
+      { id: 'einwand_id', label: 'Einwandbehandlung', group: 'Gespräch' },
+      { id: 'cross_selling', label: 'Cross-Selling', group: 'Verkauf' },
+      { id: 'angebot_nachverfolgung', label: 'Angebotsnachverfolgung', group: 'Verkauf' },
+      { id: 'reaktionszeit', label: 'Reaktionsgeschwindigkeit', group: 'Prozess' }
+    ]
+  },
+  online_coaching: {
+    label: 'Online-Coaching',
+    icon: '🖥️',
+    fields: [
+      { id: 'telefonhaltung', label: 'Haltung & Präsenz', group: 'Haltung' },
+      { id: 'einstieg_telefon', label: 'Gesprächseinstieg', group: 'Gespräch' },
+      { id: 'bedarfsermittlung_id', label: 'Bedarfsermittlung', group: 'Gespräch' },
+      { id: 'einwand_id', label: 'Einwandbehandlung', group: 'Gespräch' },
+      { id: 'cross_selling', label: 'Cross-Selling', group: 'Verkauf' },
+      { id: 'kundenbindung', label: 'Kundenbindung & After-Sales', group: 'Bindung' }
+    ]
+  },
+  nachbereitung: {
+    label: 'Nachbereitungs-Gespräch',
+    icon: '📋',
+    fields: [
+      { id: 'vorbereitung', label: 'Vorbereitung war ausreichend', group: 'Rückblick' },
+      { id: 'einwandbehandlung', label: 'Einwandbehandlung', group: 'Rückblick' },
+      { id: 'preisverhandlung', label: 'Preisverhandlung / BATNA', group: 'Rückblick' },
+      { id: 'abschluss', label: 'Abschlusstechnik', group: 'Rückblick' },
+      { id: 'nachbereitung', label: 'Nachbereitung & Dokumentation', group: 'Rückblick' }
+    ]
+  }
+};
+
+// Get fields for session type based on employee role
+function getSessionFields(sessionType, empRole) {
+  if (SESSION_TYPE_FIELDS[sessionType]) return SESSION_TYPE_FIELDS[sessionType].fields;
+  // Fallback to original fields
+  return empRole === 'ad' ? COACHING_LIB.fields_ad : COACHING_LIB.fields_id;
+}
+
+// Override renderCoachingNew to use new session types
+async function renderCoachingNew() {
+  const allEmp = await getAllEmployees();
+  const empOptions = allEmp.map(e => `<option value="${e.id}" data-role="${e.role}">${escHtml(e.name)} (${e.role === 'ad' ? 'AD' : 'ID'})</option>`).join('');
+
+  const adSessionTypes = [
+    { v: 'feldbegleitung_akquise', l: '📞 Feldbegleitung — Akquise' },
+    { v: 'feldbegleitung_termin', l: '🤝 Feldbegleitung — Vor-Ort-Termin' },
+    { v: 'feldbegleitung_online', l: '💻 Feldbegleitung — Online-Termin' },
+    { v: 'nachbereitung', l: '📋 Nachbereitungs-Gespräch' }
+  ];
+  const idSessionTypes = [
+    { v: 'telefon_coaching', l: '📲 Telefon-Coaching' },
+    { v: 'online_coaching', l: '🖥️ Online-Coaching' },
+    { v: 'nachbereitung', l: '📋 Nachbereitungs-Gespräch' }
+  ];
+  const allTypes = [...adSessionTypes, ...idSessionTypes];
+
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter und Session-Typ auswählen</div></div>
+    </div>
+    <div class="page-content">
+      <div class="card" style="max-width:600px">
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Mitarbeiter</label>
+            <select class="select" id="coaching-emp-select" onchange="updateSessionTypes()">
+              <option value="">— Mitarbeiter wählen —</option>
+              ${empOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Session-Typ</label>
+            <select class="select" id="coaching-type-select">
+              ${allTypes.map(t => `<option value="${t.v}">${t.l}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Anlass / Kunde (optional)</label>
+            <input class="input" type="text" id="coaching-anlass" placeholder="z.B. Kundenbesuch Müller GmbH, Telefonaktion...">
+          </div>
+          <button class="btn btn-primary" onclick="startCoachingSession()">Session starten →</button>
+        </div>
+      </div>
+      ${allEmp.length === 0 ? `<div class="info-box mt-16"><p>Keine Mitarbeiter. <a onclick="navigate('trainer','admin')" style="color:var(--yellow);cursor:pointer">Jetzt anlegen →</a></p></div>` : ''}
+    </div>
+  `;
+}
+
+function updateSessionTypes() {
+  const empSel = document.getElementById('coaching-emp-select');
+  const typeSel = document.getElementById('coaching-type-select');
+  if (!empSel || !typeSel) return;
+  const opt = empSel.options[empSel.selectedIndex];
+  const role = opt?.dataset?.role;
+  if (!role) return;
+
+  const adTypes = [
+    { v: 'feldbegleitung_akquise', l: '📞 Feldbegleitung — Akquise' },
+    { v: 'feldbegleitung_termin', l: '🤝 Feldbegleitung — Vor-Ort-Termin' },
+    { v: 'feldbegleitung_online', l: '💻 Feldbegleitung — Online-Termin' },
+    { v: 'nachbereitung', l: '📋 Nachbereitungs-Gespräch' }
+  ];
+  const idTypes = [
+    { v: 'telefon_coaching', l: '📲 Telefon-Coaching' },
+    { v: 'online_coaching', l: '🖥️ Online-Coaching' },
+    { v: 'nachbereitung', l: '📋 Nachbereitungs-Gespräch' }
+  ];
+  const types = role === 'ad' ? adTypes : idTypes;
+  typeSel.innerHTML = types.map(t => `<option value="${t.v}">${t.l}</option>`).join('');
+}
+
+// Override renderCoachingSession to use session-type-specific fields
+async function renderCoachingSession() {
+  const draft = await storageGet('session_draft', false);
+  if (!draft) return `<div class="page-content"><div class="empty-state"><div>Keine aktive Session — <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">Neue Session starten</button></div></div></div>`;
+
+  const emp = await getEmployee(draft.employeeId);
+  const fields = getSessionFields(draft.sessionType, emp?.role || 'ad');
+  const dt = dominantType(emp?.types);
+  const types = emp?.types;
+  const sessionTypeInfo = SESSION_TYPE_FIELDS[draft.sessionType] || { label: draft.sessionType, icon: '📋' };
+
+  const obsFields = fields.map(f => {
+    const score = draft.observations?.[f.id] || 0;
+    const scoreButtons = [1,2,3,4,5,6,7,8,9,10].map(n => {
+      let cls = '';
+      if (score === n) cls = n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red';
+      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n})">${n}</button>`;
+    }).join('');
+    return `
+      <div class="obs-item">
+        <div class="obs-item-header">
+          <div class="flex items-center gap-8">
+            ${score ? `<span class="ampel ${getAmpelClass(score)}"></span>` : ''}
+            <span class="obs-item-title">${escHtml(f.label)}</span>
+            <span class="text-sm text-dim">${escHtml(f.group)}</span>
+          </div>
+          ${score ? `<span class="font-bold" style="color:${score>=7?'var(--green)':score>=4?'var(--yellow)':'var(--red)'}">${score}/10</span>` : ''}
+        </div>
+        <div class="obs-score-row">${scoreButtons}</div>
+        <textarea class="textarea mt-8" style="min-height:44px" placeholder="Beobachtung..."
+          onchange="setObsNote('${f.id}',this.value)">${escHtml(draft.notes?.[f.id]||'')}</textarea>
+      </div>
+    `;
+  }).join('');
+
+  // Measures — use type distribution for richer recommendations
+  const lowScores = Object.entries(draft.observations||{}).filter(([k,v]) => v && v < 7).sort((a,b) => a[1]-b[1]).slice(0,4);
+  const measuresHtml = lowScores.length > 0 ? lowScores.map(([fieldId, score]) => {
+    const field = fields.find(f => f.id === fieldId);
+    const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
+    const mass_dt = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
+    // Secondary type recommendation if >25%
+    const secondaryType = types ? Object.entries(types).sort((a,b)=>b[1]-a[1]).filter(([k]) => k !== dt && types[k] >= 25)[0]?.[0] : null;
+    const mass_secondary = secondaryType && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][secondaryType] : null;
+    return `
+      <div class="card mb-12">
+        <div class="card-body">
+          <div class="flex items-center gap-8 mb-10">
+            <span class="ampel ${getAmpelClass(score)}"></span>
+            <span class="font-bold">${escHtml(field?.label||fieldId)}</span>
+            <span class="badge badge-red">Score: ${score}/10</span>
+          </div>
+          ${mass_dt ? `<div class="tip-box mb-8"><p>💡 <strong>Maßnahme (${typeName(dt)}, ${types?.[dt]||''}%):</strong> ${escHtml(mass_dt)}</p></div>` : ''}
+          ${mass_secondary ? `<div class="info-box mb-8"><p>📌 <strong>Auch relevant (${typeName(secondaryType)}, ${types?.[secondaryType]||''}%):</strong> ${escHtml(mass_secondary)}</p></div>` : ''}
+          <textarea class="textarea" style="min-height:60px" placeholder="Eigene Maßnahme / Feedforward-Frage..."
+            onchange="setMeasure('${fieldId}',this.value)">${escHtml(draft.measures?.[fieldId]||'')}</textarea>
+        </div>
+      </div>
+    `;
+  }).join('') : '<div class="tip-box"><p>✅ Alle bewerteten Felder im grünen Bereich — oder noch keine Scores eingetragen.</p></div>';
+
+  return `
+    <div class="page-header">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','coaching_new')">← Zurück</button>
+      <div>
+        <div class="page-title">${sessionTypeInfo.icon} ${escHtml(sessionTypeInfo.label||draft.sessionType)}</div>
+        <div class="page-sub">${escHtml(draft.employeeName)} · ${formatDate(draft.date)} ${draft.anlass ? '· ' + escHtml(draft.anlass) : ''}</div>
+      </div>
+      <div class="flex gap-8" style="margin-left:auto">
+        <button class="btn btn-outline btn-sm" onclick="exportSessionPDF()">📄 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="saveCoachingSessionFinal()">Session abschließen ✓</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="tabs mb-20">
+        <div class="tab active" id="tab-obs" onclick="switchCoachingTab('obs')">📋 Beobachtung</div>
+        <div class="tab" id="tab-measures" onclick="switchCoachingTab('measures')">⚡ Maßnahmen</div>
+        <div class="tab" id="tab-commitment" onclick="switchCoachingTab('commitment')">🎯 Commitment</div>
+      </div>
+      <div id="coaching-tab-obs">
+        ${dt && types ? `
+          <div class="flex gap-10 mb-16 flex-wrap">
+            ${Object.entries(types).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `
+              <span class="badge" style="background:${typeColor(k)}22;color:${typeColor(k)};border:1px solid ${typeColor(k)}44">
+                ${TYPES[k].emoji} ${typeName(k)} ${v}%
+              </span>
+            `).join('')}
+          </div>
+        ` : ''}
+        <div class="api-notice mb-16">Scores: <span class="hl-green">7–10 = Grün ✓</span> · <span style="background:rgba(245,200,0,0.15);border-radius:3px;padding:1px 4px;color:var(--yellow)">4–6 = Gelb ⚡</span> · <span class="hl-red">1–3 = Rot ✗</span></div>
+        <div class="obs-grid">${obsFields}</div>
+      </div>
+      <div id="coaching-tab-measures" style="display:none">
+        <div class="section-head mb-16"><div class="section-title">Entwicklungsfelder & Maßnahmen</div></div>
+        ${measuresHtml}
+      </div>
+      <div id="coaching-tab-commitment" style="display:none">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><span class="card-title">🎯 Commitment</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Letztes Commitment — Was war vereinbart?</label>
+              <input class="input" value="${escHtml(draft.lastCommitment||'')}" placeholder="Commitment aus der letzten Session..."
+                onchange="setDraftField('lastCommitment',this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Erfüllt?</label>
+              <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm ${draft.commitmentFulfilled==='yes'?'active':''}" 
+                  onclick="setDraftField('commitmentFulfilled','yes');this.style.borderColor='var(--green)';this.style.color='var(--green)'">✅ Erfüllt</button>
+                <button class="btn btn-outline btn-sm ${draft.commitmentFulfilled==='partial'?'active':''}"
+                  onclick="setDraftField('commitmentFulfilled','partial');this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'">⚡ Teilweise</button>
+                <button class="btn btn-outline btn-sm ${draft.commitmentFulfilled==='no'?'active':''}"
+                  onclick="setDraftField('commitmentFulfilled','no');this.style.borderColor='var(--red)';this.style.color='var(--red)'">❌ Nicht erfüllt</button>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-group">
+              <label class="form-label">Neues Commitment — 1 konkrete Sache bis zum nächsten Mal</label>
+              <textarea class="textarea" rows="3" placeholder='z.B. "Vor jedem Termin BATNA berechnen und aufschreiben"'
+                onchange="setDraftField('commitment',this.value)">${escHtml(draft.commitment||'')}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gesamtbewertung Session (1–10)</label>
+              <div class="flex items-center gap-12">
+                <input type="range" min="1" max="10" value="${draft.overallScore||5}"
+                  oninput="setDraftField('overallScore',+this.value);document.getElementById('score-val').textContent=this.value">
+                <span id="score-val" class="slider-val">${draft.overallScore||5}</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveCoachingSessionFinal()">Session speichern ✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Commitment-Tracking / Entwicklungskurve ────────────────────
+async function renderCommitmentTimeline(empId) {
+  const sessions = await getCoachingSessions(empId);
+  if (sessions.length === 0) return '<div class="text-dim text-sm">Noch keine abgeschlossenen Sessions.</div>';
+
+  const fulfillmentIcon = { yes: '✅', partial: '⚡', no: '❌', undefined: '—' };
+  const fulfillmentColor = { yes: 'var(--green)', partial: 'var(--yellow)', no: 'var(--red)', undefined: 'var(--text-dim)' };
+
+  // Score trend
+  const scoredSessions = sessions.filter(s => s.overallScore).reverse();
+  const avgScore = scoredSessions.length > 0 ? Math.round(scoredSessions.reduce((a,b) => a + b.overallScore, 0) / scoredSessions.length * 10) / 10 : null;
+
+  const timeline = sessions.map((s, idx) => {
+    const cf = s.commitmentFulfilled;
+    const sessionTypeInfo = SESSION_TYPE_FIELDS[s.sessionType];
+    return `
+      <div style="display:flex;gap:14px;margin-bottom:16px">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:36px;height:36px;border-radius:50%;background:${s.overallScore >= 7 ? 'rgba(46,204,113,0.15)' : s.overallScore >= 4 ? 'rgba(245,200,0,0.15)' : 'rgba(230,57,70,0.15)'};border:2px solid ${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'}">
+            ${s.overallScore || '—'}
+          </div>
+          ${idx < sessions.length - 1 ? '<div style="flex:1;width:2px;background:var(--border);min-height:20px;margin:4px 0"></div>' : ''}
+        </div>
+        <div class="card flex-1" style="margin-bottom:0">
+          <div class="card-body" style="padding:12px 14px">
+            <div class="flex items-center gap-8 mb-8">
+              <span style="font-size:13px;font-weight:600">${formatDate(s.date)}</span>
+              <span class="badge badge-gray">${sessionTypeInfo?.icon || '📋'} ${escHtml(sessionTypeInfo?.label || s.sessionType || '')}</span>
+              ${s.anlass ? `<span class="text-dim text-sm">${escHtml(s.anlass)}</span>` : ''}
+            </div>
+            ${s.commitment ? `
+              <div style="font-size:13px;margin-bottom:6px">
+                <span class="text-dim">Commitment: </span>
+                <span>${escHtml(s.commitment)}</span>
+              </div>
+            ` : ''}
+            ${cf ? `
+              <div style="font-size:12px;color:${fulfillmentColor[cf]}">
+                ${fulfillmentIcon[cf]} ${cf === 'yes' ? 'Erfüllt' : cf === 'partial' ? 'Teilweise erfüllt' : 'Nicht erfüllt'}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    ${avgScore ? `
+      <div class="flex gap-12 mb-16">
+        <div class="stat-card" style="flex:1;padding:14px">
+          <div class="stat-value" style="font-size:24px">${avgScore}/10</div>
+          <div class="stat-label">⌀ Session-Score</div>
+        </div>
+        <div class="stat-card" style="flex:1;padding:14px">
+          <div class="stat-value" style="font-size:24px">${sessions.length}</div>
+          <div class="stat-label">Sessions gesamt</div>
+        </div>
+        <div class="stat-card" style="flex:1;padding:14px">
+          <div class="stat-value" style="font-size:24px">${sessions.filter(s=>s.commitmentFulfilled==='yes').length}</div>
+          <div class="stat-label">Commitments erfüllt</div>
+        </div>
+      </div>
+    ` : ''}
+    <div>${timeline}</div>
+  `;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  PDF EXPORT — Session & Gesamtverlauf
+// ══════════════════════════════════════════════════════════════
+
+function exportSessionPDF() {
+  const win = window.open('', '_blank');
+  if (!win) { toast('Popup wurde blockiert — bitte Popup-Blocker deaktivieren', 'error'); return; }
+
+  storageGet('session_draft', false).then(draft => {
+    if (!draft) { win.close(); return; }
+    getEmployee(draft.employeeId).then(emp => {
+      const fields = getSessionFields(draft.sessionType, emp?.role || 'ad');
+      const sessionTypeInfo = SESSION_TYPE_FIELDS[draft.sessionType] || { label: draft.sessionType, icon: '📋' };
+      const dt = dominantType(emp?.types);
+
+      const observations = fields.map(f => {
+        const score = draft.observations?.[f.id];
+        const note = draft.notes?.[f.id];
+        if (!score) return '';
+        return `
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px">${f.label}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">
+              <span style="font-weight:700;color:${score>=7?'#2ecc71':score>=4?'#f5c800':'#e63946'}">${score}/10</span>
+            </td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555">${note||'—'}</td>
+          </tr>
+        `;
+      }).filter(Boolean).join('');
+
+      const measures = Object.entries(draft.measures||{}).map(([fieldId, measure]) => {
+        if (!measure) return '';
+        const field = fields.find(f => f.id === fieldId);
+        return `<div style="margin-bottom:10px"><strong>${field?.label||fieldId}:</strong> ${measure}</div>`;
+      }).join('');
+
+      win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Coaching Session — ${draft.employeeName}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; border-bottom: 2px solid #f5c800; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-size: 12px; border-bottom: 2px solid #ddd; }
+  .commitment-box { background: #f9f9f9; border-left: 4px solid #f5c800; padding: 14px 16px; border-radius: 4px; }
+  .logo { color: #f5c800; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
+  @media print { body { padding: 15px; } }
+</style>
+</head><body>
+<div class="logo">WEWO Training Platform</div>
+<h1>Coaching Session Report</h1>
+<div class="meta">
+  Mitarbeiter: <strong>${draft.employeeName}</strong> &nbsp;|&nbsp;
+  Datum: <strong>${formatDate(draft.date)}</strong> &nbsp;|&nbsp;
+  Typ: <strong>${sessionTypeInfo.icon} ${sessionTypeInfo.label}</strong>
+  ${draft.anlass ? ` &nbsp;|&nbsp; Anlass: <strong>${draft.anlass}</strong>` : ''}
+  ${dt ? ` &nbsp;|&nbsp; Haupttyp: <strong style="color:${typeColor(dt)}">${typeName(dt)}</strong>` : ''}
+  ${emp?.types ? `<br>Typ-Verteilung: ${Object.entries(emp.types).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${typeName(k)} ${v}%`).join(' · ')}` : ''}
+</div>
+
+<h2>📋 Beobachtungsfelder</h2>
+<table>
+  <thead><tr><th>Feld</th><th style="text-align:center;width:80px">Score</th><th>Beobachtung</th></tr></thead>
+  <tbody>${observations || '<tr><td colspan="3" style="padding:12px;color:#999">Keine Scores eingetragen</td></tr>'}</tbody>
+</table>
+
+${measures ? `<h2>⚡ Maßnahmen</h2><div>${measures}</div>` : ''}
+
+<h2>🎯 Commitment</h2>
+<div class="commitment-box">
+  ${draft.lastCommitment ? `<div style="margin-bottom:8px"><strong>Letztes Commitment:</strong> ${draft.lastCommitment} &nbsp;
+    <span style="color:${draft.commitmentFulfilled==='yes'?'#2ecc71':draft.commitmentFulfilled==='no'?'#e63946':'#f5c800'}">
+      ${draft.commitmentFulfilled==='yes'?'✅ Erfüllt':draft.commitmentFulfilled==='partial'?'⚡ Teilweise':'❌ Nicht erfüllt'}
+    </span></div>` : ''}
+  <div><strong>Neues Commitment:</strong> ${draft.commitment||'—'}</div>
+  ${draft.overallScore ? `<div style="margin-top:8px"><strong>Gesamtbewertung:</strong> ${draft.overallScore}/10</div>` : ''}
+</div>
+
+<div style="margin-top:40px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px">
+  Erstellt: ${new Date().toLocaleDateString('de-DE')} | WEWO Training Platform
+</div>
+</body></html>`);
+      win.document.close();
+      setTimeout(() => win.print(), 500);
+    });
+  });
+}
+
+async function exportEmployeePDF(empId) {
+  const emp = await getEmployee(empId);
+  const prog = await getEmployeeProgress(empId);
+  const sessions = await getCoachingSessions(empId);
+  const modules = emp?.role === 'ad' ? await getModules('ad') : await getModules('id');
+  const done = Object.values(prog.modules||{}).filter(v=>v).length;
+  const pct = Math.round(done/modules.length*100);
+  const dt = dominantType(emp?.types);
+
+  const win = window.open('', '_blank');
+  if (!win) { toast('Popup blockiert', 'error'); return; }
+
+  const moduleRows = modules.map(m => {
+    const isDone = prog.modules?.[m.id];
+    const quiz = prog.quizzes?.[m.id];
+    return `<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:13px">${m.icon} ${m.title}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px">
+        ${isDone ? '<span style="color:#2ecc71;font-weight:700">✓ Abgeschlossen</span>' : '<span style="color:#999">Ausstehend</span>'}
+      </td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:#666">
+        ${quiz ? `${quiz.correct}/${quiz.total} richtig` : '—'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const sessionRows = sessions.slice(0,10).map(s => {
+    const cf = s.commitmentFulfilled;
+    return `<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${formatDate(s.date)}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${SESSION_TYPE_FIELDS[s.sessionType]?.label||s.sessionType||'—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:${s.overallScore>=7?'#2ecc71':s.overallScore>=4?'#f5c800':'#e63946'}">${s.overallScore||'—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${s.commitment||'—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;color:${cf==='yes'?'#2ecc71':cf==='no'?'#e63946':'#f5c800'}">
+        ${cf==='yes'?'✅ Erfüllt':cf==='partial'?'⚡ Teilweise':cf==='no'?'❌ Nicht erfüllt':'—'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const avgScore = sessions.filter(s=>s.overallScore).length > 0
+    ? Math.round(sessions.filter(s=>s.overallScore).reduce((a,b)=>a+b.overallScore,0)/sessions.filter(s=>s.overallScore).length*10)/10
+    : null;
+
+  win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Mitarbeiterprofil — ${emp?.name}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
+  h1 { font-size: 22px; } h2 { font-size: 16px; border-bottom: 2px solid #f5c800; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-size: 12px; border-bottom: 2px solid #ddd; }
+  .kpi { display: inline-block; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; padding: 12px 20px; margin-right: 12px; margin-bottom: 12px; text-align: center; }
+  .kpi-val { font-size: 24px; font-weight: 800; color: #f5c800; }
+  .kpi-label { font-size: 11px; color: #666; margin-top: 2px; }
+  .logo { color: #f5c800; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
+  @media print { body { padding: 15px; } }
+</style>
+</head><body>
+<div class="logo">WEWO Training Platform</div>
+<h1>Mitarbeiterprofil: ${emp?.name}</h1>
+<div class="meta">
+  Rolle: <strong>${emp?.role==='ad'?'Außendienst':'Innendienst'}</strong> &nbsp;|&nbsp;
+  ${dt ? `Haupttyp: <strong style="color:${typeColor(dt)}">${typeName(dt)}</strong> &nbsp;|&nbsp;` : ''}
+  Erstellt: <strong>${formatDate(emp?.createdAt)}</strong> &nbsp;|&nbsp;
+  Letzter Login: <strong>${formatDate(emp?.lastLogin)}</strong>
+  ${emp?.types ? `<br>Typ-Verteilung: ${Object.entries(emp.types).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${typeName(k)} ${v}%`).join(' · ')}` : ''}
+</div>
+
+<div>
+  <div class="kpi"><div class="kpi-val">${pct}%</div><div class="kpi-label">Lernfortschritt</div></div>
+  <div class="kpi"><div class="kpi-val">${done}/${modules.length}</div><div class="kpi-label">Module</div></div>
+  <div class="kpi"><div class="kpi-val">${sessions.length}</div><div class="kpi-label">Coaching-Sessions</div></div>
+  ${avgScore ? `<div class="kpi"><div class="kpi-val">${avgScore}</div><div class="kpi-label">⌀ Score</div></div>` : ''}
+</div>
+
+<h2>📚 Lernmodule</h2>
+<table>
+  <thead><tr><th>Modul</th><th style="text-align:center;width:140px">Status</th><th style="text-align:center;width:100px">Quiz</th></tr></thead>
+  <tbody>${moduleRows}</tbody>
+</table>
+
+${sessions.length > 0 ? `
+<h2>🗂️ Coaching-Verlauf (letzte 10 Sessions)</h2>
+<table>
+  <thead><tr><th>Datum</th><th>Typ</th><th style="text-align:center;width:60px">Score</th><th>Commitment</th><th style="width:100px">Erfüllt</th></tr></thead>
+  <tbody>${sessionRows}</tbody>
+</table>
+` : ''}
+
+${emp?.trainerNotes ? `<h2>📝 Trainer-Notizen</h2><div style="background:#f9f9f9;padding:14px;border-radius:4px;font-size:13px;line-height:1.6">${escHtml(emp.trainerNotes)}</div>` : ''}
+
+<div style="margin-top:40px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:12px">
+  Erstellt: ${new Date().toLocaleDateString('de-DE')} | WEWO Training Platform
+</div>
+</body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
 }
 
 
