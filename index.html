@@ -3153,23 +3153,24 @@ async function renderModuleContent(user, prog, modules, role) {
       </div>
       ${await getModuleTypeTipBox(mod.id, user.empId)}
     </div>
-  \`;
+  `;
 }
 
 async function getModuleTypeTipBox(moduleId, empId) {
   const tipData = await getModuleTypeTip(moduleId, empId);
   if (!tipData) return '';
-  return \`
-    <div class="card mt-24" style="border-color:\${typeColor(tipData.type)}44;background:\${typeColor(tipData.type)}08">
-      <div class="card-header" style="border-bottom-color:\${typeColor(tipData.type)}22">
-        <span style="font-size:20px">\${TYPES[tipData.type].emoji}</span>
-        <span class="card-title">Für dich als \${typeName(tipData.type)} (\${tipData.types[tipData.type]}%)</span>
-      </div>
-      <div class="card-body">
-        <p style="font-size:14px;line-height:1.7;color:#d0d0d0;margin:0">\${escHtml(tipData.tip)}</p>
-      </div>
-    </div>
-  \`;
+  const color = typeColor(tipData.type);
+  const pct = tipData.types[tipData.type];
+  const emoji = TYPES[tipData.type].emoji;
+  const name = typeName(tipData.type);
+  const tip = escHtml(tipData.tip);
+  return '<div class="card mt-24" style="border-color:' + color + '44;background:' + color + '08">' +
+    '<div class="card-header" style="border-bottom-color:' + color + '22">' +
+    '<span style="font-size:20px">' + emoji + '</span>' +
+    '<span class="card-title">Für dich als ' + name + ' (' + pct + '%)</span>' +
+    '</div><div class="card-body">' +
+    '<p style="font-size:14px;line-height:1.7;color:#d0d0d0;margin:0">' + tip + '</p>' +
+    '</div></div>';
 }
 
 function answerQuiz(chosen, correct, qi, total) {
