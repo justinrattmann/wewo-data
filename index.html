@@ -3054,7 +3054,24 @@ async function renderModuleContent(user, prog, modules, role) {
   const mod = modules.find(m => m.id === moduleId) || modules[0];
   if (!mod) return '<div class="page-content"><div class="empty-state">Modul nicht gefunden</div></div>';
 
-  const isDone = prog.modules?.[mod.id];
+  // Personality test gets its own renderer
+  if (mod.type === 'test') {
+    const idx = modules.findIndex(m => m.id === mod.id);
+    const nextMod = modules[idx + 1];
+    const nextBtn = nextMod ? `<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('${role}','module_content',{subModule:'${nextMod.id}'})">Weiter: ${escHtml(nextMod.title.slice(0,15))} →</button>` : '';
+    return `
+      <div class="page-header">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('${role}','modules')">← Module</button>
+        <div><div class="page-title">${mod.icon} ${escHtml(mod.title)}</div><div class="page-sub">Modul ${mod.num} · ${mod.duration}</div></div>
+        ${nextBtn}
+      </div>
+      <div class="page-content">
+        ${renderPersonalityTest(user.empId, role)}
+      </div>
+    `;
+  }
+
+    const isDone = prog.modules?.[mod.id];
   const quizState = STATE.quizState || null;
 
   // Quiz rendering
@@ -3269,6 +3286,414 @@ async function renderEmpProgress(user, prog, modules, empData) {
       <div class="card">
         <div class="card-header"><span class="card-title">Alle Module</span></div>
         <div class="card-body">${modRows}</div>
+      </div>
+    </div>
+  `;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  PERSÖNLICHKEITSTEST — Interaktiv mit Auswertung
+// ══════════════════════════════════════════════════════════════
+
+const PERSONALITY_TEST = {
+  intro: `Beantworte alle 20 Fragen ehrlich — nicht wie du sein möchtest, sondern wie du wirklich bist. Es gibt keine richtigen oder falschen Antworten.`,
+  questions: [
+    {
+      q: "Wenn ich ein neues Projekt starte...",
+      opts: [
+        { text: "...lege ich sofort los und passe unterwegs an.", type: "C" },
+        { text: "...begeistere ich erst andere dafür.", type: "I" },
+        { text: "...warte ich bis alle Details klar sind.", type: "S" },
+        { text: "...erstelle ich zuerst einen detaillierten Plan.", type: "G" }
+      ]
+    },
+    {
+      q: "In Konfliktsituationen...",
+      opts: [
+        { text: "...spreche ich das Problem direkt und offen an.", type: "C" },
+        { text: "...versuche ich die Stimmung aufzulockern.", type: "I" },
+        { text: "...suche ich einen Kompromiss der alle zufriedenstellt.", type: "S" },
+        { text: "...analysiere ich erst die Ursache bevor ich handle.", type: "G" }
+      ]
+    },
+    {
+      q: "Andere würden mich am ehesten beschreiben als...",
+      opts: [
+        { text: "...direkt und zielorientiert.", type: "C" },
+        { text: "...begeisternd und kommunikativ.", type: "I" },
+        { text: "...zuverlässig und geduldig.", type: "S" },
+        { text: "...präzise und analytisch.", type: "G" }
+      ]
+    },
+    {
+      q: "Bei Entscheidungen...",
+      opts: [
+        { text: "...entscheide ich schnell und stehe dazu.", type: "C" },
+        { text: "...höre ich auf mein Bauchgefühl und auf andere.", type: "I" },
+        { text: "...brauche ich Zeit und Sicherheit.", type: "S" },
+        { text: "...brauche ich alle relevanten Fakten.", type: "G" }
+      ]
+    },
+    {
+      q: "Im Team übernehem ich meist...",
+      opts: [
+        { text: "...die Führung und setze das Tempo.", type: "C" },
+        { text: "...die Rolle des Motivators und Netzwerkers.", type: "I" },
+        { text: "...die zuverlässige Stütze im Hintergrund.", type: "S" },
+        { text: "...die Rolle des Analysten und Qualitätssicherers.", type: "G" }
+      ]
+    },
+    {
+      q: "Was motiviert mich am meisten?",
+      opts: [
+        { text: "Ergebnisse sehen und Ziele erreichen.", type: "C" },
+        { text: "Anerkennung und gute Beziehungen.", type: "I" },
+        { text: "Stabilität und ein harmonisches Umfeld.", type: "S" },
+        { text: "Qualität und das Richtige richtig machen.", type: "G" }
+      ]
+    },
+    {
+      q: "Wenn ein Kunde Nein sagt...",
+      opts: [
+        { text: "...finde ich sofort einen anderen Weg zum Ja.", type: "C" },
+        { text: "...versuche ich die persönliche Ebene zu stärken.", type: "I" },
+        { text: "...akzeptiere ich es und komme später wieder.", type: "S" },
+        { text: "...hinterfrage ich welches Argument noch fehlt.", type: "G" }
+      ]
+    },
+    {
+      q: "Vor einem wichtigen Termin...",
+      opts: [
+        { text: "...überlege ich kurz das Ziel und gehe rein.", type: "C" },
+        { text: "...denke ich an die Person und wie ich Rapport aufbaue.", type: "I" },
+        { text: "...bereite ich alles sorgfältig vor um sicher zu sein.", type: "S" },
+        { text: "...recherchiere ich intensiv und kenne alle Zahlen.", type: "G" }
+      ]
+    },
+    {
+      q: "Stress entsteht bei mir vor allem durch...",
+      opts: [
+        { text: "...zu viele Regeln und langsame Prozesse.", type: "C" },
+        { text: "...Ablehnung und Konflikte mit anderen.", type: "I" },
+        { text: "...unerwartete Veränderungen und Druck.", type: "S" },
+        { text: "...Fehler und unvollständige Informationen.", type: "G" }
+      ]
+    },
+    {
+      q: "Meine größte Stärke im Vertrieb ist...",
+      opts: [
+        { text: "...den Abschluss zu machen wenn andere zögern.", type: "C" },
+        { text: "...Vertrauen und Begeisterung aufzubauen.", type: "I" },
+        { text: "...langfristige Beziehungen zu pflegen.", type: "S" },
+        { text: "...komplexe Lösungen verständlich zu erklären.", type: "G" }
+      ]
+    },
+    {
+      q: "Bei Preisverhandlungen bin ich...",
+      opts: [
+        { text: "...direkt und setze klare Grenzen.", type: "C" },
+        { text: "...charmant und suche win-win Lösungen.", type: "I" },
+        { text: "...vorsichtig und gebe bei Druck oft nach.", type: "S" },
+        { text: "...faktenbasiert und argumentiere mit Zahlen.", type: "G" }
+      ]
+    },
+    {
+      q: "In Meetings bin ich derjenige der...",
+      opts: [
+        { text: "...auf den Punkt kommt und Entscheidungen treibt.", type: "C" },
+        { text: "...die Stimmung belebt und neue Ideen einbringt.", type: "I" },
+        { text: "...anderen zuhört und ausgleicht.", type: "S" },
+        { text: "...Fakten prüft und Risiken benennt.", type: "G" }
+      ]
+    },
+    {
+      q: "Feedback gebe ich...",
+      opts: [
+        { text: "...direkt und ohne Umschweife.", type: "C" },
+        { text: "...verpackt in Lob und positiver Energie.", type: "I" },
+        { text: "...vorsichtig und erst wenn ich gefragt werde.", type: "S" },
+        { text: "...strukturiert und mit konkreten Beispielen.", type: "G" }
+      ]
+    },
+    {
+      q: "Wenn ich ein Ziel nicht erreiche...",
+      opts: [
+        { text: "...analysiere ich kurz was falsch lief und mache weiter.", type: "C" },
+        { text: "...suche ich Unterstützung und Motivation bei anderen.", type: "I" },
+        { text: "...mache ich mir Sorgen und zweifle an mir.", type: "S" },
+        { text: "...untersuche ich jeden Schritt detailliert.", type: "G" }
+      ]
+    },
+    {
+      q: "Neue Menschen kennenlernen...",
+      opts: [
+        { text: "...ist für mich kein Problem — ich komme sofort zum Punkt.", type: "C" },
+        { text: "...macht mir echten Spaß — ich bin sofort im Gespräch.", type: "I" },
+        { text: "...braucht etwas Zeit — ich beobachte erst.", type: "S" },
+        { text: "...tue ich systematisch und mit klarem Interesse.", type: "G" }
+      ]
+    },
+    {
+      q: "Meine schwächste Seite ist...",
+      opts: [
+        { text: "...manchmal zu ungeduldig und zu direkt.", type: "C" },
+        { text: "...manchmal zu emotional und unstrukturiert.", type: "I" },
+        { text: "...manchmal zu nachgiebig und konfliktscheu.", type: "S" },
+        { text: "...manchmal zu perfektionistisch und langsam.", type: "G" }
+      ]
+    },
+    {
+      q: "Regeln und Prozesse...",
+      opts: [
+        { text: "...halte ich ein wenn sie sinnvoll sind — sonst nicht.", type: "C" },
+        { text: "...finde ich wichtig aber Beziehungen gehen vor.", type: "I" },
+        { text: "...geben mir Sicherheit und ich halte sie ein.", type: "S" },
+        { text: "...sind wichtig und ich folge ihnen konsequent.", type: "G" }
+      ]
+    },
+    {
+      q: "Wenn andere mich kritisieren...",
+      opts: [
+        { text: "...nehme ich es zur Kenntnis und handle wenn nötig.", type: "C" },
+        { text: "...trifft mich das emotional und ich reagiere darauf.", type: "I" },
+        { text: "...nehme ich es persönlich und grübele darüber nach.", type: "S" },
+        { text: "...prüfe ich ob die Kritik sachlich berechtigt ist.", type: "G" }
+      ]
+    },
+    {
+      q: "Im Umgang mit Kunden bevorzuge ich...",
+      opts: [
+        { text: "...kurze, effiziente Gespräche mit klarem Ergebnis.", type: "C" },
+        { text: "...persönliche, warmherzige Gespräche mit Tiefe.", type: "I" },
+        { text: "...verlässliche, regelmäßige Kontakte ohne Überraschungen.", type: "S" },
+        { text: "...sachliche, gut vorbereitete Gespräche mit Substanz.", type: "G" }
+      ]
+    },
+    {
+      q: "Was ich mir am meisten wünsche, ist...",
+      opts: [
+        { text: "...Ergebnisse, Einfluss und Freiheit.", type: "C" },
+        { text: "...Anerkennung, Beziehungen und Spaß.", type: "I" },
+        { text: "...Sicherheit, Harmonie und Verlässlichkeit.", type: "S" },
+        { text: "...Qualität, Struktur und das Richtige richtig machen.", type: "G" }
+      ]
+    }
+  ]
+};
+
+// ── Test State ─────────────────────────────────────────────────
+let testState = {
+  answers: {},      // questionIndex -> typeKey
+  finished: false,
+  result: null
+};
+
+function renderPersonalityTest(empId, role) {
+  if (testState.finished && testState.result) {
+    return renderTestResult(empId);
+  }
+
+  const total = PERSONALITY_TEST.questions.length;
+  const answered = Object.keys(testState.answers).length;
+  const pct = Math.round(answered / total * 100);
+
+  const questions = PERSONALITY_TEST.questions.map((q, qi) => {
+    const selected = testState.answers[qi];
+    // Shuffle options consistently per question (based on qi)
+    const opts = [...q.opts];
+
+    return `
+      <div class="card mb-16 ${selected ? 'done' : ''}" id="q-${qi}" style="border-color:${selected ? 'rgba(46,204,113,0.3)' : 'var(--border)'}">
+        <div class="card-body">
+          <div class="flex items-center gap-10 mb-14">
+            <span class="badge badge-gray" style="flex-shrink:0">Frage ${qi + 1}</span>
+            <div style="font-size:14px;font-weight:600">${escHtml(q.q)}</div>
+            ${selected ? '<span style="color:var(--green);margin-left:auto;flex-shrink:0">✓</span>' : ''}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            ${opts.map((o, oi) => {
+              const isSelected = selected === o.type;
+              return `
+                <div onclick="selectTestAnswer(${qi},'${o.type}')"
+                  style="padding:12px 14px;border-radius:6px;cursor:pointer;border:1px solid ${isSelected ? 'var(--yellow)' : 'var(--border)'};
+                    background:${isSelected ? 'rgba(245,200,0,0.1)' : 'var(--surface)'};
+                    color:${isSelected ? 'var(--yellow)' : 'var(--text)'};
+                    font-size:13px;line-height:1.5;transition:all .15s">
+                  ${isSelected ? '● ' : '○ '}${escHtml(o.text)}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="module-content">
+      <h2>🧠 Persönlichkeitstest</h2>
+      <p>${PERSONALITY_TEST.intro}</p>
+      
+      <div style="background:var(--surface);border-radius:8px;padding:16px;margin-bottom:24px">
+        <div class="flex justify-between mb-8">
+          <span class="text-dim text-sm">${answered} von ${total} beantwortet</span>
+          <span class="font-bold text-yellow">${pct}%</span>
+        </div>
+        <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+
+      ${questions}
+
+      <div style="margin-top:24px">
+        ${answered === total
+          ? `<button class="btn btn-primary btn-lg" onclick="finishPersonalityTest('${empId}')">📊 Auswertung anzeigen →</button>`
+          : `<div class="text-dim text-sm">Beantworte alle ${total - answered} verbleibenden Fragen um dein Ergebnis zu sehen.</div>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function selectTestAnswer(qi, typeKey) {
+  testState.answers[qi] = typeKey;
+  // Re-render just this question card
+  const card = document.getElementById(`q-${qi}`);
+  if (card) {
+    const q = PERSONALITY_TEST.questions[qi];
+    card.style.borderColor = 'rgba(46,204,113,0.3)';
+    card.querySelector('.card-body').innerHTML = `
+      <div class="flex items-center gap-10 mb-14">
+        <span class="badge badge-gray" style="flex-shrink:0">Frage ${qi + 1}</span>
+        <div style="font-size:14px;font-weight:600">${escHtml(q.q)}</div>
+        <span style="color:var(--green);margin-left:auto;flex-shrink:0">✓</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${q.opts.map(o => `
+          <div onclick="selectTestAnswer(${qi},'${o.type}')"
+            style="padding:12px 14px;border-radius:6px;cursor:pointer;border:1px solid ${o.type === typeKey ? 'var(--yellow)' : 'var(--border)'};
+              background:${o.type === typeKey ? 'rgba(245,200,0,0.1)' : 'var(--surface)'};
+              color:${o.type === typeKey ? 'var(--yellow)' : 'var(--text)'};
+              font-size:13px;line-height:1.5;transition:all .15s">
+            ${o.type === typeKey ? '● ' : '○ '}${escHtml(o.text)}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Update progress bar
+  const answered = Object.keys(testState.answers).length;
+  const total = PERSONALITY_TEST.questions.length;
+  const pct = Math.round(answered / total * 100);
+  document.querySelectorAll('.progress-fill')[0]?.style && (document.querySelectorAll('.progress-fill')[0].style.width = pct + '%');
+  const progText = document.querySelector('[class*="text-dim text-sm"]');
+
+  // Show finish button when all answered
+  const btnArea = document.querySelector('[style*="margin-top:24px"]');
+  if (btnArea && answered === total) {
+    btnArea.innerHTML = `<button class="btn btn-primary btn-lg" onclick="finishPersonalityTest('${STATE.currentUser?.empId}')">📊 Auswertung anzeigen →</button>`;
+  }
+
+  // Auto-scroll to next unanswered question
+  const nextUnanswered = PERSONALITY_TEST.questions.findIndex((_, i) => !testState.answers[i] && i > qi);
+  if (nextUnanswered >= 0) {
+    setTimeout(() => {
+      document.getElementById(`q-${nextUnanswered}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
+  }
+}
+
+async function finishPersonalityTest(empId) {
+  const counts = { C: 0, I: 0, S: 0, G: 0 };
+  Object.values(testState.answers).forEach(t => counts[t]++);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const result = {};
+  Object.entries(counts).forEach(([k, v]) => result[k] = Math.round(v / total * 100));
+
+  testState.result = result;
+  testState.finished = true;
+
+  // Save to employee profile
+  if (empId) {
+    const emp = await getEmployee(empId);
+    if (emp) {
+      emp.types = result;
+      await saveEmployee(emp);
+    }
+    // Mark module as done
+    const prog = await getEmployeeProgress(empId);
+    prog.modules = prog.modules || {};
+    prog.modules['persoenlichkeit_ad'] = true;
+    prog.modules['persoenlichkeit_id'] = true;
+    await saveEmployeeProgress(empId, prog);
+  }
+
+  render();
+  window.scrollTo(0, 0);
+}
+
+function renderTestResult(empId) {
+  const result = testState.result;
+  const dominant = Object.entries(result).sort((a, b) => b[1] - a[1])[0][0];
+  const dt = TYPES[dominant];
+
+  const bars = ['C', 'I', 'S', 'G'].sort((a, b) => result[b] - result[a]).map(k => `
+    <div class="flex items-center gap-12 mb-12">
+      <div style="width:110px;font-weight:700;color:${typeColor(k)}">${TYPES[k].emoji} ${typeName(k)}</div>
+      <div style="flex:1;height:28px;background:var(--border);border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${result[k]}%;background:${typeColor(k)};border-radius:6px;transition:width .6s;display:flex;align-items:center;padding-left:10px">
+          <span style="font-size:13px;font-weight:700;color:${k === 'S' ? 'var(--black)' : 'var(--black)'}">${result[k]}%</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const tips = {
+    C: { st: 'Direkt, schnell, abschlussstark', fa: 'Ungeduldig, hört zu wenig zu', tipp: 'Übe bewusstes Zuhören. Dein größtes Plus ist dein Drive — kombiniere es mit mehr Empathie und du wirst unschlagbar.' },
+    I: { st: 'Begeisternd, beziehungsstark, überzeugend', fa: 'Zu gefällig, gibt zu früh nach', tipp: 'Übe bewusstes Schweigen nach einem Angebot. Deine Stärke ist Rapport — nutze ihn, aber verlier dabei nicht deine Verhandlungsposition.' },
+    S: { st: 'Zuverlässig, loyal, vertrauenswürdig', fa: 'Gibt bei Druck nach, meidet Konflikte', tipp: 'Berechne vor jedem Termin deine BATNA und schreibe sie auf. Das gibt dir die Sicherheit die du brauchst, um standhaft zu bleiben.' },
+    G: { st: 'Präzise, vorbereitet, faktenbasiert', fa: 'Entscheidet zu langsam, erklärt zu viel', tipp: 'Übe die Sowjet-Methode: Position nennen, schweigen. Du musst nicht alles erklären — lass die Zahlen für dich sprechen.' }
+  };
+
+  return `
+    <div class="module-content">
+      <h2>📊 Dein Ergebnis</h2>
+      
+      <div class="card mb-24" style="border-color:${typeColor(dominant)}44;background:${typeColor(dominant)}11">
+        <div class="card-body" style="padding:24px">
+          <div class="flex items-center gap-16 mb-16">
+            <span style="font-size:48px">${dt.emoji}</span>
+            <div>
+              <div class="text-dim text-sm mb-4">Dein Haupttyp</div>
+              <div style="font-size:24px;font-weight:800;color:${typeColor(dominant)}">${typeName(dominant)}</div>
+              <div class="text-dim">${dt.desc}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-24">
+        <h3>Deine Typ-Verteilung</h3>
+        ${bars}
+      </div>
+
+      <div class="grid-2 mb-24">
+        <div class="tip-box">
+          <p>✅ <strong>Deine Stärken:</strong><br>${tips[dominant].st}</p>
+        </div>
+        <div class="warning-box">
+          <p>⚠️ <strong>Deine Fallen:</strong><br>${tips[dominant].fa}</p>
+        </div>
+      </div>
+
+      <div class="info-box mb-24">
+        <p>💡 <strong>Dein persönlicher Tipp:</strong><br>${tips[dominant].tipp}</p>
+      </div>
+
+      <div class="flex gap-10">
+        <button class="btn btn-primary" onclick="navigate('${STATE.currentUser?.role}','modules')">Weiter zu den Modulen →</button>
+        <button class="btn btn-outline" onclick="testState={answers:{},finished:false,result:null};render()">Test wiederholen</button>
       </div>
     </div>
   `;
