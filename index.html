@@ -2801,9 +2801,19 @@ function openEditEmployee(empId) {
 // ══════════════════════════════════════════════════════════════
 
 async function getModules(role) {
+  const defaults = role === 'ad' ? JSON.parse(JSON.stringify(AD_MODULES)) : JSON.parse(JSON.stringify(ID_MODULES));
   const data = await storageGet(`modules:${role}`, true);
-  if (data && Array.isArray(data) && data.length > 0) return data;
-  return role === 'ad' ? JSON.parse(JSON.stringify(AD_MODULES)) : JSON.parse(JSON.stringify(ID_MODULES));
+  if (!data || !Array.isArray(data) || data.length === 0) return defaults;
+
+  // Auto-merge: add new default modules that don't exist in stored data yet
+  const storedIds = new Set(data.map(m => m.id));
+  const newModules = defaults.filter(m => !storedIds.has(m.id));
+  if (newModules.length > 0) {
+    const merged = [...data, ...newModules].sort((a, b) => (a.num ?? 99) - (b.num ?? 99));
+    await storageSet(`modules:${role}`, merged, true); // save merged back
+    return merged;
+  }
+  return data;
 }
 
 async function saveModules(role, modules) {
@@ -2813,9 +2823,18 @@ async function saveModules(role, modules) {
 }
 
 async function getRoleplayScenarios(role) {
+  const defaults = JSON.parse(JSON.stringify(ROLEPLAY_SCENARIOS[role] || []));
   const data = await storageGet(`scenarios:${role}`, true);
-  if (data && Array.isArray(data) && data.length > 0) return data;
-  return JSON.parse(JSON.stringify(ROLEPLAY_SCENARIOS[role]));
+  if (!data || !Array.isArray(data) || data.length === 0) return defaults;
+  // Auto-merge new default scenarios
+  const storedIds = new Set(data.map(s => s.id));
+  const newScenarios = defaults.filter(s => !storedIds.has(s.id));
+  if (newScenarios.length > 0) {
+    const merged = [...data, ...newScenarios];
+    await storageSet(`scenarios:${role}`, merged, true);
+    return merged;
+  }
+  return data;
 }
 
 async function saveRoleplayScenarios(role, scenarios) {
