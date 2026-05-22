@@ -1,0 +1,3478 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEWO Training Platform</title>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+/* ══ WEWO DESIGN SYSTEM ══ */
+:root {
+  --black: #0a0a0a;
+  --dark: #111111;
+  --panel: #1a1a1a;
+  --surface: #222222;
+  --border: #2e2e2e;
+  --border-bright: #3d3d3d;
+  --yellow: #f5c800;
+  --yellow-dim: #b89400;
+  --yellow-glow: rgba(245,200,0,0.12);
+  --red: #e63946;
+  --green: #2ecc71;
+  --blue: #3b82f6;
+  --orange: #f97316;
+  --text: #e8e8e8;
+  --text-dim: #888;
+  --text-faint: #555;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.5);
+  --shadow-y: 0 2px 8px rgba(245,200,0,0.15);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--black); color: var(--text); overflow-x: hidden; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+/* ══ LAYOUT ══ */
+#app { min-height: 100vh; }
+
+.shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--dark);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: width .25s; overflow: hidden;
+}
+.sidebar.collapsed { width: 60px; min-width: 60px; }
+.sidebar-header {
+  padding: 20px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+}
+.logo-mark {
+  width: 32px; height: 32px; background: var(--yellow);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; flex-shrink: 0;
+  font-weight: 900; font-size: 14px; color: var(--black); letter-spacing: -1px;
+}
+.logo-text { font-size: 16px; font-weight: 700; color: var(--yellow); white-space: nowrap; overflow: hidden; }
+.logo-sub { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+.nav-section { padding: 8px 16px 4px; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; cursor: pointer; border-radius: 0;
+  color: var(--text-dim); font-size: 13px; transition: all .15s;
+  border-left: 3px solid transparent; white-space: nowrap;
+  position: relative;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active { background: var(--yellow-glow); color: var(--yellow); border-left-color: var(--yellow); }
+.nav-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto; background: var(--yellow); color: var(--black);
+  font-size: 10px; font-weight: 700; border-radius: 10px;
+  padding: 1px 6px; white-space: nowrap;
+}
+.sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px; background: var(--surface); border-radius: var(--radius);
+  cursor: pointer;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.user-info { overflow: hidden; }
+.user-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 10px; color: var(--text-dim); }
+
+/* MAIN CONTENT */
+.main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.page-header {
+  padding: 24px 32px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; background: var(--dark); position: sticky; top: 0; z-index: 10;
+}
+.page-title { font-size: 20px; font-weight: 700; }
+.page-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.page-content { padding: 28px 32px; flex: 1; }
+
+/* ══ COMPONENTS ══ */
+/* CARDS */
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.card-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-title { font-size: 14px; font-weight: 600; }
+.card-body { padding: 18px; }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+.stat-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px;
+}
+.stat-value { font-size: 32px; font-weight: 800; color: var(--yellow); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+.stat-delta { font-size: 11px; margin-top: 6px; color: var(--green); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; transition: all .15s; white-space: nowrap;
+}
+.btn-primary { background: var(--yellow); color: var(--black); }
+.btn-primary:hover { background: #ffd700; }
+.btn-outline { background: transparent; border: 1px solid var(--border-bright); color: var(--text); }
+.btn-outline:hover { background: var(--surface); border-color: var(--yellow); color: var(--yellow); }
+.btn-ghost { background: transparent; color: var(--text-dim); }
+.btn-ghost:hover { background: var(--surface); color: var(--text); }
+.btn-danger { background: rgba(230,57,70,0.15); border: 1px solid var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(230,57,70,0.25); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-lg { padding: 12px 24px; font-size: 15px; }
+.btn-icon { padding: 8px; border-radius: 50%; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.badge-yellow { background: rgba(245,200,0,0.15); color: var(--yellow); border: 1px solid rgba(245,200,0,0.3); }
+.badge-green { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+.badge-red { background: rgba(230,57,70,0.15); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
+.badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+.badge-gray { background: rgba(136,136,136,0.15); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* INPUTS */
+.input, .textarea, .select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 9px 12px;
+  color: var(--text); font-size: 13px; outline: none; transition: border-color .15s;
+  font-family: inherit;
+}
+.input:focus, .textarea:focus, .select:focus { border-color: var(--yellow); }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.textarea { resize: vertical; min-height: 80px; }
+.select { appearance: none; cursor: pointer; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* RANGE SLIDER */
+.slider-group { display: flex; flex-direction: column; gap: 6px; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; }
+.slider-val { font-size: 13px; font-weight: 700; color: var(--yellow); }
+input[type=range] {
+  width: 100%; appearance: none; height: 6px;
+  background: var(--border); border-radius: 3px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--yellow); cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(245,200,0,0.2);
+}
+
+/* PROGRESS BAR */
+.progress-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--yellow); border-radius: 3px; transition: width .4s; }
+.progress-fill.green { background: var(--green); }
+.progress-fill.red { background: var(--red); }
+.progress-fill.blue { background: var(--blue); }
+
+/* AMPEL */
+.ampel { display: inline-flex; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.ampel-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.ampel-yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.ampel-red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+/* TABLE */
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700;
+  color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.table td {
+  padding: 12px 14px; font-size: 13px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tbody tr { cursor: pointer; transition: background .1s; }
+.table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+.tab {
+  padding: 7px 16px; border-radius: 4px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text-dim); transition: all .15s;
+}
+.tab.active { background: var(--yellow); color: var(--black); font-weight: 700; }
+.tab:not(.active):hover { background: var(--border); color: var(--text); }
+
+/* ACCORDION */
+.accordion-item { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+.accordion-head {
+  padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  background: var(--panel); transition: background .1s; font-size: 14px; font-weight: 600;
+}
+.accordion-head:hover { background: var(--surface); }
+.accordion-body { padding: 16px; background: var(--dark); border-top: 1px solid var(--border); display: none; }
+.accordion-body.open { display: block; }
+.accordion-arrow { transition: transform .2s; color: var(--text-faint); }
+.accordion-arrow.open { transform: rotate(180deg); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); padding: 20px;
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+  animation: modalIn .2s ease;
+}
+.modal-lg { max-width: 800px; }
+.modal-xl { max-width: 1000px; }
+@keyframes modalIn { from { opacity: 0; transform: scale(.96) translateY(10px); } to { opacity: 1; transform: none; } }
+.modal-header {
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--panel);
+}
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-body { padding: 22px; }
+.modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* NOTIFICATION TOAST */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  background: var(--panel); border: 1px solid var(--border-bright);
+  border-radius: var(--radius); padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow); animation: toastIn .3s ease;
+  max-width: 320px;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error { border-left: 3px solid var(--red); }
+.toast.warning { border-left: 3px solid var(--yellow); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+/* PERSONALITY TYPE BARS */
+.type-bars { display: flex; flex-direction: column; gap: 8px; }
+.type-bar { display: flex; align-items: center; gap: 10px; }
+.type-bar-label { width: 80px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.type-bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.type-bar-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+.type-bar-pct { width: 32px; font-size: 12px; font-weight: 700; text-align: right; }
+.type-C .type-bar-fill { background: #e63946; }
+.type-I .type-bar-fill { background: #f97316; }
+.type-S .type-bar-fill { background: #2ecc71; }
+.type-G .type-bar-fill { background: #3b82f6; }
+
+/* SCORE STARS */
+.stars { display: flex; gap: 2px; }
+.star { font-size: 14px; }
+.star.filled { color: var(--yellow); }
+.star.empty { color: var(--border-bright); }
+
+/* SECTION HEADER */
+.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-title { font-size: 16px; font-weight: 700; }
+
+/* GRID LAYOUTS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+
+/* GAP UTILITIES */
+.gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; }
+.mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; } .mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; } .mb-32 { margin-bottom: 32px; }
+
+/* TEXT UTILITIES */
+.text-yellow { color: var(--yellow); }
+.text-dim { color: var(--text-dim); }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-sm { font-size: 12px; }
+.text-lg { font-size: 16px; }
+.font-bold { font-weight: 700; }
+.flex { display: flex; } .flex-col { flex-direction: column; }
+.items-center { align-items: center; } .justify-between { justify-content: space-between; }
+.flex-1 { flex: 1; }
+
+/* LOGIN PAGE */
+.login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1a00 0%, #0a0a0a 70%);
+  padding: 20px;
+}
+.login-box {
+  width: 100%; max-width: 420px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 40px; box-shadow: var(--shadow);
+}
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo .mark {
+  width: 64px; height: 64px; background: var(--yellow);
+  border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 900; color: var(--black); margin-bottom: 12px;
+  box-shadow: 0 0 30px rgba(245,200,0,0.3);
+}
+.login-logo h1 { font-size: 24px; font-weight: 900; color: var(--yellow); }
+.login-logo p { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+.role-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.role-btn {
+  padding: 14px 8px; border: 2px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; text-align: center;
+  transition: all .15s; background: var(--surface);
+}
+.role-btn:hover, .role-btn.selected { border-color: var(--yellow); background: var(--yellow-glow); }
+.role-btn .role-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+.role-btn .role-label { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+.role-btn.selected .role-label { color: var(--yellow); }
+
+/* CHAT / ROLEPLAY */
+.chat-container { display: flex; flex-direction: column; height: calc(100vh - 140px); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.chat-bubble {
+  max-width: 70%; padding: 12px 16px; border-radius: 12px;
+  font-size: 14px; line-height: 1.6;
+}
+.chat-bubble.user { background: var(--yellow-glow); border: 1px solid rgba(245,200,0,0.2); margin-left: auto; }
+.chat-bubble.ai { background: var(--surface); border: 1px solid var(--border); margin-right: auto; }
+.chat-bubble.system { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); text-align: center; font-size: 12px; color: var(--blue); margin: 0 auto; max-width: 90%; }
+.chat-bubble.feedback { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); margin: 0 auto; max-width: 95%; }
+.chat-input-row {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: flex-end;
+}
+.chat-input-row .textarea { min-height: 44px; max-height: 120px; resize: none; }
+.typing-indicator { display: flex; gap: 4px; align-items: center; padding: 8px 12px; }
+.dot { width: 8px; height: 8px; background: var(--text-dim); border-radius: 50%; animation: bounce .8s ease infinite; }
+.dot:nth-child(2) { animation-delay: .15s; }
+.dot:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,80%,100% { transform: scale(0.8); opacity: .5; } 40% { transform: scale(1.2); opacity: 1; } }
+
+/* MODULE CONTENT */
+.module-content { max-width: 800px; }
+.module-content h2 { font-size: 20px; font-weight: 800; margin-bottom: 10px; margin-top: 28px; }
+.module-content h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; margin-top: 20px; color: var(--yellow); }
+.module-content p { font-size: 14px; line-height: 1.8; color: #d0d0d0; margin-bottom: 12px; }
+.module-content ul { padding-left: 18px; margin-bottom: 12px; }
+.module-content ul li { font-size: 14px; line-height: 1.8; color: #d0d0d0; margin-bottom: 4px; }
+
+.script-box {
+  background: var(--dark); border: 1px solid var(--border-bright); border-left: 3px solid var(--yellow);
+  border-radius: var(--radius); padding: 16px; margin: 14px 0; position: relative;
+}
+.script-label { font-size: 10px; font-weight: 700; color: var(--yellow); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.script-box p { color: var(--text); margin: 0; font-size: 13.5px; line-height: 1.7; }
+.script-box .tag { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+.info-box {
+  background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0;
+}
+.info-box p { color: #a5c4ff; margin: 0; font-size: 13px; }
+
+.warning-box {
+  background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2);
+  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0;
+}
+.tip-box {
+  background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.2);
+  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0;
+}
+
+/* QUIZ */
+.quiz-option {
+  padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; margin-bottom: 8px; transition: all .15s; font-size: 14px;
+}
+.quiz-option:hover { border-color: var(--yellow-dim); background: var(--yellow-glow); }
+.quiz-option.correct { border-color: var(--green); background: rgba(46,204,113,0.1); color: var(--green); }
+.quiz-option.wrong { border-color: var(--red); background: rgba(230,57,70,0.1); color: var(--red); }
+.quiz-option.reveal { border-color: var(--green); background: rgba(46,204,113,0.05); color: var(--green); opacity: 0.7; }
+
+/* MODULE PROGRESS RING */
+.mod-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 16px; cursor: pointer; transition: all .15s; position: relative;
+}
+.mod-card:hover { border-color: var(--yellow-dim); background: var(--surface); transform: translateY(-1px); }
+.mod-card.done { border-color: rgba(46,204,113,0.3); }
+.mod-card.locked { opacity: 0.5; cursor: not-allowed; }
+.mod-num { font-size: 11px; font-weight: 700; color: var(--text-faint); letter-spacing: 1px; text-transform: uppercase; }
+.mod-title { font-size: 15px; font-weight: 700; margin: 4px 0 8px; }
+.mod-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 12px; }
+.mod-check { position: absolute; top: 12px; right: 12px; color: var(--green); font-size: 18px; }
+
+/* PERSONALITY TYPE COLORS */
+.type-closer { color: #e63946; }
+.type-connector { color: #f97316; }
+.type-verlaesslich { color: #2ecc71; }
+.type-analyst { color: #3b82f6; }
+.tag-closer { background: rgba(230,57,70,0.15); color: #e63946; border-color: rgba(230,57,70,0.3); }
+.tag-connector { background: rgba(249,115,22,0.15); color: #f97316; border-color: rgba(249,115,22,0.3); }
+.tag-verlaesslich { background: rgba(46,204,113,0.15); color: #2ecc71; border-color: rgba(46,204,113,0.3); }
+.tag-analyst { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+
+/* COACHING SESSION */
+.session-phase {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px;
+  cursor: pointer; transition: all .15s;
+}
+.session-phase:hover { border-color: var(--yellow-dim); background: var(--yellow-glow); }
+.session-phase.active { border-color: var(--yellow); background: var(--yellow-glow); }
+.session-phase.done { border-color: rgba(46,204,113,0.3); opacity: 0.6; }
+.phase-num { width: 32px; height: 32px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+.session-phase.active .phase-num { background: var(--yellow); color: var(--black); }
+.session-phase.done .phase-num { background: var(--green); color: var(--black); }
+
+/* FIELD OBSERVATION GRID */
+.obs-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.obs-item {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px;
+}
+.obs-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.obs-item-title { font-size: 13px; font-weight: 600; }
+.obs-score-row { display: flex; gap: 6px; }
+.score-btn {
+  width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 700;
+  transition: all .1s; display: flex; align-items: center; justify-content: center; color: var(--text-dim);
+}
+.score-btn.selected-green { background: var(--green); border-color: var(--green); color: var(--black); }
+.score-btn.selected-yellow { background: var(--yellow); border-color: var(--yellow); color: var(--black); }
+.score-btn.selected-red { background: var(--red); border-color: var(--red); color: var(--text); }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .sidebar { position: fixed; z-index: 50; height: 100vh; transform: translateX(-100%); transition: transform .25s; }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .page-content { padding: 16px; }
+  .page-header { padding: 14px 16px; }
+}
+
+/* UTIL */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.loading-spin {
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid var(--border); border-top-color: var(--yellow);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* HIGHLIGHT */
+.hl-yellow { background: rgba(245,200,0,0.15); border-radius: 3px; padding: 1px 4px; color: var(--yellow); font-weight: 600; }
+.hl-red { background: rgba(230,57,70,0.15); border-radius: 3px; padding: 1px 4px; color: var(--red); font-weight: 600; }
+.hl-green { background: rgba(46,204,113,0.15); border-radius: 3px; padding: 1px 4px; color: var(--green); font-weight: 600; }
+
+/* API KEY NOTICE */
+.api-notice {
+  background: rgba(245,200,0,0.08); border: 1px solid rgba(245,200,0,0.2);
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px;
+  font-size: 12px; color: var(--text-dim);
+}
+
+/* PHOTO PLACEHOLDER */
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ══════════════════════════════════════════════════════════
+//  WEWO TRAINING PLATFORM — Complete System
+//  Trainer (Justin Rattmann) + AD-Portal + ID-Portal
+//  Live AI Roleplay via Anthropic API
+//  Sync via window.storage (shared: true)
+// ══════════════════════════════════════════════════════════
+
+// ── PERSONALITY TYPES ──────────────────────────────────────
+const TYPES = {
+  C: { key:'C', name:'Closer', emoji:'🔴', color:'#e63946', desc:'Ergebnisorientiert, direkt, entscheidungsfreudig, wettbewerbsorientiert. Mag keine Zeit verlieren.' },
+  I: { key:'I', name:'Connector', emoji:'🟠', color:'#f97316', desc:'Beziehungsorientiert, enthusiastisch, überzeugend, kreativ. Braucht Anerkennung und Nähe.' },
+  S: { key:'S', name:'Verlässlich', emoji:'🟢', color:'#2ecc71', desc:'Teamorientiert, geduldig, loyal, konsistent. Mag Veränderung nicht, braucht Sicherheit.' },
+  G: { key:'G', name:'Analyst', emoji:'🔵', color:'#3b82f6', desc:'Detailorientiert, analytisch, präzise, qualitätsbewusst. Braucht Fakten und Zeit.' }
+};
+
+// ── COACHING LIBRARY ────────────────────────────────────────
+const COACHING_LIB = {
+  // BEOBACHTUNGSFELDER
+  fields_ad: [
+    { id:'vorbereitung', label:'Vorbereitung & Recherche', group:'Vorbereitung' },
+    { id:'auftreten', label:'Haltung & Auftreten', group:'Vorbereitung' },
+    { id:'einstieg', label:'Gesprächseinstieg', group:'Gespräch' },
+    { id:'bedarfsermittlung', label:'Bedarfsermittlung & SPIN', group:'Gespräch' },
+    { id:'einwandbehandlung', label:'Einwandbehandlung', group:'Gespräch' },
+    { id:'verhandlung', label:'Preisverhandlung & Ankern', group:'Verhandlung' },
+    { id:'batna', label:'BATNA / ZOPA Anwendung', group:'Verhandlung' },
+    { id:'abschluss', label:'Abschlusstechnik', group:'Abschluss' },
+    { id:'koerpersprache', label:'Körpersprache & Stimme', group:'Wirkung' },
+    { id:'nachbereitung', label:'Nachbereitung & Dokumentation', group:'Nachbereitung' }
+  ],
+  fields_id: [
+    { id:'telefonhaltung', label:'Haltung am Telefon', group:'Haltung' },
+    { id:'einstieg_telefon', label:'Gesprächseinstieg Telefon', group:'Gespräch' },
+    { id:'bedarfsermittlung_id', label:'Bedarfsermittlung', group:'Gespräch' },
+    { id:'einwand_id', label:'Einwandbehandlung', group:'Gespräch' },
+    { id:'cross_selling', label:'Cross-Selling Ansätze', group:'Verkauf' },
+    { id:'angebot_nachverfolgung', label:'Angebotsnachverfolgung', group:'Verkauf' },
+    { id:'reaktionszeit', label:'Reaktionsgeschwindigkeit', group:'Prozess' },
+    { id:'kommunikation_schrift', label:'Schriftliche Kommunikation', group:'Kommunikation' },
+    { id:'kundenbindung', label:'Kundenbindung & After-Sales', group:'Bindung' }
+  ],
+  // TYP-SPEZIFISCHE MASSNAHMEN
+  massnahmen: {
+    vorbereitung: {
+      C:'Kurze Checkliste: 3 Facts über den Kunden, 1 Hebel, 1 Ziel. Closer bereiten sich nicht gern lange vor — strukturiere es in 5 Minuten.',
+      I:'Recherche-Ritual einführen: LinkedIn + Name + ein persönliches Detail merken. Connector liebt Anknüpfungspunkte.',
+      S:'Feste Vorbereitungs-Routine vor jedem Termin etablieren. Verlässlicher braucht klare Struktur, nicht Improvisation.',
+      G:'BATNA berechnen + Faktenblatt erstellen. Analyst wird es sowieso wollen — lieber als Standard einführen.'
+    },
+    auftreten: {
+      C:'Stärke signalisieren: Stand fest, Blickkontakt, kein Entschuldigen. Closer mag Dominanz — auch beim Gegenüber.',
+      I:'Energie dosieren: Enthusiasmus ist Stärke, aber im falschen Moment wirkt er unserious. 3-Sekunden-Reset vor dem Betreten.',
+      S:'Mehr Raum einnehmen bewusst üben. Verlässliche wirken oft zu klein — das kostet Macht.',
+      G:'Körpersprache öffnen: Hände sichtbar, nicht verschränkt. Analytiker signalisieren oft Distanz ohne es zu merken.'
+    },
+    einwandbehandlung: {
+      C:'Einwände direkt annehmen, nicht umgehen. Closer schätzt Direktheit — 180°-Methode ohne Umwege.',
+      I:'Erst bestätigen, dann umlenken. Connector will gehört werden — Lob + Umkehr funktioniert bestens.',
+      S:'Sicherheit geben, bevor man den Einwand dreht. "Das ist ein berechtigter Punkt..." — dann Technik.',
+      G:'Fakten und Zahlen als Einwand-Antwort. Analyst lässt sich nicht mit Charme überzeugen — nur mit Substanz.'
+    },
+    verhandlung: {
+      C:'Anker setzen, nicht warten. Closer warten zu lang — wer nicht ankert verliert den Rahmen.',
+      I:'Kein Interesse zeigen üben. Connector will zu sehr gefallen — das kostet Verhandlungsmacht.',
+      S:'BATNA vorab berechnen, auf Zettel schreiben, in Tasche. Verlässlicher bricht zu früh ein ohne klare Grenze.',
+      G:'Sowjet-Methode anwenden: Position nennen, schweigen. Analyst erklärt zu viel — Schweigen ist stärker.'
+    },
+    abschluss: {
+      C:'Abschluss direkt ansprechen: "Was brauchen Sie noch, um heute zu entscheiden?" Closer mag keine Umwege.',
+      I:'Alternative-Abschluss: zwei Optionen anbieten. Connector will wählen, nicht gedrängt werden.',
+      S:'Abschlussfrage als logischen nächsten Schritt formulieren: "Der nächste Schritt wäre...". Verlässlicher braucht Sicherheit.',
+      G:'Schriftliche Zusammenfassung schicken, dann nachhaken. Analyst entscheidet nach Überprüfung, nicht sofort.'
+    },
+    default: {
+      C:'Direkter ansprechen, weniger erklären. Closer entscheidet schnell wenn der Mehrwert klar ist.',
+      I:'Beziehungsaufbau vor Fachthemen. Connector kauft zuerst die Person, dann das Produkt.',
+      S:'Kontinuität zeigen: selber Ansprechpartner, verlässliche Aussagen. Verlässliche kaufen von Menschen denen sie vertrauen.',
+      G:'Daten und Fakten liefern, nicht drängen. Analyst braucht Zeit und Substanz für die Entscheidung.'
+    }
+  }
+};
+
+// ── AD MODULE CONTENT ───────────────────────────────────────
+const AD_MODULES = [
+  {
+    id: 'persoenlichkeit_ad',
+    num: 0,
+    title: 'Persönlichkeitstest',
+    icon: '🧠',
+    duration: '15 Min',
+    desc: 'Lerne deinen Verhandlungstyp kennen',
+    type: 'test',
+    content: `
+<h2>Dein Verhandlungstyp — DISC-Analyse für den Vertrieb</h2>
+<p>Nicht jeder Verhandler ist gleich. WEWO arbeitet mit vier Grundtypen — basierend auf dem DISC-Modell. Dein Primärtyp beeinflusst wie du kommunizierst, wie du Einwände behandelst und wo deine Verhandlungsfallen liegen. Kenne dich selbst, bevor du andere kennenlernst.</p>
+<h3>🔴 Closer (Dominant/D)</h3>
+<p><strong>Stärken:</strong> Direkt, entscheidungsfreudig, zielorientiert, macht Druck, schließt ab.<br>
+<strong>Fallen:</strong> Hört zu wenig zu, übersieht emotionale Signale, drängt zu früh zum Abschluss.<br>
+<strong>Verhandlungs-Stärke:</strong> Ankern, Abschluss, Zeitdruck erzeugen.<br>
+<strong>Verhandlungs-Falle:</strong> Kein Interesse zeigen fällt schwer — zu viel Ehrgeiz ist sichtbar.</p>
+<h3>🟠 Connector (Initiativ/I)</h3>
+<p><strong>Stärken:</strong> Beziehungsaufbau, Überzeugungskraft, Energie, Begeisterung übertragen.<br>
+<strong>Fallen:</strong> Zu gefällig, gibt zu früh Konzessionen, vergisst Fakten hinter der Beziehung.<br>
+<strong>Verhandlungs-Stärke:</strong> Rapport aufbauen, Türen öffnen, Stimmung drehen.<br>
+<strong>Verhandlungs-Falle:</strong> Verhandlungsmacht durch zu viel Offenheit verspielt.</p>
+<h3>🟢 Verlässlich (Stetig/S)</h3>
+<p><strong>Stärken:</strong> Geduldig, loyal, zuverlässig, schafft Vertrauen durch Konsistenz.<br>
+<strong>Fallen:</strong> Gibt zu früh nach bei Druck, hat Angst Nein zu sagen, meidet Konflikte.<br>
+<strong>Verhandlungs-Stärke:</strong> Kundenbindung langfristig, Vertrauen aufbauen, kein Fake.<br>
+<strong>Verhandlungs-Falle:</strong> Bricht zu früh ein, schlechte BATNA-Disziplin.</p>
+<h3>🔵 Analyst (Gewissenhaft/G)</h3>
+<p><strong>Stärken:</strong> Präzise, faktenbasiert, vorbereitet, findet Schwächen im Angebot des anderen.<br>
+<strong>Fallen:</strong> Denkt zu lang, verhindert Abschlüsse durch Over-Analysis, wirkt kalt.<br>
+<strong>Verhandlungs-Stärke:</strong> BATNA, ZOPA, objektive Kriterien, Vorbereitung.<br>
+<strong>Verhandlungs-Falle:</strong> Zu wenig Bauch — Verhandlungen haben immer eine emotionale Ebene.</p>
+<div class="info-box"><p>💡 <strong>Wichtig:</strong> Kein Typ ist besser als der andere. Jeder hat Stärken die in der richtigen Situation entscheidend sind. Dein Ziel ist nicht deinen Typ zu ändern — sondern deine Fallen zu kennen und gezielt zu umgehen.</p></div>
+`
+  },
+  {
+    id: 'haltung_ad',
+    num: 1,
+    title: 'Haltung & Mindset',
+    icon: '💪',
+    duration: '20 Min',
+    desc: 'Die Grundlage für alles was danach kommt',
+    quizzes: [
+      { q:'Was ist die gefährlichste Mindset-Falle im Vertrieb?', opts:['Zu selbstbewusst sein','Dem Kunden gegenüber zu hilfreich sein','Den Kunden mehr brauchen als er dich','Zu hart verhandeln'], correct:2 },
+      { q:'Verhandlungsmacht entsteht hauptsächlich aus...', opts:['Dem Firmenlogo auf der Visitenkarte','Wahrgenommenen Alternativen und Souveränität','Der Anzahl der Kunden','Dem eigenen Gehalt'], correct:1 }
+    ],
+    content: `
+<h2>Haltung ist die Basis — alles andere ist Technik</h2>
+<p>Bevor du den ersten Satz sprichst, hat dein Gegenüber bereits Informationen über dich gesammelt. Haltung ist keine Körperhaltung — es ist ein Mindset das durch jede Pore strahlt.</p>
+<h3>Die Verlierer-Mentalität im Vertrieb</h3>
+<p>Der häufigste Fehler im Außendienst: Der Verkäufer glaubt, er braucht den Kunden mehr als der Kunde ihn braucht. Diese Überzeugung führt zu:</p>
+<ul><li>Zu frühem Nachgeben bei Preisforderungen</li><li>Entschuldigungen wo keine hingehören</li><li>Endlosem Erklären statt ruhigem Abwarten</li><li>Sichtbarer Verzweiflung die Macht kostet</li></ul>
+<div class="warning-box"><p>⚠️ <strong>WEWO-Grundsatz:</strong> "Nicht jeder Auftrag ist ein guter Auftrag." Wer das wirklich verinnerlicht hat, verhandelt entspannter — und erfolgreicher.</p></div>
+<h3>Was echte Stärke ausmacht</h3>
+<p>Stärke entsteht nicht aus der Unternehmensgröße oder dem Titel auf der Karte. Stärke entsteht aus:</p>
+<ul><li><strong>Alternativen:</strong> Wer andere Optionen hat braucht diesen Auftrag nicht verzweifelt</li><li><strong>Vorbereitung:</strong> Wer die Zahlen kennt hat Sicherheit</li><li><strong>Haltung:</strong> Wer ruhig und souverän wirkt wird als stärker wahrgenommen</li><li><strong>Klare Grenzen:</strong> Wer Nein sagen kann wirkt wertvoller</li></ul>
+<h3>Die WEWO-Philosophie</h3>
+<div class="script-box"><div class="script-label">WEWO Grundüberzeugungen</div><p>"Wir sind nicht nur Händler — wir sind Hersteller. Das bedeutet Qualität, Planbarkeit und Partnerschaft statt billigster Preis. Kunden die das nicht wertschätzen sind nicht unsere Kunden."</p></div>
+<h3>Körperhaltung als Machtquelle (Nasher)</h3>
+<p>Prof. Nasher: Verhandlungsmacht ist zu 80% Wahrnehmung. Wer größer wirkt, hat mehr Macht — unabhängig von Fakten. Konkret:</p>
+<ul><li>Rücken gerade, Füße schulterbreit — signalisiert Stabilität</li><li>Hände sichtbar auf dem Tisch — signalisiert Offenheit und Vertrauen</li><li>Blickkontakt halten ohne zu starren — signalisiert Souveränität</li><li>Langsam sprechen — Hast signalisiert Nervosität</li><li>Pausen aushalten — Schweigen ist kein Versagen, es ist Stärke</li></ul>
+<div class="tip-box"><p>✅ <strong>Übung:</strong> Vor jedem Termin: 2 Minuten aufrecht stehen, tief atmen, innerlich sagen: "Ich habe gute Alternativen. Ich brauche diesen Auftrag nicht um jeden Preis."</p></div>
+`
+  },
+  {
+    id: 'vorbereitung_ad',
+    num: 2,
+    title: 'Vorbereitung & Recherche',
+    icon: '🔍',
+    duration: '25 Min',
+    desc: 'Wer nicht vorbereitet ist, verliert bevor er anfängt',
+    quizzes: [
+      { q:'Was gehört zur Minimalvorbereitung vor einem AD-Termin?', opts:['Visitenkarte und Kugelschreiber','BATNA berechnen + Kundenrecherche + Ziel definieren','Produktkatalog auswendig lernen','Outfit planen'], correct:1 }
+    ],
+    content: `
+<h2>Vorbereitung schlägt Improvisation — immer</h2>
+<p>Ein Termin ohne Vorbereitung ist ein Geschenk an den Einkäufer. Er weiß mehr über seine Situation als du — und nutzt das. Deine Aufgabe: diesen Informationsvorsprung ausgleichen.</p>
+<h3>Die WEWO 5-Minuten-Vorbereitung (Minimum)</h3>
+<div class="script-box"><div class="script-label">Checkliste vor jedem Termin</div>
+<p>1. <strong>Wer ist mein Gegenüber?</strong> — Name, Position, Entscheidungsrolle (LinkedIn/Xing 2 Min)<br>
+2. <strong>Was braucht das Unternehmen?</strong> — Branche, Produkte, möglicher Bedarf bei Verbindungselementen<br>
+3. <strong>Was ist mein Ziel heute?</strong> — Termin, Angebot, Abschluss — konkret und messbar<br>
+4. <strong>Was ist meine BATNA?</strong> — Wenn kein Deal: was tue ich dann?<br>
+5. <strong>Mein Anker:</strong> Welchen Startpreis nenne ich wenn Zahlen kommen?</p></div>
+<h3>Recherche-Quellen (WEWO-Standard)</h3>
+<ul>
+<li><strong>Xing/LinkedIn:</strong> Persönlichkeitshinweise, Werdegang, gemeinsame Kontakte</li>
+<li><strong>Unternehmenswebsite:</strong> Produkte, Märkte, Pressemitteilungen, Wachstum</li>
+<li><strong>Google News:</strong> Aktuelle Ereignisse — Neuigkeiten sind der beste Gesprächseinstieg</li>
+<li><strong>CRM-Historie:</strong> Was wurde bisher angeboten/abgelehnt — nie wieder von vorne anfangen</li>
+</ul>
+<h3>BATNA berechnen — das mächtigste Werkzeug</h3>
+<p>Ohne BATNA verhandelst du blind. Mit BATNA verhandelst du souverän. Die Berechnung dauert 3 Minuten:</p>
+<div class="script-box"><div class="script-label">BATNA Rechenbeispiel (WEWO)</div>
+<p><strong>Szenario:</strong> Kunde will 100.000 Schrauben zu 0,85 €/Stk (WEWO-Zielpreis: 1,00 €)<br>
+<strong>Alternative A:</strong> Anderer Kunde — 70.000 Stk × 0,95 € = 66.500 € ✓<br>
+<strong>Alternative B:</strong> Kleinere Menge — 50.000 Stk × 1,00 € = 50.000 €<br>
+<strong>BATNA = 66.500 €</strong><br>
+<strong>Konsequenz:</strong> Jedes Angebot unter 66.500 € ist schlechter als kein Abschluss.<br>
+Kein Zittern. Keine Verzweiflung. Die Zahl sagt dir alles.</p></div>
+<div class="info-box"><p>💡 <strong>Quelle: Nasher/DEALMAKER PRO + WEWO Verhandlungstechniken:</strong> "Wer seine BATNA nicht kennt, verhandelt blind. Ohne BATNA wird jede Zahl des Kunden automatisch relevant."</p></div>
+`
+  },
+  {
+    id: 'telefonakquise_ad',
+    num: 3,
+    title: 'Telefonakquise & Türöffner',
+    icon: '📞',
+    duration: '35 Min',
+    desc: 'WEWO-Skripte: No-Name, Freunde, Einstieg, alle Varianten',
+    quizzes: [
+      { q:'Was ist der Kern der No-Name-Taktik?', opts:['Den eigenen Namen weglassen','Den Firmennamen weglassen','Schnell sprechen','Einen Termin erzwingen'], correct:1 },
+      { q:'Wie reagiert man auf "Worum geht es denn?" beim Türöffner?', opts:['Ausführlich erklären was WEWO macht','Kurz und selbstbewusst: "Es geht um mein Angebot, sind Sie so gut und stellen mich durch?"','Auflegen und später nochmal anrufen','Mit dem Türöffner verhandeln'], correct:1 }
+    ],
+    content: `
+<h2>Telefonakquise — die WEWO-Methode</h2>
+<p>Telefonakquise ist ein Zahlenspiel mit Technik. Die meisten scheitern nicht weil der Markt es nicht hergibt — sie scheitern weil sie ohne Skript improvisieren. WEWO hat die Skripte — du musst sie nur anwenden.</p>
+<h3>Phase 1: Am Türöffner vorbeikommen</h3>
+<div class="script-box"><div class="script-label">Standard-Einstieg</div>
+<p>"Guten Tag, mein Name ist [Name] von der Firma WEWO. Frau Müller, Sie kennen sich bestimmt etwas besser aus als ich — könnten Sie mir bitte verraten, wer bei Ihnen im Unternehmen für den Einkauf von Verbindungselementen, sprich Schrauben, zuständig ist?"</p></div>
+<div class="script-box"><div class="script-label">No-Name-Taktik (WEWO Leitfaden 2020)</div>
+<p>"Guten Tag, mein Name ist [Name]. Ich habe da mal eine Frage, die Sie mir bestimmt leicht beantworten können. Wer bei Ihnen im Unternehmen ist zuständig für den Einkauf von Verbindungselementen?"</p>
+<p class="tag">→ Trick: Firmennamen weglassen. Türöffner fragt weniger nach wenn kein Unternehmensname fällt.</p></div>
+<div class="script-box"><div class="script-label">Freunde-Taktik (Xing-Recherche vorausgesetzt)</div>
+<p>"Guten Tag Frau [Name], mein Name ist [Name]. Ich würde gerne mit 'Michael' reden. Ähm, ich meine Herrn Müller aus dem Einkauf."</p>
+<p class="tag">→ Wichtig: Vornamen verwenden, Firmenzusatz weglassen — wie ein Bekannter klingen.</p></div>
+<div class="script-box"><div class="script-label">Wenn der Türöffner nachbohrt</div>
+<p>TÖ: "Worum geht es denn?"<br>Du: "Es geht um mein Angebot, sind Sie so gut und stellen mich durch? Mein Name ist [Name]."<br><br>TÖ: "Hat er das Angebot schon erhalten?"<br>Du: "Genau aus diesem Grund rufe ich an — sind Sie so gut und stellen mich durch. Mein Name ist [Name]."</p></div>
+<h3>Phase 2: Einstieg beim Entscheider</h3>
+<div class="script-box"><div class="script-label">Direkter Einstieg — Variante 1 (Zum Punkt)</div>
+<p>"Guten Tag Herr [Name], mein Name ist [Name] von der Firma WEWO und ich würde Sie gerne als Neukunden gewinnen — darf ich direkt zum Punkt kommen?"</p></div>
+<div class="script-box"><div class="script-label">Variante 2 — Positionierung WEWO</div>
+<p>"Guten Tag Herr [Name], sind Sie zuständig für den Einkauf von Verbindungselementen, sprich Schrauben?" — "Ja"<br><br>"Prima, Herr [Name]. Ich würde mich gerne bei Ihnen als Lieferant vorstellen. Wir sind nicht nur ein Schraubenhändler, sondern auch Hersteller — das bedeutet Artikel nach Norm, nach Zeichnung, Sonderwerkstoffe, ab 1 Stück. Gerade das Thema Flexibilität und Einsparpotenziale ist für Sie als Einkäufer immer ein Thema, stimmts?" — "Ja"<br><br>"Prima — da ich am [Datum] in Ihrer Nähe bin, wann können wir uns für 20-30 Minuten zusammensetzen?"</p></div>
+<div class="script-box"><div class="script-label">Arme-Sau-Technik (für mutige Momente)</div>
+<p>"Herr [Name], ich sag es Ihnen ganz ehrlich: Das ist ein Akquise-Anruf. Wollen Sie jetzt auflegen oder geben Sie mir 30 Sekunden und entscheiden dann?" — "30 Sekunden."<br><br>"Danke. Wir werden geholt wenn es um Lieferantenbündelung geht und die klassische Händler-Kunden-Beziehung nicht mehr ausreicht. Wie haben Sie Ihre C-Teile bisher unter Kontrolle gebracht?"</p></div>
+`
+  },
+  {
+    id: 'einwandbehandlung_ad',
+    num: 4,
+    title: 'Einwandbehandlung',
+    icon: '🛡️',
+    duration: '40 Min',
+    desc: 'Alle 15 WEWO-Einwände mit vollständigen Skripten',
+    quizzes: [
+      { q:'Was ist die 180°-Methode?', opts:['Den Einwand 180° drehen und als Bestätigung nutzen','Den Kunden 180 Grad umdrehen','Das Gespräch auf 180 Minuten ausdehnen','Preis um 180% senken'], correct:0 },
+      { q:'Welche Technik nutzt man als letzte Chance beim hartnäckigsten Nein?', opts:['Bleistifttermin','Arme-Sau','Hop oder Top','Zitat-Technik'], correct:2 }
+    ],
+    content: `
+<h2>Einwände sind keine Absagen — sie sind Fragen</h2>
+<p>Jedes "Nein", "Keine Zeit" oder "Zu teuer" ist eine versteckte Frage: "Überzeug mich, warum ich trotzdem Ja sagen sollte." Dafür braucht man kein Talent — man braucht Technik.</p>
+<h3>Die Einwand-Techniken (WEWO-Standard)</h3>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>🚫 Kein Interesse</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">1. Lob + 180°-Methode (WEWO Leitfaden)</div>
+<p>"Ich finde es gut, dass Sie das direkt so offen ansprechen — danke dafür. Einmal abgesehen davon, dass Sie im Moment wenig Interesse haben: Als Einkäufer ist es doch immer interessant, Prozesskosten einzusparen, stimmts?" — "Ja" — weiter zum Termin.</p></div>
+<div class="script-box"><div class="script-label">2. Wenn-Dann-Technik</div>
+<p>"Mal angenommen, wir könnten einen tatsächlichen Mehrwert bieten — würde sich das Gespräch für Sie dann lohnen?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>⏰ Keine Zeit</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">180°-Methode (WEWO Leitfaden)</div>
+<p>"Herr [Name], dass Sie als Einkäufer gerade viel zu tun haben — das verstehe ich gut, das hatte ich auch nicht anders erwartet. D.h. wenn ich Sie richtig verstehe: Es geht Ihnen darum, Ihre Zeit optimal zu nutzen — und gleichzeitig sind Sie offen, wenn der Markt Ihnen neue Chancen bietet. Habe ich das richtig?" — "Ja" — "Wenn ich Ihnen in 20 Minuten genau zeige was für Sie relevant ist — ist das interessant?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>📁 Schicken Sie mir Unterlagen</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">WEWO-Standard-Reaktion</div>
+<p>"Das mache ich sehr gerne, Herr [Name]. Ich schicke Ihnen aber lieber das was für Sie wirklich relevant ist — dafür hätte ich eine Frage: Was ist bei Ihrer aktuellen C-Teile-Versorgung der wichtigste Punkt — Preis, Verfügbarkeit oder Lieferzeit?" — dann gezielt schicken + Terminangebot verknüpfen.</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>✅ Wir haben schon einen guten Lieferanten</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Glück-Technik</div>
+<p>"Frau [Name], mit so viel Glück habe ich heute Morgen auch nicht gerechnet — dass es bei Ihnen drunter und drüber läuft. Damit hätte ich wirklich nicht gerechnet, aber..."</p></div>
+<div class="script-box"><div class="script-label">Musketier-Technik (Vorteil-Vorteil)</div>
+<p>"Aber Frau [Name], dann lohnt sich unser Gespräch ja doppelt: Entweder Sie stellen fest, dass Sie bereits gut aufgestellt sind — oder Sie entdecken bessere Möglichkeiten. Wie klingt das?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>💰 Zu teuer / Mitbewerber günstiger</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">WEWO Leitfaden — Zu teuer</div>
+<p>"Vielen Dank, dass Sie das direkt ansprechen. Dass unser Preis-Leistungs-Verhältnis höher ist als das der Wettbewerber — das ist mir bewusst. Herr [Name], mal angenommen Sie würden die Ware nicht pünktlich erhalten — was könnte im schlimmsten Fall passieren? Da wir nicht nur Händler, sondern auch Hersteller sind, können wir jederzeit selbst fertigen. Um diesen Service zu gewährleisten, investieren Kunden ein wenig mehr."</p></div>
+<div class="script-box"><div class="script-label">180° Methode</div>
+<p>"D.h. wenn ich Sie richtig verstehe, geht es Ihnen darum: optimales Preis-Leistungs-Verhältnis, kein Cent zu viel. Habe ich das richtig?" — "Ja." — "D.h. wenn Sie sich davon überzeugen können, dass Sie bei einer geringen Mehrinvestition deutlich mehr Mehrwert bekommen — dann wären wir im Gespräch?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>📅 Melden Sie sich in 6 Monaten</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Bleistifttermin-Technik</div>
+<p>"Das können wir gerne machen, Frau [Name] — aber ein letzter Vorschlag und dann bin ich weg. Haben Sie schonmal von einem Bleistifttermin gehört? Das ist ein Termin zum 'Wegradieren' — wir vereinbaren z.B. Dienstag den 15. um 10 Uhr, ich rufe eine Woche vorher kurz an ob es passt. Wenn nicht, kein Problem. Passt das bei Ihnen?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>❌ Prinzipielles Nein</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Hop oder Top — letzte Chance</div>
+<p>"Herr [Name], Hand aufs Herz: Sagen Sie jetzt ein prinzipielles Nein — oder Ja, wenn wir Ihnen einen echten Mehrwert bieten können?" — Ja → weiter. Nein → höflich verabschieden, in 6 Monaten wieder.</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>🏢 Zentraleinkauf / Entscheidung liegt nicht bei mir</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Nächste Instanz</div>
+<p>"Verstehe. Herr [Name], wenn Sie mich kurz mit dem Zentraleinkauf / Herrn [Name] verbinden würden — ich erkläre Ihnen auch gerne was ich mit Ihnen besprochen habe, damit Sie intern gut informiert sind."</p></div>
+</div></div>
+`
+  },
+  {
+    id: 'verhandlungsmacht_ad',
+    num: 5,
+    title: 'Verhandlungsmacht',
+    icon: '⚡',
+    duration: '45 Min',
+    desc: 'BATNA, ZOPA, Ankern, Sowjet-Methode, Höhere Instanz',
+    quizzes: [
+      { q:'Was ist der Ankereffekt?', opts:['Die erste genannte Zahl prägt den gesamten Verhandlungsrahmen','Das Gewicht des Aktenköffers','Die Körperhaltung beim Verhandeln','Das erste Angebot annehmen'], correct:0 },
+      { q:'Was ist die Sowjet-Methode?', opts:['Immer auf Russisch verhandeln','Position nennen, dann schweigen und abwarten','So lange verhandeln bis der andere müde ist','Alle Argumente auf einmal nennen'], correct:1 }
+    ],
+    content: `
+<h2>Verhandlungsmacht — das Machtspiel verstehen</h2>
+<p>Verhandlungen sind Machtspiele, keine fairen Austausche. Der entscheidende Unterschied: Macht ist nicht objektiv — Macht ist Wahrnehmung. Wer stärker wirkt, ist stärker. (Nasher, DEALMAKER PRO)</p>
+<h3>BATNA — die wichtigste Zahl (WEWO Pflichtstandard 🔒)</h3>
+<div class="script-box"><div class="script-label">Was ist die BATNA?</div>
+<p><strong>Best Alternative to a Negotiated Agreement</strong><br>Die beste Alternative wenn kein Deal entsteht. Ohne BATNA verhandelst du blind — mit BATNA verhandelst du souverän.<br><br>Wer seine BATNA nicht kennt: Jedes Preiszugeständnis des Kunden wird zur Bedrohung.<br>Wer seine BATNA kennt: Jedes Angebot unter der BATNA wird höflich abgelehnt — ohne Drama.</p></div>
+<div class="script-box"><div class="script-label">WEWO BATNA Rechenbeispiel</div>
+<p>Kunde fordert 100.000 Stk × 0,85 € = 85.000 €<br><strong>Alternative A:</strong> Anderer Kunde — 80.000 Stk × 0,94 € = 75.200 €<br><strong>Alternative B:</strong> Weniger Menge — 50.000 Stk × 1,00 € = 50.000 €<br><strong>BATNA = 75.200 € (beste Alternative)</strong><br>→ Jedes Angebot unter 75.200 € ist schlechter als kein Deal.</p></div>
+<h3>ZOPA — der Verhandlungsraum (WEWO Standard ⚙️)</h3>
+<p>ZOPA = Zone of Possible Agreement. Der Bereich wo Einigung für beide Seiten sinnvoll ist.</p>
+<div class="info-box"><p>WEWO-BATNA: 0,93 €/Stk | Kunden-BATNA: 0,88 €/Stk → ZOPA: 0,88–0,93 € | Innerhalb = verhandeln, außerhalb = kein Deal möglich.</p></div>
+<h3>Ankern — der stärkste Preiseffekt (WEWO Pflichtstandard 🔒)</h3>
+<p>Wer zuerst eine Zahl nennt, kontrolliert den Verhandlungsrahmen. Ankern ist keine Faustregel — es ist Wissenschaft.</p>
+<div class="script-box"><div class="script-label">Anker-Rechenbeispiel (Nasher/WEWO)</div>
+<p>Zielpreis WEWO: 1,00 €/Stk<br><strong>Ohne eigenen Anker:</strong> Kunde startet bei 0,90 → Abschluss bei ~0,95 €<br><strong>Mit Anker 1,20 €:</strong> Kunde contra-ankert bei 0,95 → Abschluss bei ~1,05 €<br><strong>Unterschied: +10% Marge</strong> — allein durch den Startpunkt.</p></div>
+<h3>Zugeständnisse — nur gegen Gegenleistung (Pflichtstandard 🔒)</h3>
+<ul><li>Jedes Zugeständnis ist ein Tausch, kein Geschenk</li><li>Rabatt 3% auf 100.000 € = 3.000 € Erlösverlust</li><li>Gegenleistung: höhere Menge, feste Abrufplanung, längere Laufzeit</li><li>Niemals ein Zugeständnis ohne "Was geben Sie mir dafür?"</li></ul>
+<h3>Die Sowjet-Methode (WEWO Wissenssammlung)</h3>
+<div class="script-box"><div class="script-label">Ablauf</div>
+<p>1. Position klar und ruhig formulieren<br>2. Schweigen — nicht erklären, nicht relativieren, nicht retten<br>3. Abwarten<br><br>→ Häufig beginnt der Kunde von sich aus zu relativieren oder neue Optionen zu nennen.<br>→ WEWO-Hinweis: Nicht erklären, nicht rechtfertigen, nicht das Schweigen durch Reden auffüllen.</p></div>
+<h3>Höhere Instanz (Nasher-Taktik)</h3>
+<div class="script-box"><div class="script-label">Anwendung</div>
+<p>"Diese Kondition kann ich nur bei entsprechender Menge freigeben lassen."<br>"Das muss ich kurz mit unserem Vertriebsleiter abstimmen."<br><br>→ Eigene Flexibilität bewusst begrenzen. Macht wird auf eine andere Ebene verlagert — der Einkäufer verhandelt gegen eine Institution, nicht gegen eine Person.</p></div>
+<h3>Go/No-Go Entscheidungsmatrix (WEWO Pflichtstandard 🔒)</h3>
+<div class="script-box"><div class="script-label">5-Schritt-Check vor jedem Abschluss</div>
+<p>1. BATNA berechnet? → Nein = kein Abschluss<br>2. Angebot über BATNA? → Nein = No-Go<br>3. Angebot in ZOPA? → Nein = nachverhandeln<br>4. Zugeständnisse beidseitig? → Nein = nachverhandeln<br>5. Objektive Kriterien erfüllt? → Nein = eskalieren<br><strong>Alle 5 Ja → Go.</strong><br><em>Grundsatz: Kein Auftrag ist besser als ein schlechter Auftrag.</em></p></div>
+`
+  },
+  {
+    id: 'koerpersprache_ad',
+    num: 6,
+    title: 'Körpersprache & Stimme',
+    icon: '🎭',
+    duration: '20 Min',
+    desc: 'Non-verbale Machtquellen erkennen und einsetzen',
+    content: `
+<h2>Was du nicht sagst, spricht lauter als was du sagst</h2>
+<p>Studien zeigen: 55% der Kommunikation ist Körpersprache, 38% Stimme, 7% Inhalt. Im Vertrieb bedeutet das: Wer die richtigen Worte sagt aber falsch steht — verliert.</p>
+<h3>Machtsignale im Termin</h3>
+<ul>
+<li><strong>Stand:</strong> Schulterbreit, Gewicht gleichmäßig — nie auf einem Bein stehen (wirkt unsicher)</li>
+<li><strong>Hände:</strong> Sichtbar auf dem Tisch oder offen — nie hinter dem Rücken oder in den Taschen</li>
+<li><strong>Blickkontakt:</strong> 60-70% der Zeit — direkter, ruhiger Blick. Nicht starren, nicht ausweichen</li>
+<li><strong>Stimme:</strong> Langsam sprechen. Jedes Satzende runtergehen (nicht hochgehen — das klingt wie eine Frage)</li>
+<li><strong>Pausen:</strong> Bewusst einsetzen. 3 Sekunden Schweigen nach einer Aussage wirkt stärker als 30 Sekunden Erklären</li>
+</ul>
+<h3>Das Zusammenzucken (Nasher)</h3>
+<div class="script-box"><div class="script-label">Flinch — erste Reaktion auf jedes Angebot</div>
+<p>Man sollte beim ersten Angebot grundlegend zusammenzucken. Non-verbal: Entsetzter Gesichtsausdruck + wirkungsvolles Schweigen.<br>Verbal wenn nötig: "Das ist noch nicht gut genug."<br><br>→ Das ist effektiv weil non-verbale Signale glaubwürdiger sind als Worte.<br>→ Auch wenn man keine Ahnung hat ob das Angebot gut ist — erst Flinch, dann denken.</p></div>
+<h3>Schwächesignale die Macht kosten</h3>
+<ul>
+<li>Satzende als Frage klingen lassen ("Das ist unser bester Preis...?")</li>
+<li>Zu schnell sprechen — signalisiert Nervosität und Hast</li>
+<li>Zu viel lachen, zu viel nicken — signalisiert Zustimmungsbedürftigkeit</li>
+<li>Sich entschuldigen ohne Grund ("Tut mir leid, ich wollte mal kurz fragen...")</li>
+<li>Zu früh Preise nennen ohne Anker gesetzt zu haben</li>
+</ul>
+`
+  },
+  {
+    id: 'spin_ad',
+    num: 7,
+    title: 'SPIN-Fragemethodik',
+    icon: '🔄',
+    duration: '30 Min',
+    desc: 'Die mächtigste Fragetechnik im Vertrieb (Rackham)',
+    quizzes: [
+      { q:'Was ist ein "Need-Payoff"-Question bei SPIN?', opts:['Eine Frage die den Bedarf aufdeckt','Eine Frage die dem Kunden seinen eigenen Nutzen beschreiben lässt','Eine Frage nach dem Preis','Eine abschließende Frage'], correct:1 }
+    ],
+    content: `
+<h2>SPIN — die Wissenschaft hinter dem Verkaufsgespräch</h2>
+<p>SPIN wurde von Neil Rackham aus über 35.000 Verkaufsgesprächen destilliert. Das Ergebnis: Bei komplexen Verkäufen gewinnen die Verkäufer die keine Features präsentieren — sondern die richtigen Fragen stellen.</p>
+<h3>Die 4 SPIN-Fragetypen</h3>
+<div class="script-box"><div class="script-label">S — Situation</div>
+<p>Sammle Fakten und Kontext. Aber: nicht zu viele Situationsfragen — der Kunde findet sie langweilig.<br><em>Beispiel WEWO:</em> "Wie viele Lieferanten haben Sie aktuell für Verbindungselemente?"</p></div>
+<div class="script-box"><div class="script-label">P — Problem</div>
+<p>Decke Probleme, Schwierigkeiten oder Unzufriedenheiten auf.<br><em>Beispiel WEWO:</em> "Kommt es manchmal vor, dass Liefertermine nicht eingehalten werden?" / "Wie zufrieden sind Sie mit Ihren aktuellen Prozesskosten?"</p></div>
+<div class="script-box"><div class="script-label">I — Implication (Auswirkung)</div>
+<p>Lass den Kunden die Konsequenzen seines Problems selbst beschreiben. Das ist der wirkungsvollste Schritt.<br><em>Beispiel WEWO:</em> "Was passiert in der Produktion wenn Schrauben fehlen?" / "Was kostet ein Lieferverzug Sie typischerweise?"</p></div>
+<div class="script-box"><div class="script-label">N — Need-Payoff (Nutzenfrage)</div>
+<p>Lass den Kunden den Nutzen einer Lösung selbst formulieren.<br><em>Beispiel WEWO:</em> "Wenn Sie einen Lieferanten hätten der Ihnen 100% Lieferperformance garantiert — was würde das für Ihre Produktion bedeuten?" / "Wäre es wertvoll, wenn Sie von 5 Lieferanten auf einen zuverlässigen wechseln könnten?"</p></div>
+<div class="tip-box"><p>✅ <strong>SPIN-Goldene Regel:</strong> Der Kunde der eine Need-Payoff-Frage mit einem begeisterten "Ja, das wäre großartig" beantwortet, hat sich gerade selbst verkauft. Du musst nur noch nicken.</p></div>
+`
+  },
+  {
+    id: 'abschluss_ad',
+    num: 8,
+    title: 'Abschlusstechniken',
+    icon: '🏆',
+    duration: '25 Min',
+    desc: 'Wie und wann du den Sack zumachst',
+    content: `
+<h2>Der Abschluss — kein Trick, sondern Logik</h2>
+<p>Viele Verkäufer verlieren Aufträge nicht im Einwand — sondern weil sie die Abschlussfrage nicht stellen. Sie hoffen, der Kunde sagt von alleine "Ja". Das tun Kunden nicht.</p>
+<h3>Abschluss-Signale erkennen</h3>
+<ul>
+<li>"Wie lange würde das dauern?" → Kaufgedanke aktiv</li>
+<li>"Und was würde das kosten wenn wir das noch ergänzen?" → Investitionsbereitschaft</li>
+<li>Kunde lehnt sich vor, nickt öfter, beginnt zu rechnen</li>
+<li>"Ich müsste das noch kurz mit meiner Kollegin besprechen" → Fast-Ja</li>
+</ul>
+<h3>Die 4 Abschlusstechniken</h3>
+<div class="script-box"><div class="script-label">1. Direkte Abschlussfrage (für Closer)</div>
+<p>"Was brauchen Sie noch um heute eine Entscheidung treffen zu können?"<br>"Wenn wir uns auf [X] einigen — können wir heute abschließen?"</p></div>
+<div class="script-box"><div class="script-label">2. Alternativ-Abschluss (für Connector-Kunden)</div>
+<p>"Wäre Option A oder Option B besser für Sie?"<br>"Wollen wir ab dem 1. oder ab dem 15. starten?"<br>→ Beide Optionen sind Ja. Der Kunde wählt — aber nur innerhalb deines Rahmens.</p></div>
+<div class="script-box"><div class="script-label">3. Zusammenfassung + Abschluss (für Analyst-Kunden)</div>
+<p>"Ich fasse kurz zusammen was wir vereinbart haben: [A], [B], [C]. Sind wir damit einig?" → Pause.</p></div>
+<div class="script-box"><div class="script-label">4. Nächster-Schritt-Abschluss (für Verlässlich-Kunden)</div>
+<p>"Der nächste logische Schritt wäre jetzt [X]. Ich schicke Ihnen heute noch die Auftragsbestätigung — passt das für Sie?"</p></div>
+`
+  },
+  {
+    id: 'preisverhandlung_ad',
+    num: 9,
+    title: 'Preisverhandlung am Termin',
+    icon: '💶',
+    duration: '30 Min',
+    desc: 'Rabattfallen, Preisverteidigung, Zugeständnismanagement',
+    content: `
+<h2>Preisverhandlung — Zahlen ohne Nervosität</h2>
+<p>Der Moment wenn Zahlen auf den Tisch kommen ist der Moment der Wahrheit. Wer hier zittert, verliert. Wer vorbereitet ist, gewinnt — egal ob die Zahl die der Kunde nennt gut oder schlecht ist.</p>
+<h3>Die 3 Preisfallen</h3>
+<ul>
+<li><strong>Falle 1:</strong> Preis nennen bevor der Wert kommuniziert wurde → immer Wert zuerst</li>
+<li><strong>Falle 2:</strong> Auf den ersten Anker des Kunden reagieren ohne Flinch → immer erst zusammenzucken</li>
+<li><strong>Falle 3:</strong> Rabatt geben ohne Gegenleistung → "Was geben Sie mir dafür?"</li>
+</ul>
+<div class="script-box"><div class="script-label">Preis nennen — so geht's richtig</div>
+<p>"Herr [Name], basierend auf dem was wir besprochen haben — Menge, Lieferperformance, Service — liegt unser Preis bei [Anker, deutlich über Ziel]. Ich rechne Ihnen gerne aus was das konkret bedeutet."<br><br>→ Dann schweigen. Den Flinch des Kunden abwarten. Nicht erklären.</p></div>
+<div class="script-box"><div class="script-label">Wenn der Kunde Rabatt fordert</div>
+<p>Kunde: "Da muss noch was gehen."<br>Du: "Was genau meinen Sie damit?" (Sowjet: nachfragen, dann schweigen)<br>Oder: "Das kann ich nur mit einer festen Jahresmenge koppeln. Was wäre Ihre Jahresmenge?"<br>Oder: "Was geben Sie mir, wenn ich da runterkomme?"</p></div>
+<div class="script-box"><div class="script-label">Einkäufer-Taktik: Unsichtbarer Wettbewerber</div>
+<p>EK: "Ihr Wettbewerber bietet das für X Cent weniger an."<br>Du: "Nach welchen Kriterien vergleichen Sie das?" (nicht über die Zahl reden, den Vergleich hinterfragen)<br>"Was ist neben dem Preis noch wichtig für Sie?"<br>"Wenn wir das gleiche Preisniveau hätten — würden Sie dann bei uns kaufen?"</p></div>
+`
+  },
+  {
+    id: 'patrick_helm_ad',
+    num: 10,
+    title: 'Patrick Helm',
+    icon: '⭐',
+    duration: '— Min',
+    desc: 'Inhalte werden ergänzt',
+    locked: false,
+    placeholder: true,
+    content: `
+<h2>Patrick Helm — Inhalte folgen</h2>
+<div class="warning-box"><p>⚠️ <strong>Offener Punkt (Justin Rattmann):</strong> Die Inhalte von Patrick Helm für das AD-Modul wurden noch nicht eingepflegt. Sobald die Materialien vorliegen, wird dieses Modul vollständig ausgebaut.</p></div>
+<p>Dieses Modul ist ein Platzhalter. Sobald Justin die Patrick Helm Materialien bereitstellt, wird der vollständige Inhalt hier integriert.</p>
+`
+  }
+];
+
+// ── ID MODULE CONTENT ───────────────────────────────────────
+const ID_MODULES = [
+  {
+    id: 'persoenlichkeit_id',
+    num: 0,
+    title: 'Persönlichkeitstest ID',
+    icon: '🧠',
+    duration: '15 Min',
+    desc: 'Dein Kundentyp — am Telefon in 60 Sekunden erkennen',
+    type: 'test',
+    content: `
+<h2>Kundentypen erkennen — am Telefon und per Mail</h2>
+<p>Im Innendienst hast du keine Körpersprache. Du hast Stimme, Geschwindigkeit, Wortwahl und Reaktionszeit. Das reicht — wenn du weißt was du beobachtest.</p>
+<h3>Kundentyp am Telefon erkennen — Erkennungsmerkmale</h3>
+<div class="script-box"><div class="script-label">🔴 Closer erkennen</div>
+<p><strong>Spricht:</strong> Schnell, kurze Sätze, kommt sofort zum Punkt<br>
+<strong>Erste Sätze:</strong> "Was wollen Sie?" / "Kurz machen" / direkte Gegenfragen<br>
+<strong>Bei "zu teuer":</strong> Will sofort eine Zahl, kein Drumherumreden<br>
+<strong>Richtige Reaktion:</strong> Direkt, kurz, konkret — kein Small Talk, keine Ausschweifungen</p></div>
+<div class="script-box"><div class="script-label">🟠 Connector erkennen</div>
+<p><strong>Spricht:</strong> Locker, plaudert, fragt nach deinem Namen, macht Witze<br>
+<strong>Erste Sätze:</strong> Geht auf persönlicher Ebene ein, erinnert sich an Dinge<br>
+<strong>Bei "zu teuer":</strong> Zeigt Emotion, redet über Fairness und Beziehung<br>
+<strong>Richtige Reaktion:</strong> Aufwärmen, Namen nutzen, persönliche Verbindung herstellen</p></div>
+<div class="script-box"><div class="script-label">🟢 Verlässlich erkennen</div>
+<p><strong>Spricht:</strong> Ruhig, vorsichtig, fragt nach Details bevor er entscheidet<br>
+<strong>Erste Sätze:</strong> "Ich müsste das mal prüfen" / "Das muss ich kurz absprechen"<br>
+<strong>Bei "zu teuer":</strong> Zieht sich zurück, braucht Sicherheit<br>
+<strong>Richtige Reaktion:</strong> Sicherheit geben, Prozess erklären, nicht drängen</p></div>
+<div class="script-box"><div class="script-label">🔵 Analyst erkennen</div>
+<p><strong>Spricht:</strong> Sachlich, präzise, stellt technische Detailfragen<br>
+<strong>Erste Sätze:</strong> Fragt nach Specs, Normen, Dokumentation<br>
+<strong>Bei "zu teuer":</strong> Will Vergleichszahlen, Tabellen, Fakten<br>
+<strong>Richtige Reaktion:</strong> Fakten liefern, Zahlen vorbereiten, keine Übertreibungen</p></div>
+`
+  },
+  {
+    id: 'haltung_id',
+    num: 1,
+    title: 'Haltung & Rolle ID',
+    icon: '💡',
+    duration: '20 Min',
+    desc: 'Der Innendienst ist nicht der Auftragnehmer — er ist Vertrieb',
+    content: `
+<h2>Innendienst — aktiver Vertrieb, kein Auftragsabwickler</h2>
+<p>Der größte Fehler im Innendienst: Die Überzeugung, dass die Aufgabe darin besteht, Bestellungen entgegenzunehmen und weiterzuleiten. Die Wahrheit: Der Innendienst sitzt an einer der wichtigsten Schnittstellen zum Kunden.</p>
+<h3>Die neue Rollendefinition</h3>
+<ul>
+<li><strong>Früher:</strong> Bestellung rein → Bestellung raus</li>
+<li><strong>Heute (WEWO-Standard):</strong> Jeder Kontakt ist eine Verkaufschance</li>
+<li><strong>Konkret:</strong> Jedes eingehende Gespräch hat Potenzial für Cross-Selling, Upselling oder Beziehungsvertiefung</li>
+</ul>
+<div class="script-box"><div class="script-label">WEWO ID-Grundsatz</div>
+<p>"Wenn ein Kunde anruft um Schrauben zu bestellen, ist das kein Abwicklungsauftrag. Das ist eine Einladung zum Gespräch — und jedes Gespräch hat mehr Potential als das was auf der Bestellung steht."</p></div>
+<h3>Haltung am Telefon</h3>
+<ul>
+<li><strong>Lächeln:</strong> Man hört ob jemand lächelt. Wirklich. Teste es.</li>
+<li><strong>Name merken:</strong> Direkt beim Gesprächsbeginn — dann 2-3 Mal verwenden</li>
+<li><strong>Energie halten:</strong> Beim 15. Anruf genauso frisch wie beim ersten. Trick: kurze Pause, tief atmen, aufrechter Sitz, bevor du abnimmst.</li>
+<li><strong>Nicht hetzen:</strong> Auch wenn 5 andere Telefone klingeln — dieser Kunde ist der einzige in diesem Moment</li>
+</ul>
+<div class="tip-box"><p>✅ <strong>ID-Übung:</strong> Steh auf während du telefonierst. Die Stimme klingt sofort stärker, die Energie höher. Probiere es heute noch aus.</p></div>
+`
+  },
+  {
+    id: 'kundenanalyse_id',
+    num: 2,
+    title: 'Kundenanalyse & Potenzial',
+    icon: '📊',
+    duration: '25 Min',
+    desc: 'Wer ist der Kunde — und was könnte er noch kaufen?',
+    content: `
+<h2>Potenzialerkennung — die verborgene Aufgabe des Innendienstes</h2>
+<p>Bevor du Cross-Selling machst, musst du wissen mit wem du es tust. Nicht jeder Kunde hat das gleiche Potenzial. Nicht jeder Kontaktzeitpunkt ist der richtige.</p>
+<h3>Kundensegmentierung (WEWO-Logik)</h3>
+<div class="script-box"><div class="script-label">3 Kundenkategorien für den ID</div>
+<p><strong>A-Kunde (Fokus, schützen):</strong> Hoher Umsatz, lange Beziehung, breite Produktpalette, hohe Loyalität. Ziel: Beziehung pflegen, Potenzial ausschöpfen, Wechselbarrieren aufbauen.<br><br>
+<strong>B-Kunde (Entwickeln):</strong> Mittlerer Umsatz, Potenzial vorhanden aber nicht ausgeschöpft. Ziel: Von B nach A entwickeln — Cross-Selling, aktive Betreuung.<br><br>
+<strong>C-Kunde (Effizient betreuen):</strong> Kleiner Umsatz, wenig Engagement. Ziel: Effizienz — nicht zu viel Zeit investieren wenn kein Wachstumspotenzial erkennbar.</p></div>
+<h3>Potenzial erkennen — die 5 Signalfragen</h3>
+<ul>
+<li>"Wofür werden die Schrauben eingesetzt?" → Produktionsvolumen schätzen</li>
+<li>"Wie oft bestellen Sie typischerweise?" → Rhythmus und Regelmäßigkeit</li>
+<li>"Haben Sie mehrere Lieferanten für diese Teile?" → Bündelungspotenzial</li>
+<li>"Bestellen Sie auch [Produktkategorie X]?" → Direktes Cross-Sell-Signal</li>
+<li>"Wächst Ihr Unternehmen gerade?" → Zukünftiger Bedarf</li>
+</ul>
+<div class="info-box"><p>💡 Eine einzige gute Frage pro Gespräch reicht. Du musst nicht 5 Fragen stellen — du baust das Bild über Monate auf. Dokumentiere alles im CRM.</p></div>
+`
+  },
+  {
+    id: 'telefongespraech_id',
+    num: 3,
+    title: 'Gesprächsführung Telefon',
+    icon: '📞',
+    duration: '35 Min',
+    desc: 'Eingehende und ausgehende Gespräche meistern',
+    quizzes: [
+      { q:'Wie startet man ein ausgehendes Angebotsnachverfolgungs-Gespräch?', opts:['Direkt fragen ob der Kunde kaufen möchte','Kurze persönliche Brücke + Zweck + offene Frage','Preis nochmal nennen','Auf eine Antwort warten ohne anzurufen'], correct:1 }
+    ],
+    content: `
+<h2>Gesprächsführung — Telefon als Vertriebskanal</h2>
+<h3>Eingehende Gespräche (reaktiv → aktiv drehen)</h3>
+<div class="script-box"><div class="script-label">Standard-Einstieg eingehendes Gespräch</div>
+<p>"WEWO, [Vorname Nachname], guten [Morgen/Tag] — womit kann ich Ihnen helfen?"<br><br>→ Sofort: Namen des Kunden herausfinden und verwenden<br>→ Zweck des Anrufs notieren<br>→ Nach dem Anliegen: eine Frage die Potenzial aufdeckt</p></div>
+<div class="script-box"><div class="script-label">Aktivierungsfrage nach der Bestellung</div>
+<p>"Super, ich notiere das für Sie. Eine kurze Frage noch: Sie bestellen gerade Schrauben Typ X — haben Sie auch Muttern und Unterlegscheiben dazu im Bedarf, oder wird das über einen anderen Lieferanten bezogen?"</p></div>
+<h3>Ausgehende Gespräche (proaktiv)</h3>
+<div class="script-box"><div class="script-label">Angebotsnachverfolgung</div>
+<p>"Guten Tag Herr [Name], hier ist [Name] von WEWO. Ich hatte Ihnen vor einer Woche das Angebot für [Produkt] geschickt — ich wollte kurz hören ob das bei Ihnen angekommen ist und ob noch Fragen offen sind?"<br><br>→ Wenn "Wir überlegen noch": "Was ist der entscheidende Punkt für Ihre Entscheidung — der Preis, die Lieferzeit oder etwas anderes?"</p></div>
+<div class="script-box"><div class="script-label">Proaktiver Cross-Selling-Anruf</div>
+<p>"Guten Tag Herr [Name], [Name] von WEWO. Ich rufe an weil wir gerade ein Sonderangebot für [Produktkategorie] haben und ich weiß, dass Sie [Verwandtes Produkt] bei uns beziehen. Ich dachte, das könnte für Sie interessant sein — haben Sie 2 Minuten?"</p></div>
+<h3>Mental Reset zwischen Gesprächen</h3>
+<p>5 Sekunden vor dem nächsten Anruf: Aufrecht setzen, einmal tief einatmen, kurz lächeln. Das merkt der Kunde am Telefon — auch beim 15. Gespräch des Tages.</p>
+`
+  },
+  {
+    id: 'crossselling_id',
+    num: 4,
+    title: 'Cross-Selling Skripte',
+    icon: '🔗',
+    duration: '30 Min',
+    desc: 'Von der Bestellung zum erweiterten Auftrag',
+    quizzes: [
+      { q:'Wann ist der beste Moment für Cross-Selling?', opts:['Nach einer Reklamation','Direkt nach dem Kunden ein Problem gelöst wurde','Bevor der Kunde sein Anliegen genannt hat','Am Ende jedes dritten Gesprächs automatisch'], correct:1 }
+    ],
+    content: `
+<h2>Cross-Selling — Mehrwert der entsteht wenn man zuhört</h2>
+<p>Cross-Selling ist kein Verkaufstrick — es ist Service. Wer dem Kunden einen Weg zeigt seine Prozesse zu vereinfachen, tut ihm einen Gefallen. Das Mindset macht den Unterschied.</p>
+<h3>Die WEWO Cross-Selling-Logik</h3>
+<div class="script-box"><div class="script-label">Bündelungsargument (stärkstes Argument)</div>
+<p>"Herr [Name], viele unserer Kunden bündeln Schrauben, Muttern und Unterlegscheiben bei uns — das spart nicht nur Bestellkosten, sondern vor allem Verwaltungsaufwand. Wenn Sie alles auf einer Rechnung und einem Liefertermin haben, macht das Ihren Einkauf deutlich einfacher. Wäre das etwas für Sie?"</p></div>
+<div class="script-box"><div class="script-label">Prozesskosten-Argument (Normteile)</div>
+<p>"Herr [Name], ein kleiner Gedanke: Sie bestellen bei uns regelmäßig Artikel X. Haben Sie mal nachgerechnet was jede Einzelbestellung an Verwaltungskosten kostet — Bestellung, Wareneingang, Rechnung, Zahlung? Studien zeigen: C-Teile-Bestellungen kosten 50-150 € Prozesskosten unabhängig vom Wert. Wenn wir das auf einen Rahmenauftrag umstellen, sparen Sie das."</p></div>
+<div class="script-box"><div class="script-label">Upselling — Qualitätsstufe</div>
+<p>"Herr [Name], Sie verwenden aktuell Artikel X in der Standard-Ausführung. Wir haben die gleiche Variante auch in verzinkter Ausführung für [Aufpreis %] mehr — die hält in feuchten Umgebungen 3x länger. Ist das für Ihren Einsatzzweck interessant?"</p></div>
+<h3>Cross-Selling Timing</h3>
+<ul>
+<li><strong>Bester Moment:</strong> Direkt nachdem ein Problem gelöst wurde — Dankbarkeitsfenster</li>
+<li><strong>Zweitbester:</strong> Bei der Bestellbestätigung — Kunde ist in Kaufstimmung</li>
+<li><strong>Schlechtester:</strong> Wenn der Kunde ein dringendes Problem schildert — erst lösen, dann anbieten</li>
+</ul>
+`
+  },
+  {
+    id: 'schriftlich_id',
+    num: 5,
+    title: 'Schriftliche Kommunikation',
+    icon: '✉️',
+    duration: '25 Min',
+    desc: 'Angebote, Mails und Nachrichten die wirken',
+    content: `
+<h2>Schriftliche Kommunikation — was bleibt wenn das Gespräch vorbei ist</h2>
+<p>Mails, Angebote und Nachrichten sind still und wirkungslos wenn sie nicht richtig gestaltet sind. Wer schreibt wie er spricht, verliert seinen Vorteil.</p>
+<h3>Mail-Prinzipien (WEWO-Standard)</h3>
+<ul>
+<li><strong>Betreff:</strong> Konkret, klar, mit Bezug — nicht "Anfrage" sondern "Angebot Verbindungselemente Typ X — WEWO"</li>
+<li><strong>Einstieg:</strong> Persönliche Brücke in 1-2 Sätzen — referenziert das letzte Gespräch oder einen Kontaktpunkt</li>
+<li><strong>Kern:</strong> Was will ich vom Empfänger? Max 3 Punkte, formatiert, klar</li>
+<li><strong>Call-to-Action:</strong> Immer eine konkrete Handlungsaufforderung am Ende</li>
+<li><strong>Länge:</strong> Kürzer ist immer besser. Wenn es länger als eine Bildschirmseite wird: nochmal kürzen.</li>
+</ul>
+<div class="script-box"><div class="script-label">Angebots-Follow-Up Mail (Vorlage)</div>
+<p>Betreff: Angebot Verbindungselemente [Nr.] — kurze Rückfrage<br><br>Hallo Herr [Name],<br><br>ich hoffe, das Angebot vom [Datum] hat Sie gut erreicht. Für Rückfragen zu den technischen Details oder Lieferbedingungen stehe ich gerne bereit.<br><br>Darf ich fragen: Gibt es aktuell noch einen offenen Punkt, der eine Entscheidung verzögert? Ich helfe gerne weiter.<br><br>Mit freundlichen Grüßen<br>[Name]</p></div>
+<div class="script-box"><div class="script-label">Proaktive Kontakt-Mail (ohne Verkaufsabsicht)</div>
+<p>Betreff: Kurze Info zu [relevantem Thema] für Sie<br><br>Hallo Herr [Name],<br><br>ich bin auf eine Information gestoßen, die für Ihren Bereich relevant sein könnte: [1 Satz Kerninfo].<br><br>Kein Angebot — ich dachte nur, das könnte Sie interessieren.<br><br>Mit freundlichen Grüßen<br>[Name]</p></div>
+<div class="info-box"><p>💡 <strong>Nasher-Prinzip für Mails:</strong> Vor jeder E-Mail kurz anrufen. Der persönliche Kontakt erhöht die Reaktionsrate und schafft Vertrauen — erst anrufen, dann die Mail als Zusammenfassung schicken.</p></div>
+`
+  },
+  {
+    id: 'kundenbindung_id',
+    num: 6,
+    title: 'Kundenbindung & After-Sales',
+    icon: '🤝',
+    duration: '25 Min',
+    desc: 'Langfristige Beziehungen die Umsatz bringen',
+    content: `
+<h2>Kundenbindung — Loyalität ist kein Zufall</h2>
+<p>Kunden gehen nicht weil ein Wettbewerber billiger ist. Kunden gehen weil sie sich nicht mehr wahrgenommen fühlen. Kundenbindung ist konsequente Aufmerksamkeit — nicht Preis.</p>
+<h3>Proaktiver Nachfass nach der Lieferung</h3>
+<div class="script-box"><div class="script-label">3-Tage-Check-In nach Lieferung</div>
+<p>"Guten Tag Herr [Name], [Name] von WEWO. Die Lieferung vom [Datum] müsste bei Ihnen angekommen sein — ich wollte kurz nachfragen ob alles angekommen ist und ob die Qualität Ihren Erwartungen entspricht."<br><br>→ Wenn alles gut: "Super, freut mich. Darf ich fragen, wie das Produkt eingesetzt wird? Ich frage weil wir manchmal gute Tipps für Alternativen haben."<br>→ Wenn Problem: "Das höre ich zum ersten Mal — ich kümmere mich sofort darum."</p></div>
+<h3>Reklamation als Bindungschance</h3>
+<div class="script-box"><div class="script-label">Reklamations-Skript</div>
+<p>"Herr [Name], das tut mir wirklich leid — das entspricht nicht unserem Standard. Ich löse das jetzt für Sie. Was brauchen Sie — Ersatz, Rücksendung, oder Gutschrift?"<br><br>→ Lösung anbieten BEVOR der Kunde sie fordert<br>→ Danach: "Herr [Name], darf ich kurz nachhaken wie alles gelaufen ist?" — Loyalitätsmoment entsteht nach der Lösung, nicht vor der Reklamation.</p></div>
+<h3>Kontaktanlässe ohne Verkaufsabsicht</h3>
+<ul>
+<li>Kurze Info über relevante Normenänderung → Mehrwert ohne Auftrag</li>
+<li>Marktinformation ("Rohstoffpreise steigen — wir empfehlen frühzeitige Bestellung")</li>
+<li>Danke für Jahresauftrag mit kleiner persönlicher Note</li>
+<li>Jahresrückblick-Gespräch anbieten: "Ich würde gerne 15 Minuten mit Ihnen schauen wie das Jahr gelaufen ist"</li>
+</ul>
+<div class="tip-box"><p>✅ <strong>Regel:</strong> Kunden die sich proaktiv betreut fühlen wechseln nicht — auch wenn ein Wettbewerber etwas günstiger ist. Kontaktfrequenz schlägt Preis.</p></div>
+`
+  },
+  {
+    id: 'reaktionszeit_id',
+    num: 7,
+    title: 'Reaktionsgeschwindigkeit',
+    icon: '⚡',
+    duration: '20 Min',
+    desc: 'Prozessdisziplin die Kunden bindet',
+    content: `
+<h2>Reaktionsgeschwindigkeit — der unsichtbare Vorteil</h2>
+<p>Studien zeigen: Ein Angebot das innerhalb von 1 Stunde kommt hat eine 7x höhere Abschlusswahrscheinlichkeit als eines das nach 24 Stunden kommt. Im Innendienst ist Geschwindigkeit Vertriebsstrategie.</p>
+<h3>WEWO Reaktionszeit-Standards</h3>
+<div class="script-box"><div class="script-label">Verbindliche Zeitfenster</div>
+<p>Eingehende Anfrage → Eingangsbestätigung: <strong>max. 30 Minuten</strong><br>Angebot auf Standardartikel: <strong>max. 4 Stunden</strong><br>Angebot auf Sonderartikel: <strong>max. 24 Stunden mit Zwischenstatus</strong><br>Reklamationsbestätigung: <strong>sofort</strong><br>Rückruf bei verpasstem Anruf: <strong>max. 2 Stunden</strong></p></div>
+<h3>20 parallele Vorgänge meistern</h3>
+<ul>
+<li><strong>Priorisierung:</strong> A-Kunden zuerst, dann Dringlichkeit, dann Aufwand</li>
+<li><strong>Dokumentation:</strong> Jedes Gespräch direkt nach dem Anruf ins CRM — nie "später"</li>
+<li><strong>"Ich melde mich heute noch":</strong> Nur sagen wenn man es hält. Wenn unsicher: "Ich melde mich bis morgen früh"</li>
+<li><strong>Wiedervorlage-System:</strong> Jedes offene Angebot bekommt einen konkreten Nachfass-Termin — kein "irgendwann"</li>
+</ul>
+<div class="info-box"><p>💡 <strong>Trick:</strong> Wenn du beim 15. Anruf müde klingst, hilft es die eigene Energie kurz zu resetzen: Aufstehen, kurz schütteln, 3 tiefe Atemzüge. Der Unterschied ist hörbar.</p></div>
+`
+  },
+  {
+    id: 'einwand_id',
+    num: 8,
+    title: 'Einwandbehandlung ID',
+    icon: '🛡️',
+    duration: '30 Min',
+    desc: 'Einwände am Telefon — schnell und wirkungsvoll',
+    content: `
+<h2>Einwände am Telefon — anders als vor Ort</h2>
+<p>Am Telefon gibt es keine Körpersprache. Das bedeutet: Stimme, Tempo und Formulierung entscheiden alles. Telefoneinwände brauchen kürzere, prägnantere Antworten als Vor-Ort-Einwände.</p>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>💰 "Zu teuer" / "Mitbewerber günstiger"</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Kostenfokus umlenken</div>
+<p>"Herr [Name], ich verstehe das gut. Darf ich kurz fragen — was genau vergleichen Sie mit dem Wettbewerb? Preis pro Stück, Stück inkl. Lieferung, oder Gesamtkosten inkl. Verwaltung?" → Vergleich hinterfragen, dann Prozesskosten-Argument.</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>📬 "Schicken Sie mir erst ein Angebot"</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Qualifizierung vor dem Angebot</div>
+<p>"Sehr gerne, Herr [Name]. Damit ich Ihnen ein passendes Angebot machen kann — drei kurze Fragen: Welche Menge planen Sie, bis wann brauchen Sie die Ware, und gibt es neben dem Preis noch andere wichtige Kriterien?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>🤔 "Ich muss das intern klären"</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Nächsten Schritt sichern</div>
+<p>"Das versteht sich von selbst. Darf ich fragen — wer außer Ihnen ist noch involviert? Und wann wäre ein guter Zeitpunkt für mich, nochmal nachzuhören — Ende der Woche oder Anfang nächster?"</p></div>
+</div></div>
+<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>😴 "Ich habe keinen Bedarf gerade"</span><span class="accordion-arrow">▼</span></div><div class="accordion-body">
+<div class="script-box"><div class="script-label">Zeitraum erkunden</div>
+<p>"Verstehe. Wann schätzen Sie — wann wäre der Bedarf wieder aktuell? Ich notiere das und melde mich dann — so verlieren wir uns nicht aus den Augen."</p></div>
+</div></div>
+`
+  },
+  {
+    id: 'normteile_id',
+    num: 9,
+    title: 'Angebotsnachverhandlung & Normteile',
+    icon: '🔩',
+    duration: '35 Min',
+    desc: 'WEWO-Argumentation für Normteile und Preisverhandlung',
+    content: `
+<h2>Normteile-Argumentation — der WEWO-Vorteil sichtbar machen</h2>
+<p>Normteile werden oft als austauschbar betrachtet. Das ist die Falle. WEWO hat konkrete Argumente warum das nicht stimmt — und diese Argumente muss der Innendienst beherrschen.</p>
+<h3>Die 4 WEWO-Normteile-Argumente</h3>
+<div class="script-box"><div class="script-label">1. Prozesskosten-Argument</div>
+<p>"Herr [Name], eine Bestellung kostet Ihr Unternehmen intern zwischen 50 und 150 € — egal wie klein der Warenwert ist. Wenn wir 5 Bestellungen auf eine bündeln, sparen Sie 4 Mal diese Kosten. Der Unterschied im Einkaufspreis löst sich damit fast immer auf."</p></div>
+<div class="script-box"><div class="script-label">2. Liefersicherheit-Argument</div>
+<p>"Wir sind Hersteller und Händler. Das bedeutet: Wenn Normteile am Markt knapp werden, können wir selbst produzieren. Kein anderer Händler kann Ihnen das bieten."</p></div>
+<div class="script-box"><div class="script-label">3. Qualitätssicherheit-Argument</div>
+<p>"Günstiger Preis bedeutet oft andere Materialgüte, Toleranzen außerhalb der Norm, fehlende Zertifikate. Was passiert wenn das in Ihrer Produktion entdeckt wird? Der Stückpreisunterschied ist dann nichts mehr gegen die Ausschusskosten."</p></div>
+<div class="script-box"><div class="script-label">4. Flexibilitäts-Argument</div>
+<p>"Wir liefern ab 1 Stück — kein Mindestbestellwert, kein erzwungenes Lagerhalten. Das macht Ihre Bestandskosten planbar und vermeidet gebundenes Kapital."</p></div>
+<h3>Angebotsnachverhandlung</h3>
+<div class="script-box"><div class="script-label">Wenn der Kunde nach Rabatt fragt</div>
+<p>"Herr [Name], ich schaue was ich tun kann. Damit ich Ihnen etwas anbieten kann das wirklich sinnvoll ist — was wäre Ihre Jahresmenge wenn wir das als Rahmenvertrag aufsetzen?" → Zugeständnis gegen Menge/Bindung.</p></div>
+`
+  },
+  {
+    id: 'kundentypen_id',
+    num: 10,
+    title: 'Kundentypen & Gesprächsführung',
+    icon: '🎯',
+    duration: '30 Min',
+    desc: 'Typ-spezifische Gesprächsführung — wer braucht was?',
+    content: `
+<h2>Typ-spezifisch kommunizieren — der entscheidende Unterschied</h2>
+<p>Das gleiche Argument wirkt unterschiedlich je nach Typ. Wer jeden Kunden gleich anspricht, verliert die Hälfte davon.</p>
+<h3>So sprichst du mit jedem Typ richtig</h3>
+<div class="script-box"><div class="script-label">🔴 Mit dem Closer sprechen</div>
+<p><strong>Stil:</strong> Kurz, direkt, ergebnisorientiert<br>
+<strong>Do:</strong> "Ich komme direkt zum Punkt..." / "In 30 Sekunden: ..." / Zahlen und Ergebnisse zuerst<br>
+<strong>Don't:</strong> Kein Small Talk, keine langen Erklärungen, kein "Ich wollte mal fragen..."<br>
+<strong>Bei Einwand:</strong> Direkt bestätigen + Lösung: "Stimmt, hier ist was wir tun können: [konkrete Zahl]"</p></div>
+<div class="script-box"><div class="script-label">🟠 Mit dem Connector sprechen</div>
+<p><strong>Stil:</strong> Warm, persönlich, beziehungsorientiert<br>
+<strong>Do:</strong> Name mehrfach nutzen, persönliche Frage einbauen, Begeisterung zeigen<br>
+<strong>Don't:</strong> Nicht zu sachlich werden, kein reines Fakten-Bombardement<br>
+<strong>Bei Einwand:</strong> Erst bestätigen + Beziehung einbringen: "Das verstehe ich gut, und gerade weil wir schon so lange zusammenarbeiten..."</p></div>
+<div class="script-box"><div class="script-label">🟢 Mit dem Verlässlichen sprechen</div>
+<p><strong>Stil:</strong> Ruhig, verlässlich, kein Druck<br>
+<strong>Do:</strong> Prozess erklären, Sicherheit geben, bekannte Referenzen nennen<br>
+<strong>Don't:</strong> Kein Zeitdruck, kein "Das müssen Sie jetzt entscheiden"<br>
+<strong>Bei Einwand:</strong> Sicherheit geben: "Das ist ein typischer Schritt in unserem Prozess, ich begleite Sie dabei."</p></div>
+<div class="script-box"><div class="script-label">🔵 Mit dem Analysten sprechen</div>
+<p><strong>Stil:</strong> Sachlich, präzise, faktenbasiert<br>
+<strong>Do:</strong> Zahlen, Daten, Quellen, schriftliche Unterlagen anbieten<br>
+<strong>Don't:</strong> Keine übertriebenen Versprechen, kein "Das wird super toll sein"<br>
+<strong>Bei Einwand:</strong> Fakten liefern: "Ich schicke Ihnen die Vergleichstabelle dazu — dann können Sie das nachvollziehen."</p></div>
+`
+  }
+];
+
+// ── ROLEPLAY SCENARIOS ──────────────────────────────────────
+const ROLEPLAY_SCENARIOS = {
+  ad: [
+    { id:'ad_kaltakquise', title:'Kaltakquise am Telefon', icon:'📞', difficulty:'Mittel',
+      desc:'Du rufst einen Neukunden an. Dein Ziel: einen Termin für den Kollegen im Außendienst.',
+      system: `Du spielst einen skeptischen Einkäufer bei einem mittelständischen Maschinenbauer (Firma Müller GmbH). Du bist beschäftigt, etwas genervt von Anrufen, aber grundsätzlich professionell. Du heißt Herr Wagner. Du hast aktuell 3 Lieferanten für Verbindungselemente. Halte das Gespräch realistisch. Reagiere auf Einwandbehandlungstechniken entsprechend — wenn die Technik gut ist, zeige leichte Öffnung. Mache das Gespräch leicht, nicht extrem schwer. Spreche ausschließlich Deutsch.` },
+    { id:'ad_einwandpreis', title:'Einwand: "Zu teuer"', icon:'💰', difficulty:'Schwer',
+      desc:'Du bist im Termin. Kunde sagt: "Ihr seid 15% teurer als der Wettbewerb."',
+      system: `Du bist ein Einkäufer bei einem Automobilzulieferer. Du hast WEWO bereits ein Angebot gemacht, bist aber 15% teurer als ein Wettbewerber. Du willst WEWO haben (wegen der Zuverlässigkeit) aber du musst auch intern rechtfertigen warum du mehr bezahlst. Zeige echte Skepsis beim Preisthema. Wenn der Verkäufer gute Argumente bringt (Prozesskosten, Liefersicherheit, Qualität), öffne dich langsam. Spreche ausschließlich Deutsch.` },
+    { id:'ad_terminakquise', title:'Termin trotz Widerstand sichern', icon:'📅', difficulty:'Leicht',
+      desc:'Sekretärin blockiert den Weg zum Entscheider. Komm durch.',
+      system: `Du spielst eine freundliche aber konsequente Sekretärin/Telefonzentrale. Du schützt den Chef und stellst nicht einfach durch. Wenn der Anrufer höflich und überzeugend ist und gute Techniken anwendet (No-Name, Freunde-Taktik, etc.), kannst du ihn durchstellen. Bleibe realistisch und professionell. Spreche ausschließlich Deutsch.` }
+  ],
+  id: [
+    { id:'id_crosssell', title:'Cross-Selling Gespräch', icon:'🔗', difficulty:'Leicht',
+      desc:'Kunde ruft wegen Standardbestellung an. Dein Ziel: Cross-Selling einbauen.',
+      system: `Du bist ein Einkäufer der regelmäßig bei WEWO bestellt. Du rufst an um Schrauben DIN 933 M8 x 30 zu bestellen, 500 Stück. Du bist zufrieden mit WEWO aber kaufst auch bei anderen Lieferanten. Wenn der Innendienst-Mitarbeiter gute Cross-Selling-Fragen stellt (nicht zu aufdringlich), zeige Interesse. Wenn er zu aggressiv ist, reagiere abweisend. Spreche ausschließlich Deutsch.` },
+    { id:'id_einwand_telefon', title:'Einwand: "Zu teuer" am Telefon', icon:'💰', difficulty:'Mittel',
+      desc:'Kunde sagt er hat ein günstigeres Angebot bekommen.',
+      system: `Du bist ein preisbewusster Einkäufer. Du hast ein Angebot von WEWO und ein günstigeres von einem Wettbewerber (5% günstiger). Du willst nicht wechseln wenn WEWO gute Argumente hat. Wenn der ID-Mitarbeiter Prozesskosten, Qualität oder Liefersicherheit anspricht, öffne dich. Wenn er nur um den heißen Brei redet, bleib hart. Spreche ausschließlich Deutsch.` },
+    { id:'id_reklamation', title:'Reklamation als Chance', icon:'🔧', difficulty:'Mittel',
+      desc:'Kunde ist verärgert wegen falscher Lieferung. Drehe die Situation.',
+      system: `Du bist sehr verärgert. WEWO hat die falsche Ware geliefert und das hat in deiner Produktion zu einer Verzögerung geführt. Du bist nicht unhöflich aber klar unzufrieden. Wenn der ID-Mitarbeiter sofort Verantwortung übernimmt, eine Lösung anbietet und sich kümmert, wirst du merklich ruhiger. Wenn er Ausreden macht, wirst du ärgerlicher. Spreche ausschließlich Deutsch.` }
+  ]
+};
+
+
+// ══════════════════════════════════════════════════════════════
+//  APP STATE & FIREBASE STORAGE
+// ══════════════════════════════════════════════════════════════
+
+let STATE = {
+  currentUser: null,
+  page: 'login',
+  subPage: null,
+  selectedEmployee: null,
+  selectedModule: null,
+  modalOpen: null,
+  sidebarCollapsed: false,
+  loginRole: 'trainer',
+  quizState: null
+};
+
+// ── Firebase Init ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAN1O0mAkZ6cdivboueR3ssOCaWwQRU_m0",
+  authDomain: "wewo-training.firebaseapp.com",
+  databaseURL: "https://wewo-training-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "wewo-training",
+  storageBucket: "wewo-training.firebasestorage.app",
+  messagingSenderId: "1027176101297",
+  appId: "1:1027176101297:web:699173b6f757e0059f3990"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ── Key → Firebase path ────────────────────────────────────────
+function keyToPath(key) {
+  // 'employee:emp_123' → 'employee/emp_123'
+  // 'session:emp_123:sess_456' → 'session/emp_123/sess_456'
+  return key.split(':').filter(p => p !== '').join('/');
+}
+
+// ── Storage API (Firebase) ─────────────────────────────────────
+async function storageGet(key, shared = false) {
+  // session_draft is personal → localStorage
+  if (key === 'session_draft') {
+    try { return JSON.parse(localStorage.getItem('wewo_session_draft') || 'null'); } catch { return null; }
+  }
+  try {
+    const snap = await db.ref(keyToPath(key)).get();
+    return snap.exists() ? snap.val() : null;
+  } catch (e) { console.error('storageGet', key, e); return null; }
+}
+
+async function storageSet(key, val, shared = false) {
+  if (key === 'session_draft') {
+    try { localStorage.setItem('wewo_session_draft', JSON.stringify(val)); return true; } catch { return false; }
+  }
+  try {
+    await db.ref(keyToPath(key)).set(val);
+    return true;
+  } catch (e) { console.error('storageSet', key, e); return false; }
+}
+
+async function storageList(prefix, shared = false) {
+  // prefix 'employee:' → read node 'employee', return keys as 'employee:key'
+  const parts = prefix.split(':').filter(p => p !== '');
+  const path = parts.join('/');
+  try {
+    const snap = await db.ref(path).get();
+    if (!snap.exists()) return [];
+    const val = snap.val();
+    if (typeof val !== 'object' || val === null) return [];
+    return Object.keys(val).map(k => prefix + k);
+  } catch (e) { return []; }
+}
+
+async function storageDel(key, shared = false) {
+  if (key === 'session_draft') {
+    localStorage.removeItem('wewo_session_draft'); return;
+  }
+  try { await db.ref(keyToPath(key)).remove(); } catch (e) {}
+}
+
+// ── User Management ────────────────────────────────────────────
+async function getAllEmployees() {
+  const keys = await storageList('employee:', true);
+  const employees = [];
+  for (const key of keys) {
+    const emp = await storageGet(key, true);
+    if (emp) employees.push(emp);
+  }
+  return employees;
+}
+
+async function getEmployee(id) {
+  return await storageGet(`employee:${id}`, true);
+}
+
+async function saveEmployee(emp) {
+  await storageSet(`employee:${emp.id}`, emp, true);
+}
+
+async function getEmployeeProgress(id) {
+  return await storageGet(`progress:${id}`, true) || { modules: {}, quizzes: {}, notes: {} };
+}
+
+async function saveEmployeeProgress(id, progress) {
+  await storageSet(`progress:${id}`, progress, true);
+}
+
+async function getCoachingSessions(employeeId) {
+  const keys = await storageList(`session:${employeeId}:`, true);
+  const sessions = [];
+  for (const key of keys) {
+    const s = await storageGet(key, true);
+    if (s) sessions.push(s);
+  }
+  return sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+async function saveCoachingSession(session) {
+  await storageSet(`session:${session.employeeId}:${session.id}`, session, true);
+}
+
+// ── Auth ───────────────────────────────────────────────────────
+const TRAINER_PASS_DEFAULT = 'WEWO2024';
+
+async function loginTrainer(pass) {
+  const stored = await storageGet('trainer:password', true) || TRAINER_PASS_DEFAULT;
+  if (pass === stored || pass === TRAINER_PASS_DEFAULT) {
+    STATE.currentUser = { role: 'trainer', name: 'Justin Rattmann', id: 'trainer' };
+    return true;
+  }
+  return false;
+}
+
+async function loginEmployee(name, pass, role) {
+  const employees = await getAllEmployees();
+  const emp = employees.find(e => e.name.toLowerCase() === name.toLowerCase() && e.role === role);
+  if (!emp) return { ok: false, msg: 'Mitarbeiter nicht gefunden' };
+  if (emp.password !== pass) return { ok: false, msg: 'Falsches Passwort' };
+  STATE.currentUser = { role, name: emp.name, id: emp.id, empId: emp.id };
+  emp.lastLogin = new Date().toISOString();
+  await saveEmployee(emp);
+  return { ok: true };
+}
+
+// ── Utilities ──────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span><span>${msg}</span>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function openModal(id) { STATE.modalOpen = id; render(); }
+function closeModal() { STATE.modalOpen = null; render(); }
+
+function toggleAccordion(el) {
+  const body = el.nextElementSibling;
+  const arrow = el.querySelector('.accordion-arrow');
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function typeColor(k) {
+  return { C: '#e63946', I: '#f97316', S: '#2ecc71', G: '#3b82f6' }[k] || '#888';
+}
+
+function typeName(k) {
+  return { C: 'Closer', I: 'Connector', S: 'Verlässlich', G: 'Analyst' }[k] || k;
+}
+
+function renderTypeBars(types) {
+  if (!types) return '<span class="text-dim text-sm">Nicht hinterlegt</span>';
+  return Object.entries(types).map(([k, v]) => `
+    <div class="type-bar type-${k.toLowerCase()}">
+      <span class="type-bar-label" style="color:${typeColor(k)}">${typeName(k)}</span>
+      <div class="type-bar-track"><div class="type-bar-fill" style="width:${v}%;background:${typeColor(k)}"></div></div>
+      <span class="type-bar-pct" style="color:${typeColor(k)}">${v}%</span>
+    </div>
+  `).join('');
+}
+
+function dominantType(types) {
+  if (!types) return null;
+  return Object.entries(types).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function getAmpelClass(score) {
+  if (!score) return 'ampel-gray';
+  if (score >= 7) return 'ampel-green';
+  if (score >= 4) return 'ampel-yellow';
+  return 'ampel-red';
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function getApiKey() {
+  try { return localStorage.getItem('wewo_api_key') || ''; } catch { return ''; }
+}
+function setApiKey(k) {
+  try { localStorage.setItem('wewo_api_key', k); } catch {}
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Anthropic API — Live Roleplay ──────────────────────────────
+let chatHistory = [];
+let currentScenario = null;
+let roleplaying = false;
+let aiTyping = false;
+
+async function callClaude(messages, systemPrompt, maxTokens = 600) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages
+    })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text || '';
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  if (!input || !input.value.trim() || aiTyping) return;
+  const msg = input.value.trim();
+  input.value = '';
+  chatHistory.push({ role: 'user', content: msg });
+  aiTyping = true;
+  renderChatArea();
+  try {
+    const reply = await callClaude(chatHistory, currentScenario.system);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch {
+    chatHistory.push({ role: 'assistant', content: '...[Verbindungsfehler — bitte API-Key prüfen]' });
+  }
+  aiTyping = false;
+  renderChatArea();
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function endRoleplayAndGetFeedback() {
+  if (chatHistory.length < 2) { toast('Zu kurz für Feedback — führe erst ein Gespräch', 'warning'); return; }
+  aiTyping = true;
+  renderChatArea();
+  const feedbackSystem = `Du bist ein erfahrener Vertriebstrainer bei WEWO. Analysiere das folgende Verkaufsgespräch und gib strukturiertes Feedback auf Deutsch. Bewerte: 1) Was gut gemacht wurde (konkret), 2) Was verbessert werden kann (konkret mit Alternative), 3) Welche WEWO-Techniken erkennbar waren, 4) Eine Gesamtbewertung 1-10. Sei direkt und konstruktiv.`;
+  const transcript = chatHistory.map(m => `${m.role === 'user' ? 'Verkäufer' : 'Kunde'}: ${m.content}`).join('\n\n');
+  try {
+    const feedback = await callClaude(
+      [{ role: 'user', content: `Hier ist das Gespräch:\n\n${transcript}\n\nGib dein Feedback.` }],
+      feedbackSystem, 800
+    );
+    chatHistory.push({ role: 'feedback', content: feedback });
+  } catch {
+    chatHistory.push({ role: 'feedback', content: 'Feedback konnte nicht geladen werden. Bitte API-Key prüfen.' });
+  }
+  aiTyping = false;
+  roleplaying = false;
+  renderChatArea();
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderChatArea() {
+  const area = document.getElementById('chat-area');
+  if (!area) return;
+  const msgs = chatHistory.map(m => {
+    if (m.role === 'user') return `<div class="chat-bubble user">${escHtml(m.content)}</div>`;
+    if (m.role === 'assistant') return `<div class="chat-bubble ai"><span style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">🎭 ${escHtml(currentScenario?.title || 'KI-Kunde')}</span>${escHtml(m.content)}</div>`;
+    if (m.role === 'feedback') return `<div class="chat-bubble feedback"><span style="font-size:12px;font-weight:700;color:var(--green);display:block;margin-bottom:8px">📊 TRAINER-FEEDBACK</span><div style="white-space:pre-line;font-size:13px">${escHtml(m.content)}</div></div>`;
+    return '';
+  }).join('');
+  const typing = aiTyping ? `<div class="chat-bubble ai"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>` : '';
+  area.innerHTML = `
+    <div id="chat-messages" class="chat-messages">${msgs}${typing}</div>
+    <div class="chat-input-row">
+      ${roleplaying ? `
+        <textarea id="chat-input" class="textarea" placeholder="Deine Antwort..." rows="2"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}"
+          ${aiTyping ? 'disabled' : ''}></textarea>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="sendChatMessage()" ${aiTyping ? 'disabled' : ''}>Senden</button>
+          <button class="btn btn-outline btn-sm" onclick="endRoleplayAndGetFeedback()" ${aiTyping ? 'disabled' : ''}>Feedback</button>
+        </div>
+      ` : `
+        <div style="flex:1;display:flex;gap:10px;align-items:center">
+          <span class="text-dim text-sm">Gespräch beendet — Feedback oben sichtbar</span>
+          <button class="btn btn-outline btn-sm" onclick="navigate('${STATE.currentUser?.role}','roleplay')">Neues Gespräch</button>
+        </div>
+      `}
+    </div>
+  `;
+  if (!aiTyping) {
+    const m = document.getElementById('chat-messages');
+    if (m) m.scrollTop = m.scrollHeight;
+    const inp = document.getElementById('chat-input');
+    if (inp) inp.focus();
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  TRAINER PORTAL
+// ══════════════════════════════════════════════════════════
+
+async function renderTrainerPortal() {
+  const page = STATE.subPage || 'dashboard';
+  
+  const nav = `
+    <div class="sidebar ${STATE.sidebarCollapsed ? 'collapsed' : ''}">
+      <div class="sidebar-header" onclick="STATE.sidebarCollapsed=!STATE.sidebarCollapsed;render()">
+        <div class="logo-mark">WW</div>
+        ${!STATE.sidebarCollapsed ? `<div><div class="logo-text">WEWO</div><div class="logo-sub">Trainer-Tool</div></div>` : ''}
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">${STATE.sidebarCollapsed?'':'Übersicht'}</div>
+        ${navItem('dashboard','📊','Dashboard', page)}
+        <div class="nav-section">${STATE.sidebarCollapsed?'':'Team'}</div>
+        ${navItem('ad_list','🚗','Außendienst', page)}
+        ${navItem('id_list','📱','Innendienst', page)}
+        <div class="nav-section">${STATE.sidebarCollapsed?'':'Coaching'}</div>
+        ${navItem('coaching_new','📋','Neue Session', page)}
+        ${navItem('coaching_history','🗂️','Verlauf', page)}
+        <div class="nav-section">${STATE.sidebarCollapsed?'':'System'}</div>
+        ${navItem('admin','⚙️','Admin', page)}
+        ${navItem('content_editor','📝','Inhalte', page)}
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip" onclick="logout()">
+          <div class="user-avatar" style="background:var(--yellow);color:var(--black)">JR</div>
+          ${!STATE.sidebarCollapsed ? `<div class="user-info"><div class="user-name">Justin Rattmann</div><div class="user-role">Trainer</div></div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  let content = '';
+  switch(page) {
+    case 'dashboard': content = await renderTrainerDashboard(); break;
+    case 'ad_list': content = await renderEmployeeList('ad'); break;
+    case 'id_list': content = await renderEmployeeList('id'); break;
+    case 'employee_detail': content = await renderEmployeeDetail(); break;
+    case 'coaching_new': content = await renderCoachingNew(); break;
+    case 'coaching_session': content = await renderCoachingSession(); break;
+    case 'coaching_history': content = await renderCoachingHistory(); break;
+    case 'admin': content = await renderAdmin(); break;
+    case 'content_editor': content = await renderContentEditor(); break;
+    default: content = await renderTrainerDashboard();
+  }
+  
+  return `<div class="shell">${nav}<div class="main">${content}</div></div>`;
+}
+
+function navItem(id, icon, label, current) {
+  const active = current === id ? 'active' : '';
+  return `<div class="nav-item ${active}" onclick="navigate('trainer','${id}')">
+    <span class="nav-icon">${icon}</span>
+    ${!STATE.sidebarCollapsed ? `<span>${label}</span>` : ''}
+  </div>`;
+}
+
+async function renderTrainerDashboard() {
+  const allEmp = await getAllEmployees();
+  const adEmps = allEmp.filter(e => e.role === 'ad');
+  const idEmps = allEmp.filter(e => e.role === 'id');
+  
+  // Load progress for all
+  let totalProgress = 0, count = 0;
+  const progressData = [];
+  for (const emp of allEmp) {
+    const prog = await getEmployeeProgress(emp.id);
+    const done = Object.values(prog.modules || {}).filter(v => v).length;
+    const total = emp.role === 'ad' ? AD_MODULES.length : ID_MODULES.length;
+    const pct = total > 0 ? Math.round(done/total*100) : 0;
+    progressData.push({ emp, prog, done, total, pct });
+    totalProgress += pct; count++;
+  }
+  const avgProgress = count > 0 ? Math.round(totalProgress/count) : 0;
+  
+  const cards = progressData.slice(0,6).map(({emp, pct}) => {
+    const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const dt = dominantType(emp.types);
+    return `
+      <div class="mod-card" onclick="navigate('trainer','employee_detail',{selectedEmployee:'${emp.id}'})">
+        <div class="flex items-center gap-12 mb-12">
+          <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'}">${initials}</div>
+          <div>
+            <div class="font-bold" style="font-size:14px">${escHtml(emp.name)}</div>
+            <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'} ${dt ? `· <span style="color:${typeColor(dt)}">${typeName(dt)}</span>` : ''}</div>
+          </div>
+        </div>
+        <div class="progress-wrap mb-8"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="flex justify-between"><span class="text-sm text-dim">Fortschritt</span><span class="text-sm font-bold text-yellow">${pct}%</span></div>
+      </div>
+    `;
+  }).join('');
+  
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Dashboard</div><div class="page-sub">Gesamtübersicht Team</div></div>
+      <div class="flex gap-8" style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">+ Neue Coaching Session</button>
+        <button class="btn btn-outline btn-sm" onclick="navigate('trainer','admin')">Mitarbeiter anlegen</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="stat-grid mb-24">
+        <div class="stat-card"><div class="stat-value">${adEmps.length}</div><div class="stat-label">Außendienst-Mitarbeiter</div></div>
+        <div class="stat-card"><div class="stat-value">${idEmps.length}</div><div class="stat-label">Innendienst-Mitarbeiter</div></div>
+        <div class="stat-card"><div class="stat-value">${avgProgress}%</div><div class="stat-label">Ø Team-Fortschritt</div></div>
+        <div class="stat-card"><div class="stat-value">${allEmp.length}</div><div class="stat-label">Aktive Mitarbeiter</div></div>
+      </div>
+      
+      <div class="section-head mb-16">
+        <div class="section-title">Team-Übersicht</div>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','ad_list')">Alle AD →</button>
+          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','id_list')">Alle ID →</button>
+        </div>
+      </div>
+      
+      ${allEmp.length === 0 ? `
+        <div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <div class="font-bold mb-8">Noch keine Mitarbeiter angelegt</div>
+          <div class="text-dim mb-16">Lege jetzt deinen ersten AD oder ID Mitarbeiter an</div>
+          <button class="btn btn-primary" onclick="navigate('trainer','admin')">Mitarbeiter anlegen</button>
+        </div>
+      ` : `<div class="grid-3">${cards}</div>`}
+    </div>
+  `;
+}
+
+async function renderEmployeeList(role) {
+  const allEmp = await getAllEmployees();
+  const emps = allEmp.filter(e => e.role === role);
+  const label = role === 'ad' ? 'Außendienst' : 'Innendienst';
+  const modules = role === 'ad' ? AD_MODULES : ID_MODULES;
+  
+  const rows = await Promise.all(emps.map(async emp => {
+    const prog = await getEmployeeProgress(emp.id);
+    const done = Object.values(prog.modules || {}).filter(v => v).length;
+    const pct = modules.length > 0 ? Math.round(done/modules.length*100) : 0;
+    const dt = dominantType(emp.types);
+    const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    return `
+      <tr onclick="navigate('trainer','employee_detail',{selectedEmployee:'${emp.id}'})">
+        <td>
+          <div class="flex items-center gap-12">
+            <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'}; width:34px;height:34px;font-size:13px">${initials}</div>
+            <div><div class="font-bold">${escHtml(emp.name)}</div><div class="text-dim text-sm">${formatDate(emp.lastLogin)}</div></div>
+          </div>
+        </td>
+        <td>${dt ? `<span class="badge" style="background:${typeColor(dt)}22;color:${typeColor(dt)};border:1px solid ${typeColor(dt)}44">${TYPES[dt].emoji} ${typeName(dt)}</span>` : '—'}</td>
+        <td>
+          <div class="flex items-center gap-8">
+            <div class="progress-wrap flex-1" style="min-width:80px"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <span class="text-sm font-bold text-yellow">${pct}%</span>
+          </div>
+        </td>
+        <td>${done}/${modules.length} Module</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">Coaching starten</button>
+        </td>
+      </tr>
+    `;
+  }));
+  
+  return `
+    <div class="page-header">
+      <div><div class="page-title">${label}-Team</div><div class="page-sub">${emps.length} Mitarbeiter</div></div>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('trainer','admin')">+ Mitarbeiter anlegen</button>
+    </div>
+    <div class="page-content">
+      ${emps.length === 0 ? `
+        <div class="empty-state">
+          <div class="empty-icon">👤</div>
+          <div class="font-bold mb-8">Noch keine ${label}-Mitarbeiter angelegt</div>
+          <button class="btn btn-primary mt-16" onclick="navigate('trainer','admin')">Jetzt anlegen</button>
+        </div>
+      ` : `
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Mitarbeiter</th><th>Typ</th><th>Fortschritt</th><th>Module</th><th>Aktion</th></tr></thead>
+            <tbody>${rows.join('')}</tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+async function renderEmployeeDetail() {
+  const emp = STATE.selectedEmployee ? await getEmployee(STATE.selectedEmployee) : null;
+  if (!emp) return `<div class="page-content"><div class="empty-state"><div>Mitarbeiter nicht gefunden</div></div></div>`;
+  
+  const prog = await getEmployeeProgress(emp.id);
+  const modules = emp.role === 'ad' ? AD_MODULES : ID_MODULES;
+  const sessions = await getCoachingSessions(emp.id);
+  const done = Object.values(prog.modules || {}).filter(v => v).length;
+  const pct = modules.length > 0 ? Math.round(done/modules.length*100) : 0;
+  const dt = dominantType(emp.types);
+  const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  
+  const moduleRows = modules.map(m => {
+    const isDone = prog.modules?.[m.id];
+    const quiz = prog.quizzes?.[m.id];
+    return `
+      <div class="flex items-center gap-12 mb-12">
+        <span style="font-size:18px">${m.icon}</span>
+        <div class="flex-1">
+          <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
+          ${quiz ? `<div class="text-sm text-dim">Quiz: ${quiz.correct}/${quiz.total} richtig</div>` : ''}
+        </div>
+        ${isDone ? '<span class="badge badge-green">✓ Abgeschlossen</span>' : '<span class="badge badge-gray">Ausstehend</span>'}
+      </div>
+    `;
+  }).join('');
+  
+  const sessionRows = sessions.slice(0,3).map(s => `
+    <div class="flex items-center gap-12 mb-12">
+      <div style="font-size:20px">${s.type === 'ad' ? '🚗' : '📱'}</div>
+      <div class="flex-1">
+        <div style="font-size:13px;font-weight:600">${formatDate(s.date)} — ${escHtml(s.sessionType||'Coaching')}</div>
+        <div class="text-sm text-dim">${escHtml(s.commitment||'Kein Commitment')}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="viewSession('${s.id}','${emp.id}')">Details</button>
+    </div>
+  `).join('') || '<div class="text-dim text-sm">Noch keine Sessions</div>';
+  
+  return `
+    <div class="page-header">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','${emp.role}_list')">← Zurück</button>
+      <div class="flex items-center gap-12">
+        <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'}; width:44px;height:44px;font-size:17px">${initials}</div>
+        <div><div class="page-title">${escHtml(emp.name)}</div><div class="page-sub">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'}</div></div>
+      </div>
+      <div class="flex gap-8" style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">Coaching starten</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditEmployee('${emp.id}')">Profil bearbeiten</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="grid-2 mb-16">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Persönlichkeitsprofil</span></div>
+          <div class="card-body">
+            ${emp.types ? `<div class="type-bars mb-12">${renderTypeBars(emp.types)}</div>` : '<div class="text-dim text-sm mb-12">Noch nicht hinterlegt</div>'}
+            ${dt ? `<div class="info-box"><p>Primärtyp <strong>${typeName(dt)}</strong>: ${TYPES[dt].desc}</p></div>` : ''}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Lernfortschritt</span></div>
+          <div class="card-body">
+            <div class="stat-value mb-8">${pct}%</div>
+            <div class="progress-wrap mb-16"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div style="max-height:200px;overflow-y:auto">${moduleRows}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Letzte Coaching Sessions</span>
+            <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="navigate('trainer','coaching_history')">Alle →</button>
+          </div>
+          <div class="card-body">${sessionRows}</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Trainer-Notizen</span></div>
+          <div class="card-body">
+            <textarea class="textarea" id="trainer-notes-${emp.id}" placeholder="Interne Notizen (nur für Trainer sichtbar)..." rows="4">${escHtml(emp.trainerNotes||'')}</textarea>
+            <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="saveTrainerNotes('${emp.id}')">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveTrainerNotes(empId) {
+  const emp = await getEmployee(empId);
+  if (!emp) return;
+  const el = document.getElementById(`trainer-notes-${empId}`);
+  if (!el) return;
+  emp.trainerNotes = el.value;
+  await saveEmployee(emp);
+  toast('Notizen gespeichert');
+}
+
+async function renderCoachingNew() {
+  const allEmp = await getAllEmployees();
+  
+  const empOptions = allEmp.map(e => `<option value="${e.id}" data-role="${e.role}">${escHtml(e.name)} (${e.role === 'ad' ? 'AD' : 'ID'})</option>`).join('');
+  
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter auswählen und Session starten</div></div>
+    </div>
+    <div class="page-content">
+      <div class="card" style="max-width:600px">
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Mitarbeiter</label>
+            <select class="select" id="coaching-emp-select">
+              <option value="">— Mitarbeiter wählen —</option>
+              ${empOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Session-Typ</label>
+            <select class="select" id="coaching-type-select">
+              <option value="feldbegleitung">Feldbegleitung</option>
+              <option value="telefon-coaching">Telefon-Coaching</option>
+              <option value="online-coaching">Online-Coaching</option>
+              <option value="nachbereitung">Nachbereitung</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kundentermin / Anlass (optional)</label>
+            <input class="input" type="text" id="coaching-anlass" placeholder="z.B. Kundenbesuch Müller GmbH, Telefonaktion...">
+          </div>
+          <button class="btn btn-primary" onclick="startCoachingSession()">Session starten →</button>
+        </div>
+      </div>
+      
+      ${allEmp.length === 0 ? `<div class="info-box mt-16"><p>Keine Mitarbeiter gefunden. <a onclick="navigate('trainer','admin')" style="color:var(--yellow);cursor:pointer">Jetzt anlegen →</a></p></div>` : ''}
+    </div>
+  `;
+}
+
+async function startCoachingSession() {
+  const empSel = document.getElementById('coaching-emp-select');
+  const typeSel = document.getElementById('coaching-type-select');
+  const anlassSel = document.getElementById('coaching-anlass');
+  
+  if (!empSel?.value) { toast('Bitte Mitarbeiter auswählen', 'warning'); return; }
+  
+  const emp = await getEmployee(empSel.value);
+  if (!emp) return;
+  
+  // Store session draft
+  const sessionDraft = {
+    id: 'sess_' + Date.now(),
+    employeeId: emp.id,
+    employeeName: emp.name,
+    employeeRole: emp.role,
+    sessionType: typeSel?.value || 'feldbegleitung',
+    anlass: anlassSel?.value || '',
+    date: new Date().toISOString(),
+    observations: {},
+    notes: {},
+    causes: {},
+    measures: {},
+    commitment: '',
+    lastCommitment: '',
+    phase: 'observation'
+  };
+  
+  await storageSet('session_draft', sessionDraft, false);
+  STATE.selectedEmployee = emp.id;
+  navigate('trainer', 'coaching_session', { selectedEmployee: emp.id });
+}
+
+async function renderCoachingSession() {
+  const draft = await storageGet('session_draft', false);
+  if (!draft) return `<div class="page-content"><div class="empty-state"><div>Keine aktive Session — <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">Neue Session starten</button></div></div></div>`;
+  
+  const emp = await getEmployee(draft.employeeId);
+  const fields = emp?.role === 'ad' ? COACHING_LIB.fields_ad : COACHING_LIB.fields_id;
+  
+  const dt = dominantType(emp?.types);
+  
+  // Observation fields
+  const obsFields = fields.map(f => {
+    const score = draft.observations[f.id] || 0;
+    const scoreButtons = [1,2,3,4,5,6,7,8,9,10].map(n => {
+      let cls = '';
+      if (score === n) cls = n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red';
+      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n})">${n}</button>`;
+    }).join('');
+    const ampelCls = score ? getAmpelClass(score) : '';
+    return `
+      <div class="obs-item">
+        <div class="obs-item-header">
+          <div class="flex items-center gap-8">
+            ${score ? `<span class="ampel ${ampelCls}"></span>` : ''}
+            <span class="obs-item-title">${escHtml(f.label)}</span>
+            <span class="text-sm text-dim">${escHtml(f.group)}</span>
+          </div>
+          ${score ? `<span class="font-bold" style="color:${score>=7?'var(--green)':score>=4?'var(--yellow)':'var(--red)'}">${score}/10</span>` : ''}
+        </div>
+        <div class="obs-score-row">${scoreButtons}</div>
+        <textarea class="textarea mt-8" style="min-height:48px" placeholder="Beobachtung (optional)..."
+          onchange="setObsNote('${f.id}',this.value)">${escHtml(draft.notes?.[f.id]||'')}</textarea>
+      </div>
+    `;
+  }).join('');
+  
+  // Measures based on low scores
+  const lowScores = Object.entries(draft.observations).filter(([k,v]) => v && v < 7).sort((a,b) => a[1]-b[1]).slice(0,3);
+  const measuresHtml = lowScores.length > 0 ? lowScores.map(([fieldId, score]) => {
+    const field = fields.find(f => f.id === fieldId);
+    const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
+    const mass = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
+    return `
+      <div class="card mb-12">
+        <div class="card-body">
+          <div class="flex items-center gap-8 mb-8">
+            <span class="ampel ${getAmpelClass(score)}"></span>
+            <span class="font-bold">${escHtml(field?.label||fieldId)}</span>
+            <span class="badge badge-red">Score: ${score}/10</span>
+          </div>
+          ${mass ? `<div class="tip-box"><p>💡 <strong>Maßnahme für ${typeName(dt)}:</strong> ${escHtml(mass)}</p></div>` : ''}
+          <div class="form-group mt-8">
+            <label class="form-label">Eigene Maßnahme / Feedforward-Frage</label>
+            <textarea class="textarea" style="min-height:60px" placeholder="Was konkret bis zum nächsten Mal?"
+              onchange="setMeasure('${fieldId}',this.value)">${escHtml(draft.measures?.[fieldId]||'')}</textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') : '<div class="tip-box"><p>✅ Alle bewerteten Felder im grünen Bereich — oder noch keine Scores eingetragen.</p></div>';
+  
+  return `
+    <div class="page-header">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','coaching_new')">← Zurück</button>
+      <div><div class="page-title">Coaching Session</div><div class="page-sub">${escHtml(draft.employeeName)} · ${escHtml(draft.sessionType)} · ${formatDate(draft.date)}</div></div>
+      <div class="flex gap-8" style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="saveCoachingSessionFinal()">Session abschließen</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="tabs mb-20">
+        <div class="tab active" id="tab-obs" onclick="switchCoachingTab('obs')">📋 Beobachtung</div>
+        <div class="tab" id="tab-measures" onclick="switchCoachingTab('measures')">⚡ Maßnahmen</div>
+        <div class="tab" id="tab-commitment" onclick="switchCoachingTab('commitment')">🎯 Commitment</div>
+      </div>
+      
+      <div id="coaching-tab-obs">
+        <div class="grid-2 mb-16">
+          ${dt ? `<div class="info-box"><p>Mitarbeitertyp: <strong style="color:${typeColor(dt)}">${TYPES[dt].emoji} ${typeName(dt)}</strong> — ${escHtml(TYPES[dt].desc)}</p></div>` : ''}
+          <div class="api-notice">Scores: <span class="hl-green">7-10 = Grün ✓</span> · <span class="hl-yellow" style="background:rgba(245,200,0,0.15)">4-6 = Gelb ⚡</span> · <span class="hl-red">1-3 = Rot ✗</span></div>
+        </div>
+        <div class="obs-grid">${obsFields}</div>
+      </div>
+      
+      <div id="coaching-tab-measures" style="display:none">
+        <div class="section-head mb-16">
+          <div class="section-title">Entwicklungsfelder & Maßnahmen</div>
+        </div>
+        ${measuresHtml}
+      </div>
+      
+      <div id="coaching-tab-commitment" style="display:none">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><span class="card-title">🎯 Commitment</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Letzte Session — Was war das Commitment?</label>
+              <input class="input" value="${escHtml(draft.lastCommitment||'')}" placeholder="Commitment aus der letzten Session..." onchange="setDraftField('lastCommitment',this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Erfüllt?</label>
+              <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','yes');this.style.borderColor='var(--green)';this.style.color='var(--green)'">✅ Ja, erfüllt</button>
+                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','no');this.style.borderColor='var(--red)';this.style.color='var(--red)'">❌ Nicht erfüllt</button>
+                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','partial');this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'">⚡ Teilweise</button>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-group">
+              <label class="form-label">Neues Commitment — 1 konkrete Sache bis zum nächsten Mal</label>
+              <textarea class="textarea" rows="3" placeholder='z.B. "Vor jedem Termin BATNA berechnen und auf Zettel schreiben"'
+                onchange="setDraftField('commitment',this.value)">${escHtml(draft.commitment||'')}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gesamtbewertung Session (1-10)</label>
+              <div class="flex items-center gap-12">
+                <input type="range" min="1" max="10" value="${draft.overallScore||5}" 
+                  oninput="setDraftField('overallScore',+this.value);document.getElementById('overall-score-val').textContent=this.value">
+                <span id="overall-score-val" class="slider-val">${draft.overallScore||5}</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveCoachingSessionFinal()">Session speichern ✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function switchCoachingTab(tab) {
+  ['obs','measures','commitment'].forEach(t => {
+    const el = document.getElementById(`coaching-tab-${t}`);
+    const btn = document.getElementById(`tab-${t}`);
+    if (el) el.style.display = t === tab ? '' : 'none';
+    if (btn) btn.className = `tab ${t === tab ? 'active' : ''}`;
+  });
+}
+
+async function setObsScore(fieldId, score) {
+  const draft = await storageGet('session_draft', false) || {};
+  if (!draft.observations) draft.observations = {};
+  draft.observations[fieldId] = score;
+  await storageSet('session_draft', draft, false);
+  // Re-render just the score buttons for this field
+  const container = document.querySelector(`[onclick*="setObsScore('${fieldId}'"]`)?.closest('.obs-item');
+  if (container) {
+    // Update button states
+    container.querySelectorAll('.score-btn').forEach((btn, i) => {
+      const n = i + 1;
+      btn.className = 'score-btn';
+      if (score === n) btn.classList.add(n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red');
+    });
+    // Update header
+    const header = container.querySelector('.obs-item-header');
+    const scoreEl = header?.lastElementChild;
+    if (scoreEl && !scoreEl.classList.contains('flex')) {
+      scoreEl.textContent = `${score}/10`;
+      scoreEl.style.color = score >= 7 ? 'var(--green)' : score >= 4 ? 'var(--yellow)' : 'var(--red)';
+    }
+  }
+}
+
+async function setObsNote(fieldId, val) {
+  const draft = await storageGet('session_draft', false) || {};
+  if (!draft.notes) draft.notes = {};
+  draft.notes[fieldId] = val;
+  await storageSet('session_draft', draft, false);
+}
+
+async function setMeasure(fieldId, val) {
+  const draft = await storageGet('session_draft', false) || {};
+  if (!draft.measures) draft.measures = {};
+  draft.measures[fieldId] = val;
+  await storageSet('session_draft', draft, false);
+}
+
+async function setDraftField(key, val) {
+  const draft = await storageGet('session_draft', false) || {};
+  draft[key] = val;
+  await storageSet('session_draft', draft, false);
+}
+
+async function saveCoachingSessionFinal() {
+  const draft = await storageGet('session_draft', false);
+  if (!draft) return;
+  await saveCoachingSession(draft);
+  await storageDel('session_draft', false);
+  toast('Session gespeichert ✓');
+  navigate('trainer', 'employee_detail', { selectedEmployee: draft.employeeId });
+}
+
+async function renderCoachingHistory() {
+  const allEmp = await getAllEmployees();
+  let allSessions = [];
+  for (const emp of allEmp) {
+    const sessions = await getCoachingSessions(emp.id);
+    allSessions.push(...sessions);
+  }
+  allSessions.sort((a,b) => new Date(b.date) - new Date(a.date));
+  
+  const rows = allSessions.map(s => `
+    <tr onclick="viewSession('${s.id}','${s.employeeId}')">
+      <td>${formatDate(s.date)}</td>
+      <td><span class="font-bold">${escHtml(s.employeeName||'—')}</span></td>
+      <td>${escHtml(s.sessionType||'—')}</td>
+      <td>${s.overallScore ? `<span class="font-bold text-yellow">${s.overallScore}/10</span>` : '—'}</td>
+      <td class="truncate" style="max-width:200px">${escHtml(s.commitment||'—')}</td>
+    </tr>
+  `).join('');
+  
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Coaching-Verlauf</div><div class="page-sub">${allSessions.length} Sessions gesamt</div></div>
+    </div>
+    <div class="page-content">
+      ${allSessions.length === 0 ? `<div class="empty-state"><div class="empty-icon">🗂️</div><div>Noch keine Sessions abgeschlossen</div></div>` : `
+        <div class="card"><table class="table">
+          <thead><tr><th>Datum</th><th>Mitarbeiter</th><th>Typ</th><th>Bewertung</th><th>Commitment</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      `}
+    </div>
+  `;
+}
+
+async function viewSession(sessionId, employeeId) {
+  toast('Session-Detail folgt in nächster Version', 'warning');
+}
+
+async function renderAdmin() {
+  const allEmp = await getAllEmployees();
+  
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Admin</div><div class="page-sub">Mitarbeiterverwaltung & Einstellungen</div></div>
+    </div>
+    <div class="page-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Neuen Mitarbeiter anlegen</span></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Vorname</label>
+                <input class="input" id="new-emp-fname" placeholder="Max">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nachname</label>
+                <input class="input" id="new-emp-lname" placeholder="Mustermann">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rolle</label>
+              <select class="select" id="new-emp-role">
+                <option value="ad">Außendienst (AD)</option>
+                <option value="id">Innendienst (ID)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Passwort</label>
+              <input class="input" id="new-emp-pass" placeholder="WEWO" value="WEWO">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Persönlichkeitstyp % (optional)</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                ${['C','I','S','G'].map(t => `
+                  <div class="flex items-center gap-8">
+                    <span style="color:${typeColor(t)};font-weight:700;width:70px">${TYPES[t].emoji} ${typeName(t)}</span>
+                    <input class="input" id="new-emp-type-${t}" type="number" min="0" max="100" placeholder="0" style="width:70px">
+                    <span class="text-dim">%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="createEmployee()">Mitarbeiter anlegen</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header"><span class="card-title">Mitarbeiter verwalten</span></div>
+          <div class="card-body">
+            ${allEmp.length === 0 ? '<div class="text-dim text-sm">Noch keine Mitarbeiter</div>' : allEmp.map(emp => `
+              <div class="flex items-center gap-12 mb-12">
+                <div class="flex-1">
+                  <div class="font-bold">${escHtml(emp.name)}</div>
+                  <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'}</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="resetPassword('${emp.id}')">🔑 Reset PW</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      
+      <div class="card mt-16">
+        <div class="card-header"><span class="card-title">⚙️ Einstellungen</span></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Trainer-Passwort ändern</label>
+            <div class="flex gap-8">
+              <input class="input" id="new-trainer-pass" type="password" placeholder="Neues Passwort">
+              <button class="btn btn-outline" onclick="changeTrainerPass()">Ändern</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Anthropic API-Key (für Live-Roleplay)</label>
+            <div class="flex gap-8">
+              <input class="input" id="api-key-input" type="password" placeholder="sk-ant-..." value="${escHtml(getApiKey())}">
+              <button class="btn btn-outline" onclick="saveApiKey()">Speichern</button>
+            </div>
+            <div class="text-sm text-dim mt-8">Der API-Key wird lokal gespeichert und für das Live-Roleplay benötigt. Er wird nie an Dritte übertragen.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function createEmployee() {
+  const fname = document.getElementById('new-emp-fname')?.value.trim();
+  const lname = document.getElementById('new-emp-lname')?.value.trim();
+  const role = document.getElementById('new-emp-role')?.value;
+  const pass = document.getElementById('new-emp-pass')?.value.trim() || 'WEWO';
+  
+  if (!fname || !lname) { toast('Vor- und Nachname erforderlich', 'warning'); return; }
+  
+  const types = {};
+  let sum = 0;
+  for (const t of ['C','I','S','G']) {
+    const v = parseInt(document.getElementById(`new-emp-type-${t}`)?.value || '0') || 0;
+    types[t] = v; sum += v;
+  }
+  
+  const emp = {
+    id: 'emp_' + Date.now(),
+    name: `${fname} ${lname}`,
+    role,
+    password: pass,
+    types: sum > 0 ? types : null,
+    createdAt: new Date().toISOString(),
+    lastLogin: null,
+    trainerNotes: ''
+  };
+  
+  await saveEmployee(emp);
+  toast(`${emp.name} angelegt ✓`);
+  navigate('trainer', 'admin');
+}
+
+async function resetPassword(empId) {
+  const emp = await getEmployee(empId);
+  if (!emp) return;
+  emp.password = 'WEWO';
+  await saveEmployee(emp);
+  toast(`Passwort für ${emp.name} auf "WEWO" zurückgesetzt`);
+}
+
+async function changeTrainerPass() {
+  const el = document.getElementById('new-trainer-pass');
+  if (!el?.value) { toast('Bitte neues Passwort eingeben', 'warning'); return; }
+  await storageSet('trainer:password', el.value, true);
+  toast('Trainer-Passwort geändert ✓');
+  el.value = '';
+}
+
+function saveApiKey() {
+  const el = document.getElementById('api-key-input');
+  if (!el) return;
+  setApiKey(el.value);
+  toast('API-Key gespeichert ✓');
+}
+
+function openEditEmployee(empId) {
+  STATE.selectedEmployee = empId;
+  navigate('trainer', 'admin');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  CONTENT EDITOR — WYSIWYG
+// ══════════════════════════════════════════════════════════════
+
+async function getModules(role) {
+  const data = await storageGet(`modules:${role}`, true);
+  if (data && Array.isArray(data) && data.length > 0) return data;
+  return role === 'ad' ? JSON.parse(JSON.stringify(AD_MODULES)) : JSON.parse(JSON.stringify(ID_MODULES));
+}
+
+async function saveModules(role, modules) {
+  await storageSet(`modules:${role}`, modules, true);
+  const ts = Date.now();
+  await storageSet(`modules_backup:${role}:${ts}`, modules, true);
+}
+
+async function getRoleplayScenarios(role) {
+  const data = await storageGet(`scenarios:${role}`, true);
+  if (data && Array.isArray(data) && data.length > 0) return data;
+  return JSON.parse(JSON.stringify(ROLEPLAY_SCENARIOS[role]));
+}
+
+async function saveRoleplayScenarios(role, scenarios) {
+  await storageSet(`scenarios:${role}`, scenarios, true);
+}
+
+async function loadAndStartRoleplay(role, scenarioId) {
+  const scenarios = await getRoleplayScenarios(role);
+  const scenario = scenarios.find(s => s.id === scenarioId);
+  if (!scenario) { toast('Szenario nicht gefunden', 'error'); return; }
+  startRoleplay(scenario);
+}
+
+// ── Content Editor Page ────────────────────────────────────────
+async function renderContentEditor() {
+  const tab = STATE.contentTab || 'ad_modules';
+  return `
+    <div class="page-header">
+      <div><div class="page-title">📝 Inhalte bearbeiten</div><div class="page-sub">Module und Roleplay-Szenarien</div></div>
+    </div>
+    <div class="page-content">
+      <div class="tabs mb-20">
+        <div class="tab ${tab==='ad_modules'?'active':''}" onclick="STATE.contentTab='ad_modules';render()">🚗 AD Module</div>
+        <div class="tab ${tab==='id_modules'?'active':''}" onclick="STATE.contentTab='id_modules';render()">📞 ID Module</div>
+        <div class="tab ${tab==='ad_roleplay'?'active':''}" onclick="STATE.contentTab='ad_roleplay';render()">🎭 AD Roleplay</div>
+        <div class="tab ${tab==='id_roleplay'?'active':''}" onclick="STATE.contentTab='id_roleplay';render()">🎭 ID Roleplay</div>
+      </div>
+      ${tab==='ad_modules' ? await renderModuleList_Editor('ad') : ''}
+      ${tab==='id_modules' ? await renderModuleList_Editor('id') : ''}
+      ${tab==='ad_roleplay' ? await renderScenarioEditor('ad') : ''}
+      ${tab==='id_roleplay' ? await renderScenarioEditor('id') : ''}
+    </div>
+    <div id="wysiwyg-modal" style="display:none"></div>
+    <div id="scenario-modal" style="display:none"></div>
+  `;
+}
+
+// ── Module List ────────────────────────────────────────────────
+async function renderModuleList_Editor(role) {
+  const modules = await getModules(role);
+  const label = role==='ad' ? 'Außendienst' : 'Innendienst';
+  const rows = modules.map((m, idx) => `
+    <div class="card mb-10" style="${m.disabled?'opacity:0.45':''}">
+      <div class="card-body" style="padding:14px">
+        <div class="flex items-center gap-12">
+          <span style="font-size:26px;width:36px;text-align:center">${m.icon||'📄'}</span>
+          <div class="flex-1">
+            <div class="font-bold" style="font-size:14px">${escHtml(m.title)}</div>
+            <div class="text-dim text-sm">${escHtml(m.desc||'')} · ${m.duration||''} · ${(m.quizzes||[]).length} Quizfragen</div>
+          </div>
+          <div class="flex gap-6 items-center">
+            <div class="flex flex-col gap-4">
+              ${idx>0?`<button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px" onclick="moveModule('${role}',${idx},-1)">▲</button>`:'<span style="height:24px;display:block"></span>'}
+              ${idx<modules.length-1?`<button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11px" onclick="moveModule('${role}',${idx},1)">▼</button>`:'<span style="height:24px;display:block"></span>'}
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openWysiwyg('${role}',${idx})">✏️ Bearbeiten</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleModuleDisabled('${role}',${idx})" style="color:${m.disabled?'var(--green)':'var(--text-dim)'}">
+              ${m.disabled?'Aktivieren':'Deaktivieren'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  return `
+    <div class="section-head mb-16">
+      <div class="section-title">${label} — ${modules.length} Module</div>
+      <button class="btn btn-primary btn-sm" onclick="addNewModule('${role}')">+ Neues Modul</button>
+    </div>
+    ${rows}
+  `;
+}
+
+// ── WYSIWYG Editor Modal ───────────────────────────────────────
+async function openWysiwyg(role, idx) {
+  const modules = await getModules(role);
+  const m = modules[idx];
+  STATE.editingModule = { role, idx, backup: JSON.parse(JSON.stringify(m)) };
+
+  const quizHtml = (m.quizzes||[]).map((q,qi) => buildQuizRow(q,qi)).join('');
+
+  const modal = document.getElementById('wysiwyg-modal');
+  modal.style.display = 'block';
+  modal.innerHTML = `
+    <div class="modal-overlay" style="align-items:flex-start;padding:0">
+      <div style="width:100%;max-width:900px;margin:0 auto;height:100vh;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border);border-right:1px solid var(--border)">
+        
+        <!-- Header -->
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--dark);flex-shrink:0">
+          <span style="font-size:24px" id="we-icon-preview">${m.icon||'📄'}</span>
+          <div class="flex-1">
+            <input id="we-title" class="input" value="${escHtml(m.title)}" 
+              style="font-size:16px;font-weight:700;background:transparent;border:none;padding:0;margin-bottom:4px"
+              placeholder="Modul-Titel">
+            <div class="flex gap-8">
+              <input id="we-desc" class="input" value="${escHtml(m.desc||'')}" 
+                style="font-size:12px;background:transparent;border:none;padding:0;color:var(--text-dim)"
+                placeholder="Kurzbeschreibung">
+              <input id="we-duration" class="input" value="${escHtml(m.duration||'')}" 
+                style="font-size:12px;background:transparent;border:none;padding:0;color:var(--text-dim);width:80px"
+                placeholder="30 Min">
+              <input id="we-icon" class="input" value="${escHtml(m.icon||'')}" 
+                style="font-size:12px;background:transparent;border:none;padding:0;color:var(--text-dim);width:50px"
+                placeholder="📄" oninput="document.getElementById('we-icon-preview').textContent=this.value||'📄'">
+            </div>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn btn-ghost btn-sm" onclick="revertModuleEdit()" title="Änderungen verwerfen">↩ Verwerfen</button>
+            <button class="btn btn-primary" onclick="saveWysiwyg()">💾 Speichern</button>
+            <button class="btn btn-ghost btn-sm" onclick="closeWysiwyg()">✕</button>
+          </div>
+        </div>
+
+        <!-- Formatting Toolbar -->
+        <div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;background:var(--dark);flex-shrink:0">
+          <button class="editor-btn" onclick="fmt('bold')" title="Fett"><b>B</b></button>
+          <button class="editor-btn" onclick="fmt('italic')" title="Kursiv"><i>I</i></button>
+          <div style="width:1px;background:var(--border);margin:0 4px"></div>
+          <button class="editor-btn" onclick="fmt('formatBlock','h2')" title="Große Überschrift">H2</button>
+          <button class="editor-btn" onclick="fmt('formatBlock','h3')" title="Kleine Überschrift">H3</button>
+          <button class="editor-btn" onclick="fmt('formatBlock','p')" title="Normaler Text">¶</button>
+          <button class="editor-btn" onclick="fmt('insertUnorderedList')" title="Aufzählung">• Liste</button>
+          <div style="width:1px;background:var(--border);margin:0 4px"></div>
+          <button class="editor-btn" onclick="insertBlock('script')" style="color:var(--yellow)" title="Skriptbox einfügen">📜 Skript</button>
+          <button class="editor-btn" onclick="insertBlock('tip')" style="color:var(--green)" title="Tippbox einfügen">✅ Tipp</button>
+          <button class="editor-btn" onclick="insertBlock('info')" style="color:var(--blue)" title="Infobox einfügen">💡 Info</button>
+          <button class="editor-btn" onclick="insertBlock('warning')" style="color:var(--orange)" title="Warnbox einfügen">⚠️ Hinweis</button>
+          <button class="editor-btn" onclick="insertBlock('accordion')" title="Akkordeon einfügen">▼ Akkordeon</button>
+        </div>
+
+        <!-- Tabs: Inhalt / Quiz -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0">
+          <div id="wetab-content" style="padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid var(--yellow);color:var(--yellow)" onclick="switchWeTab('content')">📄 Inhalt</div>
+          <div id="wetab-quiz" style="padding:10px 20px;cursor:pointer;font-size:13px;color:var(--text-dim);border-bottom:2px solid transparent" onclick="switchWeTab('quiz')">🧩 Quiz (${(m.quizzes||[]).length} Fragen)</div>
+        </div>
+
+        <!-- Editor Area -->
+        <div style="flex:1;overflow-y:auto">
+          <!-- Content Tab -->
+          <div id="we-content-tab" style="padding:24px 32px">
+            <div id="we-editor" class="module-content" contenteditable="true"
+              style="outline:none;min-height:400px;cursor:text"
+              onpaste="handlePaste(event)">${m.content||'<p>Inhalt hier eingeben...</p>'}</div>
+          </div>
+          <!-- Quiz Tab -->
+          <div id="we-quiz-tab" style="display:none;padding:24px 32px">
+            <div class="flex justify-between items-center mb-16">
+              <div style="font-size:14px;font-weight:600">Quizfragen</div>
+              <button class="btn btn-primary btn-sm" onclick="addQuizRow_we()">+ Frage hinzufügen</button>
+            </div>
+            <div id="we-quiz-rows">${quizHtml}</div>
+            ${!m.quizzes?.length ? '<div class="text-dim text-sm">Noch keine Quizfragen — klicke oben auf + um eine hinzuzufügen.</div>' : ''}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  // Inject editor button styles
+  if (!document.getElementById('editor-btn-style')) {
+    const style = document.createElement('style');
+    style.id = 'editor-btn-style';
+    style.textContent = `
+      .editor-btn { 
+        background: var(--surface); border: 1px solid var(--border); 
+        color: var(--text-dim); padding: 5px 10px; border-radius: 4px; 
+        cursor: pointer; font-size: 12px; font-weight: 600;
+        transition: all .15s;
+      }
+      .editor-btn:hover { background: var(--border); color: var(--text); }
+      #we-editor:focus { outline: none; }
+      #we-editor h2 { font-size: 20px; font-weight: 800; margin-bottom: 10px; margin-top: 28px; }
+      #we-editor h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; margin-top: 20px; color: var(--yellow); }
+      #we-editor p { font-size: 14px; line-height: 1.8; color: #d0d0d0; margin-bottom: 12px; }
+      #we-editor ul { padding-left: 18px; margin-bottom: 12px; }
+      #we-editor ul li { font-size: 14px; line-height: 1.8; color: #d0d0d0; margin-bottom: 4px; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Focus editor
+  setTimeout(() => {
+    const ed = document.getElementById('we-editor');
+    if (ed) ed.focus();
+  }, 100);
+}
+
+function fmt(cmd, val) {
+  const ed = document.getElementById('we-editor');
+  if (!ed) return;
+  ed.focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function insertBlock(type) {
+  const ed = document.getElementById('we-editor');
+  if (!ed) return;
+  ed.focus();
+  const blocks = {
+    script: `<div class="script-box"><div class="script-label">SKRIPT</div><p>Skript-Text hier eingeben...</p></div><p></p>`,
+    tip: `<div class="tip-box"><p>✅ <strong>Tipp:</strong> Tipp-Text hier eingeben...</p></div><p></p>`,
+    info: `<div class="info-box"><p>💡 Info-Text hier eingeben...</p></div><p></p>`,
+    warning: `<div class="warning-box"><p>⚠️ Wichtiger Hinweis hier eingeben...</p></div><p></p>`,
+    accordion: `<div class="accordion-item"><div class="accordion-head" onclick="toggleAccordion(this)"><span>Titel klicken zum Bearbeiten</span><span class="accordion-arrow">▼</span></div><div class="accordion-body open"><p>Inhalt hier eingeben...</p></div></div><p></p>`
+  };
+  document.execCommand('insertHTML', false, blocks[type]);
+}
+
+function handlePaste(e) {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  document.execCommand('insertText', false, text);
+}
+
+function switchWeTab(tab) {
+  const contentTab = document.getElementById('we-content-tab');
+  const quizTab = document.getElementById('we-quiz-tab');
+  const btnContent = document.getElementById('wetab-content');
+  const btnQuiz = document.getElementById('wetab-quiz');
+  if (tab === 'content') {
+    contentTab.style.display = 'block';
+    quizTab.style.display = 'none';
+    btnContent.style.borderBottomColor = 'var(--yellow)';
+    btnContent.style.color = 'var(--yellow)';
+    btnQuiz.style.borderBottomColor = 'transparent';
+    btnQuiz.style.color = 'var(--text-dim)';
+  } else {
+    contentTab.style.display = 'none';
+    quizTab.style.display = 'block';
+    btnContent.style.borderBottomColor = 'transparent';
+    btnContent.style.color = 'var(--text-dim)';
+    btnQuiz.style.borderBottomColor = 'var(--yellow)';
+    btnQuiz.style.color = 'var(--yellow)';
+  }
+}
+
+// ── Quiz Editor ────────────────────────────────────────────────
+function buildQuizRow(q, qi) {
+  const opts = (q.opts||['','','','']).map((o, oi) => `
+    <div class="flex items-center gap-8 mb-8">
+      <input type="radio" name="wq-correct-${qi}" value="${oi}" ${q.correct===oi?'checked':''} 
+        style="width:16px;height:16px;cursor:pointer;accent-color:var(--yellow)" title="Als richtige Antwort markieren">
+      <input class="input" id="wq-opt-${qi}-${oi}" value="${escHtml(o)}" placeholder="Antwort ${oi+1}">
+    </div>
+  `).join('');
+  return `
+    <div class="card mb-12" id="wq-row-${qi}">
+      <div class="card-body">
+        <div class="flex items-center gap-8 mb-10">
+          <span class="badge badge-yellow">Frage ${qi+1}</span>
+          <span class="text-dim text-sm" style="flex:1">🟡 = richtige Antwort markieren</span>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeQuizRow_we(${qi})">✕ Löschen</button>
+        </div>
+        <input class="input mb-10" id="wq-q-${qi}" value="${escHtml(q.q||'')}" placeholder="Frage eingeben...">
+        ${opts}
+      </div>
+    </div>
+  `;
+}
+
+function addQuizRow_we() {
+  const container = document.getElementById('we-quiz-rows');
+  if (!container) return;
+  const qi = container.querySelectorAll('[id^="wq-row-"]').length;
+  container.insertAdjacentHTML('beforeend', buildQuizRow({q:'',opts:['','','',''],correct:0}, qi));
+  // Update tab label
+  const btn = document.getElementById('wetab-quiz');
+  if (btn) btn.textContent = `🧩 Quiz (${qi+1} Fragen)`;
+}
+
+function removeQuizRow_we(qi) {
+  const el = document.getElementById(`wq-row-${qi}`);
+  if (el) el.remove();
+  // Renumber
+  document.querySelectorAll('[id^="wq-row-"]').forEach((row, i) => {
+    row.id = `wq-row-${i}`;
+    const badge = row.querySelector('.badge-yellow');
+    if (badge) badge.textContent = `Frage ${i+1}`;
+  });
+}
+
+function collectQuizzes_we() {
+  const quizzes = [];
+  document.querySelectorAll('[id^="wq-row-"]').forEach((row, qi) => {
+    const q = document.getElementById(`wq-q-${qi}`)?.value?.trim();
+    if (!q) return;
+    const opts = [0,1,2,3].map(oi => document.getElementById(`wq-opt-${qi}-${oi}`)?.value?.trim()||'');
+    const checked = row.querySelector(`input[name="wq-correct-${qi}"]:checked`);
+    quizzes.push({ q, opts, correct: checked ? parseInt(checked.value) : 0 });
+  });
+  return quizzes;
+}
+
+// ── Save / Close ───────────────────────────────────────────────
+async function saveWysiwyg() {
+  const { role, idx } = STATE.editingModule || {};
+  if (role === undefined) return;
+  const modules = await getModules(role);
+  const ed = document.getElementById('we-editor');
+  modules[idx] = {
+    ...modules[idx],
+    icon: document.getElementById('we-icon')?.value?.trim() || modules[idx].icon,
+    title: document.getElementById('we-title')?.value?.trim() || modules[idx].title,
+    desc: document.getElementById('we-desc')?.value?.trim() || modules[idx].desc,
+    duration: document.getElementById('we-duration')?.value?.trim() || modules[idx].duration,
+    content: ed ? ed.innerHTML : modules[idx].content,
+    quizzes: collectQuizzes_we()
+  };
+  await saveModules(role, modules);
+  toast('Modul gespeichert ✓');
+  closeWysiwyg();
+  render();
+}
+
+async function revertModuleEdit() {
+  const { role, idx, backup } = STATE.editingModule || {};
+  if (!backup) return;
+  if (!confirm('Alle Änderungen verwerfen?')) return;
+  const modules = await getModules(role);
+  modules[idx] = backup;
+  await saveModules(role, modules);
+  toast('Zurückgesetzt ✓');
+  closeWysiwyg();
+  render();
+}
+
+function closeWysiwyg() {
+  const modal = document.getElementById('wysiwyg-modal');
+  if (modal) modal.style.display = 'none';
+  STATE.editingModule = null;
+}
+
+// ── Module management ──────────────────────────────────────────
+async function moveModule(role, idx, dir) {
+  const modules = await getModules(role);
+  const ni = idx + dir;
+  if (ni < 0 || ni >= modules.length) return;
+  [modules[idx], modules[ni]] = [modules[ni], modules[idx]];
+  modules.forEach((m, i) => m.num = i);
+  await saveModules(role, modules);
+  toast('Reihenfolge geändert');
+  render();
+}
+
+async function toggleModuleDisabled(role, idx) {
+  const modules = await getModules(role);
+  modules[idx].disabled = !modules[idx].disabled;
+  await saveModules(role, modules);
+  render();
+}
+
+async function addNewModule(role) {
+  const modules = await getModules(role);
+  const m = {
+    id: 'module_' + Date.now(),
+    num: modules.length,
+    title: 'Neues Modul',
+    icon: '📄',
+    duration: '30 Min',
+    desc: 'Kurzbeschreibung hier eingeben',
+    content: '<h2>Titel</h2><p>Inhalt hier eingeben...</p>',
+    quizzes: [],
+    disabled: false
+  };
+  modules.push(m);
+  await saveModules(role, modules);
+  toast('Neues Modul angelegt ✓');
+  STATE.contentTab = role==='ad' ? 'ad_modules' : 'id_modules';
+  render();
+  setTimeout(() => openWysiwyg(role, modules.length - 1), 400);
+}
+
+// ── Scenario Editor ────────────────────────────────────────────
+async function renderScenarioEditor(role) {
+  const scenarios = await getRoleplayScenarios(role);
+  const label = role==='ad' ? 'Außendienst' : 'Innendienst';
+  const cards = scenarios.map((s, idx) => `
+    <div class="card mb-10">
+      <div class="card-body" style="padding:14px">
+        <div class="flex items-center gap-12">
+          <span style="font-size:28px">${s.icon||'🎭'}</span>
+          <div class="flex-1">
+            <div class="font-bold">${escHtml(s.title)}</div>
+            <div class="text-dim text-sm mb-6">${escHtml(s.desc||'')}</div>
+            <span class="badge ${s.difficulty==='Leicht'?'badge-green':s.difficulty==='Schwer'?'badge-red':'badge-yellow'}">${s.difficulty||'Mittel'}</span>
+          </div>
+          <div class="flex gap-6">
+            <button class="btn btn-primary btn-sm" onclick="openScenarioEdit('${role}',${idx})">✏️ Bearbeiten</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteScenario('${role}',${idx})">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  return `
+    <div class="section-head mb-16">
+      <div class="section-title">${label} — ${scenarios.length} Szenarien</div>
+      <button class="btn btn-primary btn-sm" onclick="addNewScenario('${role}')">+ Neues Szenario</button>
+    </div>
+    <div class="info-box mb-16"><p>Der <strong>KI-Systempromt</strong> bestimmt wie sich der KI-Kunde verhält. Sei konkret: Name, Situation, Einwände, wann er sich öffnet. Immer auf Deutsch anweisen.</p></div>
+    ${cards||'<div class="empty-state"><div>Noch keine Szenarien</div></div>'}
+  `;
+}
+
+async function openScenarioEdit(role, idx) {
+  const scenarios = await getRoleplayScenarios(role);
+  const s = scenarios[idx];
+  STATE.editingScenario = { role, idx };
+  const modal = document.getElementById('scenario-modal');
+  if (!modal) return;
+  modal.style.display = 'block';
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeScenarioModal()">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">✏️ Szenario bearbeiten</div>
+          <button class="btn btn-ghost btn-sm" onclick="closeScenarioModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row mb-12">
+            <div class="form-group">
+              <label class="form-label">Icon</label>
+              <input class="input" id="se-icon" value="${escHtml(s.icon||'🎭')}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Schwierigkeit</label>
+              <select class="select" id="se-diff">
+                <option ${s.difficulty==='Leicht'?'selected':''}>Leicht</option>
+                <option ${s.difficulty==='Mittel'?'selected':''}>Mittel</option>
+                <option ${s.difficulty==='Schwer'?'selected':''}>Schwer</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Titel</label>
+            <input class="input" id="se-title" value="${escHtml(s.title)}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kurzbeschreibung (für Mitarbeiter sichtbar)</label>
+            <input class="input" id="se-desc" value="${escHtml(s.desc||'')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">KI-Systempromt</label>
+            <div class="text-dim text-sm mb-8">Beschreibe die Rolle des KI-Kunden: Name, Situation, wie er auf gute/schlechte Techniken reagiert. Endet immer mit "Spreche ausschließlich Deutsch."</div>
+            <textarea class="textarea" id="se-system" style="min-height:180px;font-size:13px;line-height:1.6">${escHtml(s.system||'')}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeScenarioModal()">Abbrechen</button>
+          <button class="btn btn-primary" onclick="saveScenarioEdit()">💾 Speichern</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveScenarioEdit() {
+  const { role, idx } = STATE.editingScenario || {};
+  if (role === undefined) return;
+  const scenarios = await getRoleplayScenarios(role);
+  scenarios[idx] = {
+    ...scenarios[idx],
+    icon: document.getElementById('se-icon')?.value?.trim() || '🎭',
+    title: document.getElementById('se-title')?.value?.trim() || scenarios[idx].title,
+    desc: document.getElementById('se-desc')?.value?.trim() || '',
+    difficulty: document.getElementById('se-diff')?.value || 'Mittel',
+    system: document.getElementById('se-system')?.value || ''
+  };
+  await saveRoleplayScenarios(role, scenarios);
+  toast('Szenario gespeichert ✓');
+  closeScenarioModal();
+  render();
+}
+
+function closeScenarioModal() {
+  const modal = document.getElementById('scenario-modal');
+  if (modal) modal.style.display = 'none';
+  STATE.editingScenario = null;
+}
+
+async function deleteScenario(role, idx) {
+  if (!confirm('Szenario wirklich löschen?')) return;
+  const scenarios = await getRoleplayScenarios(role);
+  scenarios.splice(idx, 1);
+  await saveRoleplayScenarios(role, scenarios);
+  toast('Gelöscht');
+  render();
+}
+
+async function addNewScenario(role) {
+  const scenarios = await getRoleplayScenarios(role);
+  scenarios.push({
+    id: 'scenario_' + Date.now(),
+    title: 'Neues Szenario',
+    icon: '🎭',
+    difficulty: 'Mittel',
+    desc: 'Beschreibung...',
+    system: 'Du spielst einen Einkäufer. Spreche ausschließlich Deutsch.'
+  });
+  await saveRoleplayScenarios(role, scenarios);
+  render();
+  setTimeout(() => openScenarioEdit(role, scenarios.length - 1), 400);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  EMPLOYEE PORTAL (AD + ID shared renderer)
+// ══════════════════════════════════════════════════════════════
+
+async function renderEmployeePortal() {
+  const user = STATE.currentUser;
+  const role = user.role; // 'ad' or 'id'
+  const page = STATE.subPage || 'home';
+  const modules = await getModules(role);
+  const scenarios = await getRoleplayScenarios(role);
+  const roleLabel = role === 'ad' ? 'Außendienst' : 'Innendienst';
+
+  const prog = await getEmployeeProgress(user.empId);
+  const done = Object.values(prog.modules || {}).filter(v => v).length;
+  const pct = Math.round(done / modules.length * 100);
+
+  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const empData = await getEmployee(user.empId);
+  const dt = dominantType(empData?.types);
+
+  const nav = `
+    <div class="sidebar ${STATE.sidebarCollapsed ? 'collapsed' : ''}">
+      <div class="sidebar-header" onclick="STATE.sidebarCollapsed=!STATE.sidebarCollapsed;render()">
+        <div class="logo-mark">WW</div>
+        ${!STATE.sidebarCollapsed ? `<div><div class="logo-text">WEWO</div><div class="logo-sub">${roleLabel}</div></div>` : ''}
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Mein Bereich'}</div>
+        ${empNavItem('home', '🏠', 'Dashboard', page)}
+        ${empNavItem('modules', '📚', 'Lernmodule', page)}
+        ${empNavItem('roleplay', '🎭', 'Live Roleplay', page)}
+        <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
+        ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip" onclick="logout()">
+          <div class="user-avatar" style="background:${dt ? typeColor(dt) + '33' : 'var(--surface)'};color:${dt ? typeColor(dt) : 'var(--text-dim)'};">${initials}</div>
+          ${!STATE.sidebarCollapsed ? `<div class="user-info"><div class="user-name">${escHtml(user.name)}</div><div class="user-role">${roleLabel}</div></div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  let content = '';
+  switch (page) {
+    case 'home': content = await renderEmpHome(user, prog, modules, pct, scenarios, role); break;
+    case 'modules': content = await renderModuleList(user, prog, modules, role); break;
+    case 'module_content': content = await renderModuleContent(user, prog, modules, role); break;
+    case 'roleplay': content = renderRoleplaySelection(scenarios, role); break;
+    case 'active_roleplay': content = renderActiveRoleplay(); break;
+    case 'progress': content = await renderEmpProgress(user, prog, modules, empData); break;
+    default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
+  }
+
+  return `<div class="shell">${nav}<div class="main">${content}</div></div>`;
+}
+
+function empNavItem(id, icon, label, current) {
+  const active = current === id || (current === 'module_content' && id === 'modules') || (current === 'active_roleplay' && id === 'roleplay') ? 'active' : '';
+  return `<div class="nav-item ${active}" onclick="navigate('${STATE.currentUser.role}','${id}')">
+    <span class="nav-icon">${icon}</span>
+    ${!STATE.sidebarCollapsed ? `<span>${label}</span>` : ''}
+  </div>`;
+}
+
+async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
+  const empData = await getEmployee(user.empId);
+  const dt = dominantType(empData?.types);
+  const done = Object.values(prog.modules || {}).filter(v => v).length;
+
+  // Next module to complete
+  const nextModule = modules.find(m => !prog.modules?.[m.id]);
+
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Hallo, ${escHtml(user.name.split(' ')[0])} 👋</div>
+        <div class="page-sub">Bereit für heute?</div>
+      </div>
+      ${dt ? `<div class="badge" style="margin-left:auto;background:${typeColor(dt)}22;color:${typeColor(dt)};border:1px solid ${typeColor(dt)}44;font-size:13px;padding:6px 14px">${TYPES[dt].emoji} ${typeName(dt)}</div>` : ''}
+    </div>
+    <div class="page-content">
+      <div class="stat-grid mb-24">
+        <div class="stat-card">
+          <div class="stat-value">${pct}%</div>
+          <div class="stat-label">Gesamtfortschritt</div>
+          <div class="progress-wrap mt-8"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${done}</div>
+          <div class="stat-label">Module abgeschlossen</div>
+          <div class="stat-delta">von ${modules.length} gesamt</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${Object.keys(prog.quizzes || {}).length}</div>
+          <div class="stat-label">Quizze bestanden</div>
+        </div>
+      </div>
+
+      ${nextModule ? `
+        <div class="card mb-16" style="border-color:rgba(245,200,0,0.3);background:rgba(245,200,0,0.04)">
+          <div class="card-body">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-12">
+                <span style="font-size:32px">${nextModule.icon}</span>
+                <div>
+                  <div class="text-dim text-sm" style="margin-bottom:3px">Nächstes Modul</div>
+                  <div class="font-bold" style="font-size:16px">${escHtml(nextModule.title)}</div>
+                  <div class="text-dim text-sm">${escHtml(nextModule.desc)} · ${nextModule.duration}</div>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="navigate('${role}','module_content',{subModule:'${nextModule.id}'})">Weiter lernen →</button>
+            </div>
+          </div>
+        </div>
+      ` : `<div class="tip-box mb-16"><p>🏆 <strong>Alle Module abgeschlossen!</strong> Du hast das gesamte Lernprogramm absolviert.</p></div>`}
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📚 Lernmodule</span><span class="badge badge-yellow" style="margin-left:auto">${done}/${modules.length}</span></div>
+          <div class="card-body">
+            ${modules.slice(0, 4).map(m => {
+    const isDone = prog.modules?.[m.id];
+    return `<div class="flex items-center gap-10 mb-10 cursor-pointer" onclick="navigate('${role}','module_content',{subModule:'${m.id}'})">
+                <span style="font-size:20px">${m.icon}</span>
+                <div class="flex-1">
+                  <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
+                  <div class="text-dim text-sm">${m.duration}</div>
+                </div>
+                ${isDone ? '<span style="color:var(--green)">✓</span>' : '<span class="text-faint text-sm">→</span>'}
+              </div>`;
+  }).join('')}
+            <button class="btn btn-ghost btn-sm mt-8" onclick="navigate('${role}','modules')">Alle Module →</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🎭 Live Roleplay</span><span class="badge badge-green" style="margin-left:auto">KI-Live</span></div>
+          <div class="card-body">
+            ${scenarios.slice(0, 3).map(s => `
+              <div class="flex items-center gap-10 mb-10 cursor-pointer" onclick="loadAndStartRoleplay('${role}','${s.id}')">
+                <span style="font-size:20px">${s.icon}</span>
+                <div class="flex-1">
+                  <div style="font-size:13px;font-weight:600">${escHtml(s.title)}</div>
+                  <span class="badge ${s.difficulty === 'Leicht' ? 'badge-green' : s.difficulty === 'Schwer' ? 'badge-red' : 'badge-yellow'}">${s.difficulty}</span>
+                </div>
+              </div>
+            `).join('')}
+            <button class="btn btn-ghost btn-sm mt-8" onclick="navigate('${role}','roleplay')">Alle Szenarien →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function renderModuleList(user, prog, modules, role) {
+  const rows = modules.map(m => {
+    const isDone = prog.modules?.[m.id];
+    const quiz = prog.quizzes?.[m.id];
+    return `
+      <div class="mod-card ${isDone ? 'done' : ''}" onclick="navigate('${role}','module_content',{subModule:'${m.id}'})">
+        ${isDone ? '<div class="mod-check">✓</div>' : ''}
+        <div class="mod-num">Modul ${String(m.num).padStart(2, '0')}</div>
+        <div style="font-size:28px;margin:8px 0">${m.icon}</div>
+        <div class="mod-title">${escHtml(m.title)}</div>
+        <div class="mod-meta">
+          <span>⏱ ${m.duration}</span>
+          ${m.quizzes ? `<span>🧩 ${m.quizzes.length} Quiz${m.quizzes.length > 1 ? 'ze' : ''}</span>` : ''}
+          ${quiz ? `<span style="color:var(--green)">✓ ${quiz.correct}/${quiz.total}</span>` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Lernmodule</div><div class="page-sub">${modules.length} Module · ${Object.values(prog.modules || {}).filter(v => v).length} abgeschlossen</div></div>
+    </div>
+    <div class="page-content">
+      <div class="grid-3">${rows.join('')}</div>
+    </div>
+  `;
+}
+
+async function renderModuleContent(user, prog, modules, role) {
+  const moduleId = STATE.selectedModule || modules[0]?.id;
+  const mod = modules.find(m => m.id === moduleId) || modules[0];
+  if (!mod) return '<div class="page-content"><div class="empty-state">Modul nicht gefunden</div></div>';
+
+  const isDone = prog.modules?.[mod.id];
+  const quizState = STATE.quizState || null;
+
+  // Quiz rendering
+  let quizHtml = '';
+  if (mod.quizzes && mod.quizzes.length > 0) {
+    const qi = quizState?.questionIndex ?? 0;
+    const finished = quizState?.finished ?? false;
+    const score = quizState?.score ?? 0;
+
+    if (finished) {
+      const passed = score >= Math.ceil(mod.quizzes.length * 0.6);
+      quizHtml = `
+        <div class="card mt-24" style="border-color:${passed ? 'rgba(46,204,113,0.3)' : 'rgba(230,57,70,0.3)'}">
+          <div class="card-body" style="text-align:center;padding:32px">
+            <div style="font-size:48px;margin-bottom:12px">${passed ? '🏆' : '📚'}</div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:8px">${passed ? 'Bestanden!' : 'Noch nicht bestanden'}</div>
+            <div class="text-dim mb-16">${score} von ${mod.quizzes.length} Fragen richtig</div>
+            <div class="flex gap-10" style="justify-content:center">
+              ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">Als abgeschlossen markieren ✓</button>` : '<span class="badge badge-green">✓ Modul abgeschlossen</span>'}
+              <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Quiz wiederholen</button>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (qi < mod.quizzes.length) {
+      const q = mod.quizzes[qi];
+      const answered = quizState?.answered ?? null;
+      const opts = q.opts.map((o, i) => {
+        let cls = '';
+        if (answered !== null) {
+          if (i === q.correct) cls = 'correct';
+          else if (i === answered && i !== q.correct) cls = 'wrong';
+        }
+        return `<div class="quiz-option ${cls}" onclick="${answered === null ? `answerQuiz(${i},${q.correct},${qi},${mod.quizzes.length})` : ''}">${escHtml(o)}</div>`;
+      }).join('');
+
+      quizHtml = `
+        <div class="card mt-24">
+          <div class="card-header">
+            <span class="card-title">🧩 Quiz — Frage ${qi + 1}/${mod.quizzes.length}</span>
+            ${quizState?.score ? `<span class="badge badge-green" style="margin-left:auto">✓ ${quizState.score} richtig</span>` : ''}
+          </div>
+          <div class="card-body">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px">${escHtml(q.q)}</div>
+            ${opts}
+            ${answered !== null ? `<button class="btn btn-primary mt-16" onclick="nextQuizQuestion(${qi + 1},${mod.quizzes.length})">
+              ${qi + 1 < mod.quizzes.length ? 'Nächste Frage →' : 'Ergebnis ansehen →'}
+            </button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Mark done button if no quiz
+  const actionBar = !mod.quizzes || mod.quizzes.length === 0 ? `
+    <div class="flex gap-10 mt-24">
+      ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',0,0)">✓ Modul abschließen</button>` : '<span class="badge badge-green" style="font-size:13px;padding:8px 14px">✓ Abgeschlossen</span>'}
+      <button class="btn btn-outline" onclick="navigate('${role}','modules')">← Zurück zur Übersicht</button>
+    </div>
+  ` : '';
+
+  // Module nav
+  const idx = modules.findIndex(m => m.id === mod.id);
+  const prev = idx > 0 ? modules[idx - 1] : null;
+  const next = idx < modules.length - 1 ? modules[idx + 1] : null;
+
+  return `
+    <div class="page-header">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('${role}','modules')">← Module</button>
+      <div>
+        <div class="page-title">${mod.icon} ${escHtml(mod.title)}</div>
+        <div class="page-sub">Modul ${mod.num} · ${mod.duration}${isDone ? ' · <span style="color:var(--green)">✓ Abgeschlossen</span>' : ''}</div>
+      </div>
+      <div class="flex gap-8" style="margin-left:auto">
+        ${prev ? `<button class="btn btn-outline btn-sm" onclick="navigate('${role}','module_content',{subModule:'${prev.id}'})">← ${escHtml(prev.title.slice(0, 12))}</button>` : ''}
+        ${next ? `<button class="btn btn-primary btn-sm" onclick="navigate('${role}','module_content',{subModule:'${next.id}'})">Weiter: ${escHtml(next.title.slice(0, 12))} →</button>` : ''}
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="module-content">
+        ${mod.content}
+        ${actionBar}
+        ${quizHtml}
+      </div>
+    </div>
+  `;
+}
+
+function answerQuiz(chosen, correct, qi, total) {
+  if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false };
+  STATE.quizState.answered = chosen;
+  if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
+  render();
+}
+
+function nextQuizQuestion(nextQi, total) {
+  if (!STATE.quizState) return;
+  if (nextQi >= total) {
+    STATE.quizState.finished = true;
+  } else {
+    STATE.quizState.questionIndex = nextQi;
+    STATE.quizState.answered = null;
+  }
+  render();
+}
+
+async function markModuleDone(moduleId, empId, score, total) {
+  const prog = await getEmployeeProgress(empId);
+  prog.modules = prog.modules || {};
+  prog.modules[moduleId] = true;
+  if (total > 0) {
+    prog.quizzes = prog.quizzes || {};
+    prog.quizzes[moduleId] = { correct: score, total };
+  }
+  await saveEmployeeProgress(empId, prog);
+  STATE.quizState = null;
+  toast('Modul abgeschlossen ✓');
+  render();
+}
+
+function renderRoleplaySelection(scenarios, role) {
+  const hasKey = !!getApiKey();
+  const cards = scenarios.map(s => `
+    <div class="card" style="cursor:pointer" onclick="loadAndStartRoleplay('${role}','${s.id}')">
+      <div class="card-body" style="padding:24px">
+        <div style="font-size:36px;margin-bottom:12px">${s.icon}</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px">${escHtml(s.title)}</div>
+        <div class="text-dim text-sm mb-12">${escHtml(s.desc)}</div>
+        <div class="flex gap-8 items-center">
+          <span class="badge ${s.difficulty === 'Leicht' ? 'badge-green' : s.difficulty === 'Schwer' ? 'badge-red' : 'badge-yellow'}">${s.difficulty}</span>
+          <span class="badge badge-blue">🤖 KI-Live</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="page-header">
+      <div><div class="page-title">🎭 Live Roleplay</div><div class="page-sub">Übe echte Verkaufsgespräche mit KI-Gesprächspartner</div></div>
+    </div>
+    <div class="page-content">
+      ${!hasKey ? `<div class="api-notice mb-20">⚠️ <strong>Kein API-Key hinterlegt.</strong> Bitte den Trainer bitten, den Anthropic API-Key unter Admin → Einstellungen einzutragen. Dann funktioniert das Live-Roleplay.</div>` : ''}
+      <div class="info-box mb-20">
+        <p>Die KI spielt einen echten Kunden — reagiert auf deine Techniken, stellt Gegenfragen und gibt am Ende Feedback. Drücke <strong>Feedback</strong> um das Gespräch zu beenden und eine Auswertung zu erhalten.</p>
+      </div>
+      <div class="grid-3">${cards}</div>
+    </div>
+  `;
+}
+
+function renderActiveRoleplay() {
+  const hasKey = !!getApiKey();
+  return `
+    <div class="page-header">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('${STATE.currentUser.role}','roleplay')">← Szenarien</button>
+      <div>
+        <div class="page-title">🎭 ${escHtml(currentScenario?.title || 'Roleplay')}</div>
+        <div class="page-sub">${escHtml(currentScenario?.desc || '')}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="endRoleplayAndGetFeedback()">📊 Feedback</button>
+    </div>
+    <div class="page-content" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 73px)">
+      ${!hasKey ? `<div class="api-notice" style="margin:12px 16px">⚠️ API-Key fehlt — Roleplay nicht verfügbar. Bitte Trainer informieren.</div>` : ''}
+      <div id="chat-area" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+    </div>
+  `;
+}
+
+async function renderEmpProgress(user, prog, modules, empData) {
+  const done = Object.values(prog.modules || {}).filter(v => v).length;
+  const pct = Math.round(done / modules.length * 100);
+  const dt = dominantType(empData?.types);
+
+  const modRows = modules.map(m => {
+    const isDone = prog.modules?.[m.id];
+    const quiz = prog.quizzes?.[m.id];
+    return `
+      <div class="flex items-center gap-12 mb-12" style="cursor:pointer" onclick="navigate('${user.role}','module_content',{subModule:'${m.id}'})">
+        <span style="font-size:22px">${m.icon}</span>
+        <div class="flex-1">
+          <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
+          ${quiz ? `<div class="text-sm text-dim">Quiz: ${quiz.correct}/${quiz.total} richtig</div>` : ''}
+        </div>
+        ${isDone ? '<span class="badge badge-green">✓ Abgeschlossen</span>' : '<span class="badge badge-gray">Ausstehend</span>'}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="page-header">
+      <div><div class="page-title">Mein Fortschritt</div><div class="page-sub">Gesamtübersicht</div></div>
+    </div>
+    <div class="page-content">
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Lernfortschritt</span></div>
+          <div class="card-body">
+            <div class="stat-value mb-8">${pct}%</div>
+            <div class="progress-wrap mb-12"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div class="text-dim text-sm">${done} von ${modules.length} Modulen abgeschlossen</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Dein Typ</span></div>
+          <div class="card-body">
+            ${empData?.types ? `<div class="type-bars">${renderTypeBars(empData.types)}</div>` : '<div class="text-dim text-sm">Noch nicht hinterlegt</div>'}
+            ${dt ? `<div class="info-box mt-12"><p>Dein Haupttyp: <strong style="color:${typeColor(dt)}">${TYPES[dt].emoji} ${typeName(dt)}</strong><br><span class="text-sm">${escHtml(TYPES[dt].desc)}</span></p></div>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Alle Module</span></div>
+        <div class="card-body">${modRows}</div>
+      </div>
+    </div>
+  `;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  LOGIN PAGE
+// ══════════════════════════════════════════════════════════════
+
+function renderLoginPage() {
+  const role = STATE.loginRole || 'trainer';
+  return `
+    <div class="login-page">
+      <div class="login-box">
+        <div class="login-logo">
+          <div class="mark">WW</div>
+          <h1>WEWO</h1>
+          <p>we make it work! — Training Platform</p>
+        </div>
+        
+        <div class="role-selector mb-20">
+          <div class="role-btn ${role === 'trainer' ? 'selected' : ''}" onclick="STATE.loginRole='trainer';render()">
+            <span class="role-icon">🎓</span>
+            <div class="role-label">Trainer</div>
+          </div>
+          <div class="role-btn ${role === 'ad' ? 'selected' : ''}" onclick="STATE.loginRole='ad';render()">
+            <span class="role-icon">🚗</span>
+            <div class="role-label">Außendienst</div>
+          </div>
+          <div class="role-btn ${role === 'id' ? 'selected' : ''}" onclick="STATE.loginRole='id';render()">
+            <span class="role-icon">📞</span>
+            <div class="role-label">Innendienst</div>
+          </div>
+        </div>
+
+        ${role !== 'trainer' ? `
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input class="input" id="login-name" placeholder="Vor- und Nachname"
+              onkeydown="if(event.key==='Enter')doLogin()">
+          </div>
+        ` : ''}
+
+        <div class="form-group">
+          <label class="form-label">Passwort</label>
+          <input class="input" id="login-pass" type="password" 
+            placeholder="${role === 'trainer' ? 'Trainer-Passwort' : 'Dein Passwort'}"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+
+        <button class="btn btn-primary btn-lg" style="width:100%" onclick="doLogin()">
+          Anmelden →
+        </button>
+        
+        <div id="login-error" class="text-sm" style="color:var(--red);margin-top:12px;text-align:center;display:none"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function doLogin() {
+  const role = STATE.loginRole || 'trainer';
+  const pass = document.getElementById('login-pass')?.value || '';
+  const errEl = document.getElementById('login-error');
+
+  if (!pass) { showLoginError('Bitte Passwort eingeben'); return; }
+
+  if (role === 'trainer') {
+    const ok = await loginTrainer(pass);
+    if (ok) {
+      STATE.loginRole = null;
+      navigate('trainer', 'dashboard');
+    } else {
+      showLoginError('Falsches Passwort');
+    }
+  } else {
+    const name = document.getElementById('login-name')?.value?.trim() || '';
+    if (!name) { showLoginError('Bitte Name eingeben'); return; }
+    const result = await loginEmployee(name, pass, role);
+    if (result.ok) {
+      STATE.loginRole = null;
+      navigate(role, 'home');
+    } else {
+      showLoginError(result.msg);
+    }
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function logout() {
+  STATE.currentUser = null;
+  STATE.page = 'login';
+  STATE.subPage = null;
+  STATE.selectedEmployee = null;
+  STATE.quizState = null;
+  chatHistory = [];
+  currentScenario = null;
+  roleplaying = false;
+  render();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MAIN RENDER + INIT
+// ══════════════════════════════════════════════════════════════
+
+async function render() {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  // Show loading for async renders
+  if (!STATE.currentUser) {
+    app.innerHTML = renderLoginPage();
+    return;
+  }
+
+  app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh"><div class="loading-spin"></div></div>';
+
+  try {
+    let html = '';
+    const role = STATE.currentUser.role;
+    const page = STATE.page;
+
+    if (role === 'trainer') {
+      html = await renderTrainerPortal();
+    } else if (role === 'ad' || role === 'id') {
+      if (page === 'roleplay') {
+        // Active roleplay page
+        html = await renderEmployeePortal();
+        app.innerHTML = html;
+        // Initialize chat area after DOM update
+        setTimeout(() => renderChatArea(), 50);
+        return;
+      } else {
+        html = await renderEmployeePortal();
+      }
+    } else {
+      html = renderLoginPage();
+    }
+
+    app.innerHTML = html;
+  } catch (e) {
+    console.error('Render error:', e);
+    app.innerHTML = `<div class="page-content"><div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <div class="font-bold mb-8">Fehler beim Laden</div>
+      <div class="text-dim">${escHtml(e.message || 'Unbekannter Fehler')}</div>
+      <button class="btn btn-primary mt-16" onclick="render()">Neu laden</button>
+    </div></div>`;
+  }
+}
+
+// Override navigate to handle module sub-state
+const _navigate = navigate;
+function navigate(page, subPage = null, extra = {}) {
+  STATE.page = page;
+  STATE.subPage = subPage;
+  if (extra.selectedEmployee !== undefined) STATE.selectedEmployee = extra.selectedEmployee;
+  if (extra.subModule !== undefined) {
+    STATE.selectedModule = extra.subModule;
+    STATE.quizState = null;
+  }
+  render();
+  window.scrollTo(0, 0);
+}
+
+// Override startRoleplay to set correct sub-page
+const _startRoleplay = startRoleplay;
+async function startRoleplay(scenario) {
+  if (!scenario) return;
+  currentScenario = scenario;
+  chatHistory = [];
+  roleplaying = true;
+  STATE.subPage = 'active_roleplay';
+  render();
+
+  setTimeout(async () => {
+    aiTyping = true;
+    renderChatArea();
+    try {
+      const opening = await callClaude(
+        [{ role: 'user', content: 'Starte das Gespräch mit einem kurzen, natürlichen Einstieg als deine Rolle. Max 2 Sätze.' }],
+        scenario.system
+      );
+      chatHistory.push({ role: 'assistant', content: opening });
+    } catch {
+      chatHistory.push({ role: 'assistant', content: 'Hallo? Wer ist da bitte?' });
+    }
+    aiTyping = false;
+    renderChatArea();
+  }, 300);
+}
+
+function init() {
+  STATE.loginRole = 'trainer';
+  render();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
