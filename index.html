@@ -598,6 +598,506 @@ const COACHING_LIB = {
 };
 
 // ── AD MODULE CONTENT ───────────────────────────────────────
+const QUIZ_LEVELS = {
+  'haltung_ad': {
+    leicht: [
+      {q:'Was ist die häufigste Mindset-Falle im Außendienst?', opts:['Zu selbstbewusst auftreten', 'Den Kunden mehr brauchen als er dich', 'Zu schnell sprechen', 'Zu spät zum Termin kommen'], correct:1},
+      {q:'Wofür steht das "WEWO-Grundprinzip" beim Thema Haltung?', opts:['Immer freundlich lächeln', 'Nicht jeder Auftrag ist ein guter Auftrag', 'So viele Kunden wie möglich besuchen', 'Den Kunden nie warten lassen'], correct:1},
+      {q:'Wo entsteht Verhandlungsmacht laut Nasher?', opts:['Im Firmensitz', 'Im Kopf des Gegenübers', 'Im Produktkatalog', 'Im Preisblatt'], correct:1},
+      {q:'Was signalisiert langsames Sprechen?', opts:['Unsicherheit', 'Nervosität', 'Souveränität und Kontrolle', 'Desinteresse'], correct:2},
+      {q:'Was ist ein Zeichen von Stärke in Verhandlungen?', opts:['Schnell zustimmen', 'Pausen aushalten können', 'Viel reden', 'Immer nachhaken'], correct:1},
+    ],
+    mittel: [
+      {q:'Ein Einkäufer fragt: "Sind Sie sicher, dass Sie das liefern können?" — was ist die stärkste Reaktion?', opts:['Sofort ausführlich erklären warum ja', 'Kurz und ruhig bestätigen, dann schweigen', 'Zögern und nachdenken', 'Fragen ob er Zweifel hat'], correct:1},
+      {q:'Du merkst, dass du diesen Auftrag unbedingt brauchst — und der Einkäufer merkt es. Was tust du?', opts:['Das Gespräch sofort verlassen', 'Innehalten, BATNA mental aktivieren, Tempo rausnehmen', 'Noch mehr Argumente liefern', 'Preis sofort senken'], correct:1},
+      {q:'Was ist der Unterschied zwischen Selbstbewusstsein und Arroganz im Vertrieb?', opts:['Arroganz ist immer besser', 'Selbstbewusstsein basiert auf Substanz — Arroganz auf Fassade', 'Beide wirken gleich auf Kunden', 'Arroganz öffnet Türen schneller'], correct:1},
+      {q:'Welche Körperhaltung stärkt deine Verhandlungsposition?', opts:['Leicht zusammengesunken, entspannt wirken', 'Arme verschränkt, standfest', 'Aufrecht, Hände sichtbar, ruhiger Blickkontakt', 'Vorgebeugt, zeigt Interesse und Hunger'], correct:2},
+      {q:'Ein Mitarbeiter beendet jeden Termin mit: "Also wenn das für Sie nicht passt ist es auch okay." — Was ist falsch daran?', opts:['Nichts, das ist professionell', 'Er signalisiert fehlende Selbstsicherheit und dass er den Auftrag nicht braucht... aber er braucht ihn doch', 'Er ist zu ehrlich', 'Das zeigt gute Haltung'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer: "Ich habe heute noch 3 andere Anbieter — was bieten Sie?" — Beste Reaktion?', opts:['Sofort besten Preis nennen', 'Ruhig: "Das freut mich — dann haben Sie einen guten Vergleich. Was ist Ihnen dabei am wichtigsten?" und abwarten', 'Termin absagen', 'Alle Vorteile von WEWO in einer Minute durchgehen'], correct:1},
+      {q:'Du bist beim Termin und spürst, dass du nervös wirst. Welche Technik hilft sofort?', opts:['Schneller sprechen um Unsicherheit zu überdecken', '3-Sekunden-Reset: tief einatmen, BATNA-Gedanke, dann erst sprechen', 'Thema wechseln', 'Handy checken'], correct:1},
+      {q:'Einkäufer sagt nach deiner Präsentation: "Das klingt gut aber wir brauchen das nicht." Was verrät diese Antwort über seine Haltung?', opts:['Er ist definitiv desinteressiert', 'Er hat eine Einwand-Technik genutzt — das bedeutet noch kein echtes Nein', 'Er hat dich nicht zugehört', 'Er kauft beim Wettbewerb'], correct:1},
+      {q:'Was ist das Risiko wenn ein Verkäufer zu sehr gemocht werden will?', opts:['Er wird beliebter als andere Verkäufer', 'Er verliert Verhandlungsmacht durch Konzessionen um Harmonie zu erhalten', 'Er macht mehr Umsatz', 'Er lernt Kunden besser kennen'], correct:1},
+      {q:'Welche Aussage beschreibt "entspannte Stärke" korrekt?', opts:['Entspannt = locker = kein Druck nötig', 'Stark = laut und dominant', 'Entspannt weil du eine Alternative hast — stark weil du vorbereitet bist', 'Entspannt weil du den Auftrag sowieso bekommst'], correct:2},
+    ],
+    profi: [
+      {q:'Einkäufer: "Sie wirken als wäre Ihnen dieser Auftrag sehr wichtig." — Profi-Reaktion?', opts:['Verneinen und Begeisterung zeigen', 'Lachen und sagen "Jeder Auftrag ist uns wichtig" — dann sofort Gegenfrage stellen um Kontrolle zurückzugewinnen', 'Schweigen und peinlich berührt sein', 'Preis als Zeichen des Interesses senken'], correct:1},
+      {q:'Du hast 3 Alternativkunden in der Pipeline. Der aktuelle Einkäufer macht maximalen Druck. Was ist die psychologisch stärkste Strategie?', opts:['Maximal standhalten und nie nachgeben', 'Die Alternativen beiläufig erwähnen ohne zu drohen — das verändert die Machtwahrnehmung subtil', 'Alle Details zu den Alternativen erklären', 'Das Gespräch beenden'], correct:1},
+      {q:'Ein Verkäufer sagt: "Ich bin so froh dass Sie sich für WEWO interessieren." Warum ist das eine schwache Aussage?', opts:['Es ist zu informell', 'Sie zeigt Dankbarkeit wo Souveränität sein sollte — der Einkäufer gewinnt sofort Machtposition', 'Sie ist zu kurz', 'Sie ist zu direkt'], correct:1},
+      {q:'Welches Verhaltensmuster beschreibt einen Profi-Verkäufer im Vergleich zu einem durchschnittlichen?', opts:['Er gibt mehr Rabatt aber baut bessere Beziehungen', 'Er macht mehr Druck und ist ausdauernder', 'Er erscheint wertvoller weil er klar ist was er kann — und was er nicht macht', 'Er besucht mehr Kunden pro Tag'], correct:2},
+      {q:'Warum ist "Ich brauche diesen Auftrag nicht" kein Trick sondern ein Mindset?', opts:['Weil man das dem Kunden sagen soll', 'Weil es nur funktioniert wenn man es wirklich meint — gespiegelte Coolness wird durchschaut', 'Weil Abstand zeigen immer zum Abschluss führt', 'Weil es den Kunden neugierig macht'], correct:1},
+    ],
+  },
+  'vorbereitung_ad': {
+    leicht: [
+      {q:'Was gehört zur WEWO Minimalvorbereitung?', opts:['Visitenkarte einstecken', 'BATNA + Kundenrecherche + klares Gesprächsziel', 'Produktkatalog auswendig lernen', 'Outfit abstimmen'], correct:1},
+      {q:'Was ist BATNA?', opts:['Eine Verhandlungstechnik aus Japan', 'Best Alternative to a Negotiated Agreement — die beste Alternative wenn kein Deal entsteht', 'Ein Angebots-Tool', 'Budget-Anpassungs-Technik'], correct:1},
+      {q:'Wer ist der ASP?', opts:['Der Assistent des Sekretariats', 'Der Ansprechpartner / Entscheider', 'Der Außendienst-Service-Partner', 'Der allgemeine Serviceplan'], correct:1},
+      {q:'Wie lange dauert die WEWO Minimalvorbereitung?', opts:['30 Minuten', '1 Stunde', '5 Minuten reichen als Minimum', 'Keine Vorbereitung nötig'], correct:2},
+      {q:'Was ist das Ziel der Vorbereitung?', opts:['Den Informationsvorsprung des Einkäufers ausgleichen', 'Argumente für alle möglichen Fragen sammeln', 'Den Termin absagen wenn man nicht vorbereitet ist', 'Ein perfektes Skript auswendig lernen'], correct:0},
+    ],
+    mittel: [
+      {q:'Du hast 10 Minuten bis zum Termin. Was priorisierst du?', opts:['LinkedIn-Profil des Einkäufers lesen', 'BATNA in einem Satz formulieren + klares Ziel definieren', 'Produktpreise nochmals überprüfen', 'Kollegen anrufen für Tips'], correct:1},
+      {q:'Was ist der Unterschied zwischen Entscheidungsrolle und Ansprechpartner?', opts:['Es gibt keinen Unterschied', 'Der ASP ist dein Gesprächspartner — der Entscheider bestimmt ob gekauft wird. Nicht immer dieselbe Person', 'Entscheider sind immer Chefs', 'Ansprechpartner entscheiden immer selbst'], correct:1},
+      {q:'Warum sollst du BATNA VOR dem Termin berechnen, nicht währenddessen?', opts:['Weil du im Termin keine Zeit hast', 'Weil BATNA im Gespräch dein inneres Sicherheitsgefühl gibt — es kann nicht spontan entstehen', 'Weil der Einkäufer es sonst merkt', 'Weil es Pflichtstandard bei WEWO ist'], correct:1},
+      {q:'Welche Information aus der Kundenrecherche ist am wertvollsten?', opts:['Wie groß das Unternehmen ist', 'Was aktuell beim Kunden läuft — Projekte, Herausforderungen, kürzliche Veränderungen', 'Wie lange das Unternehmen schon existiert', 'Wie viele Mitarbeiter es hat'], correct:1},
+      {q:'Ein Kollege sagt: "Ich brauche keine Vorbereitung, ich improvisiere lieber." Was ist das Problem?', opts:['Improvisation ist besser als Vorbereitung', 'Er verschenkt die Möglichkeit, Informationsvorsprung des Einkäufers auszugleichen', 'Es gibt kein Problem, beides funktioniert', 'Er spart Zeit'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer: "Was wissen Sie über unser Unternehmen?" — Du hast dich gut vorbereitet. Was ist die stärkste Antwort?', opts:['Alles auflisten was du weißt', 'Kurze präzise Aussage über ihre Situation + offene Frage: "Stimmt das so? Was hat sich verändert?"', 'Schweigen und improvisieren', 'Sagen dass du alles weißt aber nicht alles sagen willst'], correct:1},
+      {q:'Du weißt dass der Einkäufer heute unter Zeitdruck steht. Wie nutzt du das?', opts:['Das Gespräch verlängern', 'Dein Angebot kürzer und prägnanter gestalten — er will schnelle Entscheidungen, keine langen Erklärungen', 'Ihn darauf ansprechen', 'Das Gespräch auf morgen verschieben'], correct:1},
+      {q:'Was macht eine BATNA stark?', opts:['Eine hohe Anzahl an Alternativen kenne', 'Eine konkrete, realistische Alternative die du sofort aktivieren könntest', 'Dass der Einkäufer sie kennt', 'Dass sie besser ist als der aktuelle Deal'], correct:1},
+      {q:'Du gehst in einen Termin ohne Zielvorbereitung. Was ist die wahrscheinlichste Konsequenz?', opts:['Nichts — gute Gespräche entstehen spontan', 'Du wirst das Gespräch so führen wie es der Einkäufer will, nicht wie es dir nützt', 'Der Einkäufer merkt es nicht', 'Du bist authentischer'], correct:1},
+      {q:'Welche Vorbereitung ist spezifisch für einen Bestandskunden wichtiger als für einen Neukunden?', opts:['LinkedIn-Recherche', 'Letzter Auftrag, offene Punkte, was wurde versprochen, wie ist die Beziehungsqualität', 'BATNA berechnen', 'Unternehmensrecherche'], correct:1},
+    ],
+    profi: [
+      {q:'Du bereitest dich auf einen strategischen Großkunden vor. Was gehört über die 5-Min-Routine hinaus?', opts:['Mehr Zeit für LinkedIn', 'Szenarioplanung: Was wenn er A sagt? Was wenn B? Welche Zugeständnisse gehe ich maximal ein?', 'Einen Kollegen zur Unterstützung mitbringen', 'Mehr Produktmuster'], correct:1},
+      {q:'Warum ist eine schwache BATNA manchmal besser als keine?', opts:['Es gibt keine schwache BATNA', 'Eine schwache BATNA gibt einen konkreten Ankerpunkt — ohne BATNA gibt es gar keine Untergrenze', 'Weil sie den Einkäufer verwirrt', 'Weil sie die Verhandlung schneller beendet'], correct:1},
+      {q:'Ein Profi kennt nicht nur seine eigene BATNA sondern auch...', opts:['Die BATNA des Wettbewerbers', 'Die wahrscheinliche BATNA des Einkäufers — was ist seine beste Alternative wenn kein Deal entsteht?', 'Die BATNA des Chefs', 'Die BATNA anderer Kunden'], correct:1},
+      {q:'Vorbereitung kostet Zeit. Was ist der ROI-stärkste Aspekt?', opts:['Ausführliche Produktrecherche', 'BATNA berechnen — weil sie direkte finanzielle Auswirkung auf jede Preisverhandlung hat', 'LinkedIn-Profil studieren', 'Outfit und Material vorbereiten'], correct:1},
+      {q:'Was bedeutet "mentale Vorbereitung" im Kontext von Nasher?', opts:['Meditation vor dem Termin', 'Innere Überzeugung dass man Alternativen hat und den Auftrag nicht braucht — erzeugt die sichtbare Souveränität die Macht schafft', 'Sich auf schlechte Ergebnisse vorbereiten', 'Positiv denken'], correct:1},
+    ],
+  },
+  'telefonakquise_ad': {
+    leicht: [
+      {q:'Was ist das Ziel eines Kaltakquise-Anrufs?', opts:['Sofort verkaufen', 'Vertrauen aufbauen und einen Termin vereinbaren', 'Alle Produktdetails erklären', 'Die Entscheidung sofort herbeiführen'], correct:1},
+      {q:'Was ist die "Arme-Sau-Technik"?', opts:['Eine Mitleids-Strategie', 'Ehrlicher, direkter Einstieg: "Ich bin der Akquise-Anrufer — wie schaffen wir es trotzdem..."', 'Eine aggressive Technik', 'Eine Technik für Bestandskunden'], correct:1},
+      {q:'Was ist der "Bleistifttermin"?', opts:['Ein Termin mit Bleistift statt Kugelschreiber', 'Ein vorläufiger Termin den man eine Woche vorher bestätigt oder radiert', 'Ein kurzfristiger Termin', 'Ein Termin beim Kunden vor Ort'], correct:1},
+      {q:'Was bedeutet "Türöffner" in der Telefonakquise?', opts:['Die Sekretärin', 'Eine Technik um zum Entscheider durchzukommen', 'Eine Begrüßungsformel', 'Ein Termin-Opener'], correct:1},
+      {q:'Was ist "Hop oder Top"?', opts:['Eine Preistechnik', 'Letzte-Chance-Frage: Prinzipiell Nein oder Ja bei echtem Mehrwert?', 'Ein Abschluss-Skript', 'Eine Einwandtechnik'], correct:1},
+    ],
+    mittel: [
+      {q:'Sekretärin fragt: "Was geht es denn?" — Beste Reaktion (No-Name-Technik)?', opts:['Sofort alles erklären', 'Namen des Chefs nennen als wäre man bekannt: "Sagen Sie Herrn Müller es ist [Vorname]"', 'Auflegen und später nochmal anrufen', 'Erklären dass es ein Akquise-Anruf ist'], correct:1},
+      {q:'Einkäufer: "Keine Zeit, kein Interesse." Was wendest du als nächstes an?', opts:['Sofort auflegen', 'Wenn-Dann-Technik: "Mal angenommen wir könnten echten Mehrwert bieten — was müsste das sein?"', 'Noch mehr Produktinfo geben', 'Nochmal in 6 Monaten anrufen'], correct:1},
+      {q:'Was ist der Unterschied zwischen Musketier-Technik und 180°-Technik?', opts:['Es gibt keinen', 'Musketier nutzt Win-Win-Formulierung (doppelter Vorteil), 180° dreht den Einwand direkt um', '180° ist aggressiver', 'Musketier ist für Bestandskunden'], correct:1},
+      {q:'Einkäufer sagt: "Wir haben schon einen Lieferanten und sind glücklich." Was ist die stärkste Reaktion?', opts:['Sofort auflegen', 'Glücks-Technik: Humor und Umlenken, dann Mehrwert signalisieren', 'Sagen dass euer Produkt besser ist', 'Preis nennen der günstiger ist'], correct:1},
+      {q:'Warum sollte man am Telefon nicht zu viel über das Produkt erklären?', opts:['Weil Produkte langweilig sind', 'Weil das Ziel ein Termin ist, nicht ein Verkauf — zu viel Info gibt dem Kunden Argumente für ein Nein', 'Weil man das im Termin macht', 'Weil Telefone schlechte Tonqualität haben'], correct:1},
+    ],
+    schwer: [
+      {q:'Du hast Einkäufer Müller nach 3 Anrufversuchen endlich am Telefon. Er sagt sofort: "Ich habe 30 Sekunden." Wie reagierst du?', opts:['Alle Vorteile in 30 Sekunden hineinpacken', 'Direkt + präzise: "Perfekt. [Kernaussage in 20 Sek.] — passt das für einen 15-Minuten-Termin nächste Woche?" Dann Stille', 'Sagen dass 30 Sekunden nicht reichen', 'Einen späteren Rückruf vereinbaren'], correct:1},
+      {q:'Welches Signal zeigt, dass ein Einwand behandelbar ist statt echtes Desinteresse?', opts:['Wenn der Einkäufer sehr laut wird', 'Wenn er trotz Einwand noch spricht und nachfragt — echtes Desinteresse führt zu Aufhängen', 'Wenn er "nein" sagt', 'Wenn er keine Zeit hat'], correct:1},
+      {q:'Du rufst zum 4. Mal an. Einkäufer: "Sie schon wieder?" — Profi-Reaktion?', opts:['Sich entschuldigen und versprechen nie wieder anzurufen', 'Humor + Direktheit: "Ja, ich — weil ich davon überzeugt bin dass das Gespräch für Sie wertvoll wäre. Ich brauche 10 Minuten Ihre Zeit."', 'Nochmal von vorne erklären warum man anruft', 'Auflegen'], correct:1},
+      {q:'Was ist das Hauptrisiko der "Einwand-Wegnahme"-Technik (proaktiv Einwände nennen)?', opts:['Sie funktioniert nie', 'Sie kann unnatürlich wirken wenn sie nicht authentisch ist — der Einkäufer merkt wenn man ihn manipuliert', 'Sie ist zu direkt', 'Sie gibt dem Kunden zu viele Informationen'], correct:1},
+      {q:'Alles-Tutti-Taktik: Wann ist sie am stärksten?', opts:['Als erstes Gesprächselement', 'Wenn der Einkäufer sagt er kauft schon gut bei anderen — als Annahme-Formulierung um ihn zu korrigieren', 'Bei Stammkunden', 'Als Abschluss'], correct:1},
+    ],
+    profi: [
+      {q:'Du weißt dass der Einkäufer einen Pflichtanbieter-Rahmen hat und keine neuen Lieferanten aufnehmen darf. Wie gehst du vor?', opts:['Aufgeben', 'Fragen wer für Ausnahmen zuständig ist oder ob es Nischen gibt — Zeichnungsteile/Sonderwerkstoffe häufig nicht im Rahmen', 'Direkt an den Chef', 'Über Social Media Kontakt aufbauen'], correct:1},
+      {q:'Was macht den Unterschied zwischen einem 60%-Terminquoten-Anrufer und einem 20%-Anrufer?', opts:['Mehr Anrufe pro Tag', 'Er qualifiziert besser vor: er weiß wer sein Zielkunde ist und passt Skript und Technik an den Typ an', 'Er hat bessere Produkte', 'Er ruft früher morgens an'], correct:1},
+      {q:'Sekretärin fragt nach deinem Namen und Firma — du erkennst dass sie Anrufe filtert. Beste Strategie?', opts:['Lügen', 'Ehrlich + souverän: Name + Firma, dann sofort Gesprächswert formulieren: "Es geht um [konkretes Thema] — bitte sagen Sie Herrn X, er kennt das Thema."', 'Namen nicht nennen', 'Ein anderes Mal anrufen'], correct:1},
+      {q:'Welches psychologische Prinzip steckt hinter der Einwand-Wegnahme?', opts:['Überraschungseffekt', 'Reaktanz-Umkehr: wer selbst den Einwand bringt nimmt ihm die Schlagkraft — der Kunde fühlt sich nicht manipuliert', 'Konsistenz-Prinzip', 'Reziprozität'], correct:1},
+      {q:'Du hast einen Einkäufer der immer sagt "kein Bedarf" aber eigentlich interessiert wirkt. Welche Diagnose ist wahrscheinlichste?', opts:['Er ist wirklich nicht interessiert', 'Er hat Angst vor intern rechtfertigen müssen — er braucht einen "sicheren" Weg seine Interesse zu zeigen', 'Er lügt', 'Er kauft beim Wettbewerb exklusiv'], correct:1},
+    ],
+  },
+  'einwandbehandlung_ad': {
+    leicht: [
+      {q:'Was ist ein Einwand aus Vertriebsperspektive?', opts:['Ein Nein das final ist', 'Eine versteckte Frage oder ein Bedarf nach mehr Information', 'Ein Zeichen von Desinteresse', 'Ein Problem mit dem Produkt'], correct:1},
+      {q:'Was ist die 180°-Technik?', opts:['Den Kunden 180° drehen', 'Den Einwand bestätigen und dann direkt umkehren zu einem Argument', '180 Sekunden warten', 'Eine aggressive Gegenfrage'], correct:1},
+      {q:'Was bedeutet "Lob + 180°"?', opts:['Den Kunden loben und dann angreifen', 'Erst den Einwand anerkennen/loben, dann umkehren', 'Erst 180° dann loben', 'Eine Kombination aus zwei Preistechniken'], correct:1},
+      {q:'Was ist der "Wenn-Dann"-Einstieg in der Einwandbehandlung?', opts:['Eine Bedingung formulieren: wenn du X lieferst kaufe ich', 'Hypothetische Öffnung: "Mal angenommen, das wäre möglich — was dann?"', 'Eine Wenn-Dann-Programmierung', 'Ein Skript für schwierige Einwände'], correct:1},
+      {q:'Bei welchem Einwand funktioniert die Glücks-Technik besonders gut?', opts:['Zu teuer', 'Bei "Wir haben schon einen Lieferanten und sind gut versorgt"', 'Bei Lieferproblemen', 'Bei technischen Fragen'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer: "Das ist zu teuer." Welche Technik passt als Einstieg?', opts:['Sofort Preis senken', 'Lob: "Das ist ein berechtigter Punkt" + 180°: "Genau deshalb...Prozesskosten/Qualität/Liefersicherheit"', 'Auflegen', 'Preis verteidigen mit Produktdetails'], correct:1},
+      {q:'Einkäufer: "Kein Interesse, kein Bedarf." Welche Technik ist hier am unpassendsten?', opts:['Wenn-Dann', 'Musketier', 'Hop oder Top als Erstreaktion', '180°'], correct:2},
+      {q:'Wann ist "Hop oder Top" der richtige Moment?', opts:['Als erstes Gesprächselement', 'Als letzte Option wenn alle anderen Techniken keinen Fortschritt gebracht haben', 'Bei Preisverhandlungen', 'Immer wenn der Kunde zögert'], correct:1},
+      {q:'Was ist das Risiko wenn man Einwände einfach ignoriert und weitermacht?', opts:['Kein Risiko, das ist eine Technik', 'Der Einwand bleibt aktiv im Kopf des Einkäufers und blockiert den Abschluss', 'Der Einkäufer wird verwirrt', 'Man wirkt stärker'], correct:1},
+      {q:'Einkäufer: "Ruf mich in einem Jahr nochmal an." Was antwortest du?', opts:['Okay, bis dann', 'Bleistifttermin vorschlagen: Termin für in X Monaten mit Bestätigung eine Woche vorher', 'Preis jetzt stark senken damit er heute entscheidet', 'Einwand akzeptieren und gehen'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer widerspricht dir mit einer Zahl: "Euer Wettbewerber kostet 12% weniger." Du weißt das ist übertrieben. Beste Reaktion?', opts:['Die Zahl bestreiten', 'Ruhig: "Interessant — bei welcher Qualität genau? Welche Zertifikate? Welche Lieferzuverlässigkeit?" — Phantom-Angebot entzaubern', 'Sofort 12% Nachlass anbieten', 'Dem Kunden glauben'], correct:1},
+      {q:'Welcher Kundentyp reagiert am besten auf emotionale Einwandbehandlung (Lob, Beziehung, Wärme)?', opts:['Analyst', 'Closer', 'Connector', 'Verlässlich'], correct:2},
+      {q:'Einkäufer sagt drei Mal kurz hintereinander "kein Bedarf". Was bedeutet das psychologisch?', opts:['Er hat wirklich keinen Bedarf', 'Er fühlt sich unter Druck und sagt was am schnellsten beendet — Rapport und Tempo runter', 'Er lügt', 'Er hat einen anderen Lieferanten'], correct:1},
+      {q:'Was ist der Unterschied zwischen einem Vorwand und einem echten Einwand?', opts:['Es gibt keinen', 'Ein Vorwand ist eine Ablenkung — der echte Einwand liegt dahinter. Fragen helfen ihn zu finden', 'Vorwände sind immer über den Preis', 'Echte Einwände sind immer über das Produkt'], correct:1},
+      {q:'Du hast alle Techniken probiert und bekommst kein Weiter. Was ist der professionellste Schritt?', opts:['Immer weiter versuchen', 'Graceful Exit: Respektvoll abschließen, Kontakt halten, nicht als Niederlage interpretieren', 'Preis auf 0 setzen', 'Chef anrufen'], correct:1},
+    ],
+    profi: [
+      {q:'Welches psychologische Prinzip nutzt die Lob+180°-Technik?', opts:['Überraschungseffekt', 'Kognitive Dissonanz: erst Zustimmung holen (Lob), dann Umkehrung. Gehirn widerspricht sich nur ungern selbst', 'Reziprozität', 'Konsistenz-Prinzip'], correct:1},
+      {q:'Einkäufer: "Ich muss das erst mit meinem Chef absprechen." Echter Einwand oder Vorwand?', opts:['Immer echter Einwand', 'Oft Vorwand für "Ich bin nicht überzeugt" — Test: "Was müsste Ihr Chef hören um Ja zu sagen?"', 'Immer Vorwand', 'Hängt von der Branche ab'], correct:1},
+      {q:'Welche Einwandtechnik ist spezifisch gefährlich bei Analyst-Kunden (G-Typ)?', opts:['180°', 'Lob ohne Substanz — Analytiker erkennen leere Floskeln sofort und verlieren Vertrauen', 'Hop oder Top', 'Wenn-Dann'], correct:1},
+      {q:'Was ist das Ziel einer Einwandbehandlung laut Nasher-Logik?', opts:['Den Kunden überzeugen dass er falsch liegt', 'Interessen hinter der Position verstehen und eine Lösung finden die beide Seiten akzeptieren', 'Den Einwand zu ignorieren', 'Den Kunden zum Schweigen bringen'], correct:1},
+      {q:'Wann ist es professionell, einen Einwand NICHT zu behandeln?', opts:['Nie — immer behandeln', 'Wenn der Einwand ein Ablenkungsmanöver ist und Behandlung ihm mehr Gewicht gibt als er verdient — dann kurz bestätigen und weitergehen', 'Wenn man keine Zeit hat', 'Wenn man den Einwand nicht versteht'], correct:1},
+    ],
+  },
+  'verhandlungsmacht_ad': {
+    leicht: [
+      {q:'Was bedeutet BATNA?', opts:['Beste Angebot Total Netto Aktuell', 'Best Alternative to a Negotiated Agreement', 'Budget-Analyse Total Netto Aufwand', 'Beste Abschluss Technik Nasher Ansatz'], correct:1},
+      {q:'Was bedeutet ZOPA?', opts:['Zone of Possible Agreement — der Bereich zwischen den BATNAs beider Seiten', 'Zero Option Pricing Area', 'Zentrales Optimiertes Preisangebot', 'Zone of Price Analysis'], correct:0},
+      {q:'Was ist der Ankereffekt?', opts:['Ein Boot vor dem Hafen', 'Die erste genannte Zahl beeinflusst alle weiteren Zahlen im Gespräch', 'Ein Produktionsprozess', 'Eine Buchführungsmethode'], correct:1},
+      {q:'Wer soll laut WEWO-Prinzip zuerst einen Preis nennen?', opts:['Immer der Einkäufer', 'Immer der Verkäufer — um den Anker zu setzen', 'Derjenige mit mehr Erfahrung', 'Es spielt keine Rolle'], correct:1},
+      {q:'Was ist die Sowjet-Methode?', opts:['Eine Verhandlungstaktik aus dem Kalten Krieg', 'Position klar nennen — dann schweigen und warten', 'Eine Preisberechnungsmethode', 'Eine Technik aus DEALMAKER PRO'], correct:1},
+    ],
+    mittel: [
+      {q:'Deine BATNA ist 0,93€/Stück. Der Einkäufer bietet 0,90€. Was tust du?', opts:['Sofort ablehnen und gehen', 'Nein sagen — unter BATNA ist dieser Deal schlechter als kein Deal', 'Zustimmen um die Beziehung zu erhalten', '0,91€ anbieten als Kompromiss'], correct:1},
+      {q:'Einkäufer sagt nach deiner Preisnennung nichts. Was machst du?', opts:['Sofort den Preis senken um die Stille zu brechen', 'Schweigen. Die Sowjet-Methode: wer zuerst spricht macht das nächste Zugeständnis', 'Nachfragen ob er gehört hat', 'Das Gespräch beenden'], correct:1},
+      {q:'Was ist das Problem wenn der Einkäufer den Anker setzt bevor du es tust?', opts:['Kein Problem, Zahlen sind verhandelbar', 'Du verhandelst auf seiner Zahlengrundlage — der Endpreis liegt statistisch näher an seinem Anker', 'Du kannst nicht mehr reagieren', 'Es ist unfair'], correct:1},
+      {q:'Welche der folgenden ist KEIN Machtverstärker?', opts:['Knappheit', 'Zeitdruck des Kunden', 'Eigener sichtbarer Zeitdruck', 'Wettbewerb'], correct:2},
+      {q:'Was bedeutet "Interessen statt Positionen" bei Harvard?', opts:['Nur über Interessen sprechen', 'Hinter jeder Position gibt es ein tieferes Interesse — wer das versteht findet kreativere Lösungen', 'Positionen sind falsch', 'Interessen sind unwichtig'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer: "Das Angebot ist gut aber ich brauche noch 5% mehr." ZOPA liegt zwischen 0,88-0,95€, aktueller Vorschlag 0,93€. Was tust du?', opts:['Sofort auf 0,88€ gehen', 'Fragen welche Gegenleistung er bietet — Rabatt nur gegen Volumen, Laufzeit oder Zahlungsziel', 'Ablehnen', '0,90€ anbieten'], correct:1},
+      {q:'Du erkennst dass der Einkäufer echten Zeitdruck hat (Produktionsstart in 2 Wochen). Wie verändert das deine Strategie?', opts:['Gar nicht — BATNA bleibt gleich', 'Du hast mehr Machtposition — du kannst bei Preis standhafter bleiben da er dich braucht. Nicht ausnutzen aber bewusst nutzen', 'Du machst mehr Druck', 'Du senkst den Preis um den Deal zu sichern'], correct:1},
+      {q:'Was ist das Problem wenn du zu viele Informationen über deinen Bedarf an diesem Auftrag gibst?', opts:['Kein Problem — Offenheit ist gut', 'Du schwächst deine wahrgenommene BATNA — der Einkäufer erkennt deinen Hunger und nutzt ihn', 'Du wirkst inkompetent', 'Der Einkäufer verliert Vertrauen'], correct:1},
+      {q:'Warum ist "Höhere Instanz" ein Machtverstärker?', opts:['Weil der Chef immer Recht hat', 'Du reduzierst scheinbar deine eigene Flexibilität — "Das kann ich intern nicht freigeben" macht Zugeständnisse weniger erpressbar', 'Weil es den Einkäufer einschüchtert', 'Weil es Zeit kauft'], correct:1},
+      {q:'Einkäufer hat dich mit einem Phantom-Angebot unter Druck gesetzt und du hast nachgegeben. Was war das echte Problem?', opts:['Das Angebot war real', 'Du hast deine BATNA in diesem Moment nicht klar vor Augen gehabt — ohne Untergrenze gibt man nach', 'Du warst zu schwach', 'Der Einkäufer war unehrlich'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist der Unterschied zwischen ZOPA und BATNA in der praktischen Verhandlung?', opts:['Kein Unterschied', 'BATNA ist deine Untergrenze — ZOPA ist der Bereich wo sich beide BATNAs überschneiden und ein Deal möglich ist. Verhandlung endet wenn ZOPA verlassen wird', 'ZOPA ist für Preise, BATNA für Verträge', 'BATNA gilt für Käufer, ZOPA für Verkäufer'], correct:1},
+      {q:'Du hast 4 ähnlich attraktive Kunden in der Pipeline. Wie verändert das deine Verhandlungsführung?', opts:['Gar nicht', 'Du kannst ehrlich entspannter sein — das ist echter Machtgewinn durch reale Alternativen, nicht Psychologie', 'Du machst mehr Druck', 'Du verhandelst schneller'], correct:1},
+      {q:'Warum empfiehlt Nasher "kein Interesse zeigen" auch wenn man sehr interessiert ist?', opts:['Weil Lügen in Verhandlungen erlaubt ist', 'Wahrgenommene Interesselosigkeit erhöht deinen Wert und schwächt die Machtposition des Einkäufers — es geht nicht um Täuschung sondern Dosierung', 'Weil es den Einkäufer verärgert', 'Weil es Nasher so erlebt hat'], correct:1},
+      {q:'Was ist der "Flinch" und wann setzt du ihn ein?', opts:['Ein schneller Angebotsabschluss', 'Sichtbare Reaktion auf eine Zahl (Zucken, Pause, "Das ist mehr als erwartet...") — direkt nach der ersten Preisnennung des Einkäufers um dessen Anker zu schwächen', 'Eine Körpersignal-Technik für Dominanz', 'Ein Einwand gegen das Phantom-Angebot'], correct:1},
+      {q:'Wann ist es strategisch richtig, einen Deal ABZULEHNEN obwohl er oberhalb der BATNA liegt?', opts:['Nie — oberhalb BATNA ist immer gut', 'Wenn die Konditionen eine Präzedenz setzen die zukünftige Verhandlungen dauerhaft schwächt oder die Beziehung falsche Erwartungen weckt', 'Nur wenn man bessere Kunden hat', 'Wenn der Preis nicht stimmt'], correct:1},
+    ],
+  },
+  'spin_ad': {
+    leicht: [
+      {q:'Wofür steht SPIN?', opts:['Situation, Produkt, Information, Nutzen', 'Situation, Problem, Implication, Need-Payoff', 'Service, Preis, Inhalt, Nein', 'Schnell, Präzise, Interessant, Nötig'], correct:1},
+      {q:'Welcher Fragetyp kommt bei SPIN zuerst?', opts:['Problem', 'Need-Payoff', 'Situation', 'Implication'], correct:2},
+      {q:'Was ist das Ziel einer Implication-Frage?', opts:['Informationen sammeln', 'Das Problem des Kunden in seiner Konsequenz verstärken', 'Den Preis verhandeln', 'Den Abschluss einleiten'], correct:1},
+      {q:'Was ist eine Need-Payoff-Frage?', opts:['Eine Frage nach dem Budget', 'Eine Frage die den Kunden die Lösung selbst formulieren lässt', 'Eine Frage nach dem "Nein"', 'Eine technische Produktfrage'], correct:1},
+      {q:'Warum sind Situations-Fragen allein nicht ausreichend?', opts:['Sie sind verboten', 'Sie liefern nur Kontext — ohne Problemfragen fehlt die emotionale Spannung die zu Entscheidungen führt', 'Sie kosten zu viel Zeit', 'Sie funktionieren nur bei Neukunden'], correct:1},
+    ],
+    mittel: [
+      {q:'Statt: "Unser Produkt löst Ihr Problem." — Wie formulierst du das als SPIN Need-Payoff?', opts:['Gar nicht — das ist gut formuliert', 'Frage: "Wenn Sie dieses Problem in 2 Wochen erledigt hätten — was würde das für Ihre Produktion bedeuten?"', 'Einfach mehr erklären', 'Den Preis nennen'], correct:1},
+      {q:'Einkäufer zuckt mit den Schultern bei deiner Frage. Was bedeutet das für SPIN?', opts:['Du sollst aufhören zu fragen', 'Du bist zu früh bei Implication — erst mehr Situations- und Problemfragen um Rapport zu bauen', 'Der Einkäufer versteht SPIN nicht', 'Die Frage war zu direkt'], correct:1},
+      {q:'Welche Frage ist eine echte Implication-Frage?', opts:['"Wie viele Mitarbeiter haben Sie?"', '"Was ist Ihr Budget?"', '"Was kostet Sie eine Produktionsverzögerung pro Tag?"', '"Welche Produkte kaufen Sie aktuell?"'], correct:2},
+      {q:'Wann sollte man mit Need-Payoff-Fragen beginnen?', opts:['Sofort zum Einstieg', 'Erst wenn das Problem klar etabliert ist und der Einkäufer es als wichtig bewertet', 'Nach dem Angebot', 'Als Abschluss'], correct:1},
+      {q:'Was ist der häufigste SPIN-Fehler im Außendienst?', opts:['Zu viele Fragen stellen', 'Zu früh zum Produkt wechseln bevor das Problem emotional verankert ist', 'Zu langsam fragen', 'Zu persönliche Fragen stellen'], correct:1},
+    ],
+    schwer: [
+      {q:'Du stellst eine Implication-Frage: "Was kostet Sie das jährlich?" Einkäufer antwortet: "Keine Ahnung." Was tust du?', opts:['Weitermachen mit nächster Frage', 'Schätzen helfen: "Bei Kunden ähnlicher Größe sehen wir typisch 50-100k€ — könnte das in Ihrer Größenordnung sein?"', 'Thema wechseln', 'Sagen dass er es herausfinden soll'], correct:1},
+      {q:'Welcher Kundentyp reagiert am positivsten auf ausführliche SPIN-Fragestrecken?', opts:['Closer — er will direkte Antworten', 'Analyst — er schätzt strukturierte Bedarfsermittlung', 'Connector — er will Beziehung', 'Alle gleich'], correct:1},
+      {q:'Du hast das Problem mit SPIN gut herausgearbeitet. Der Einkäufer sagt aber: "Das Problem haben wir schon seit Jahren, wir leben damit." Was tust du?', opts:['Aufgeben', 'Zurück zu Implication: "Was kostet Sie dieses Weiterleben konkret? Was wäre möglich wenn das gelöst wäre?"', 'Zum Produkt wechseln', 'Eine Sonderaktion anbieten'], correct:1},
+      {q:'Was unterscheidet SPIN von klassischen Feature-Benefit-Verkauf?', opts:['SPIN ist moderner', 'SPIN führt den Kunden dazu, den Nutzen selbst zu formulieren — das ist 5x überzeugender als wenn du ihn beschreibst', 'SPIN ist einfacher', 'Feature-Benefit ist besser bei einfachen Produkten'], correct:1},
+      {q:'Einkäufer unterbricht deine Situationsfrage: "Warum fragen Sie das alles?" — Profi-Reaktion?', opts:['Entschuldigen und aufhören', 'Transparent sein: "Um sicherzugehen dass ich Ihnen eine Lösung vorschlage die wirklich zu Ihnen passt — und um Ihre Zeit nicht zu verschwenden mit Irrelevantem."', 'Schneller fragen', 'Direkt zum Produkt'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist das psychologische Prinzip hinter Need-Payoff-Fragen?', opts:['Overconfidence erzeugen', 'Eigene Argumente sind 5x überzeugender als fremde — der Kunde soll die Lösung selbst formulieren', 'Reziprozität aktivieren', 'Zeitdruck erzeugen'], correct:1},
+      {q:'Ein Profi-Verkäufer stellt eine Implication-Frage und der Einkäufer wird nachdenklich und still. Was macht er?', opts:['Die Stille füllen mit mehr Fragen', 'Warten. Diese Stille ist wertvoll — der Einkäufer rechnet gerade. Stille hier ist Gold.', 'Den Termin beenden', 'Sofort das Produkt vorstellen'], correct:1},
+      {q:'SPIN wurde für komplexe B2B-Verkäufe entwickelt. Was macht es für WEWO besonders relevant?', opts:['WEWO hat viele Produkte', 'C-Teile-Entscheidungen sind oft Prozessentscheidungen — SPIN hilft den echten Prozessschmerz zu finden der über den Preis hinausgeht', 'WEWO hat viele Kunden', 'SPIN ist für alle gleich relevant'], correct:1},
+      {q:'Wann ist es falsch, SPIN zu nutzen?', opts:['Nie — SPIN ist immer richtig', 'Bei einfachen Transaktionen (Bestandskunde bestellt Standardteil) — Fragestrecken wirken überambitioniert und verschwenden Zeit', 'Bei Neukunden', 'Bei Analytiker-Kunden'], correct:1},
+      {q:'Welche Kombination ist bei einem Closer-Einkäufer am wirkungsvollsten?', opts:['Viele Situations-Fragen', 'Wenige präzise Fragen, direkt zu starker Implication, kurze Need-Payoff — dann Produkt. Closer schätzen Effizienz', 'Ausführliche SPIN-Strecke', 'Nur Produktpräsentation'], correct:1},
+    ],
+  },
+  'abschluss_ad': {
+    leicht: [
+      {q:'Was ist die direkte Abschlussfrage?', opts:['"Kaufen Sie?"', '"Was brauchen Sie noch um heute zu entscheiden?"', 'Eine Preisfrage', 'Eine Produktfrage'], correct:1},
+      {q:'Was ist der Alternativ-Abschluss?', opts:['Zwei Produkte vergleichen', 'Zwei Optionen anbieten die beide ein Ja bedeuten: "Ab dem 1. oder 15.?"', 'Eine Alternative zum Kauf', 'Ein Backup-Angebot'], correct:1},
+      {q:'Wann ist der richtige Moment für den Abschluss?', opts:['Am Anfang des Gesprächs', 'Wenn der Wert klar ist und der Einkäufer Kaufsignale gibt', 'Am Ende jedes Termins egal was', 'Nach dem zweiten Termin immer'], correct:1},
+      {q:'Was ist ein Kaufsignal?', opts:['Der Einkäufer kauft sofort', 'Signale wie Nachfragen zu Details, Lieferzeit, Mengen — zeigen echtes Interesse', 'Wenn der Einkäufer lächelt', 'Wenn der Einkäufer einen Kaffee anbietet'], correct:1},
+      {q:'Was ist der "Nächster-Schritt-Abschluss"?', opts:['Einen nächsten Termin vereinbaren', 'Den nächsten logischen Schritt benennen statt eine große Entscheidung zu verlangen', 'Eine Schritt-für-Schritt-Erklärung', 'Einen Kollegen hinzuziehen'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer fragt: "Wie lange gilt das Angebot?" — Was ist das?', opts:['Eine Ablenkung', 'Ein starkes Kaufsignal — er plant bereits intern', 'Eine Zeitverlusttaktik', 'Eine Frage zur Qualität'], correct:1},
+      {q:'Du fragst nach dem Abschluss. Einkäufer schweigt 10 Sekunden. Was tust du?', opts:['Sofort das nächste Argument liefern', 'Warten. Wer nach der Abschlussfrage spricht macht ein Zugeständnis', 'Preis senken', 'Eine neue Frage stellen'], correct:1},
+      {q:'Welcher Abschluss passt am besten zu einem Verlässlich-Kunden?', opts:['Hop oder Top', 'Direkte Abschlussfrage', 'Nächster-Schritt-Abschluss: kein Druck, nur logische Fortsetzung', 'Alternativ-Abschluss'], correct:2},
+      {q:'Einkäufer: "Ich muss noch nachdenken." Was ist die beste Reaktion?', opts:['Okay, melden Sie sich', 'Herausfinden was fehlt: "Was bräuchten Sie noch um sicher zu sein?" dann konkreten nächsten Schritt vereinbaren', 'Preis sofort senken', 'Einen Monat warten'], correct:1},
+      {q:'Was ist das Risiko wenn man zu früh nach dem Abschluss fragt?', opts:['Kein Risiko — früher ist besser', 'Der Einkäufer fühlt sich gedrängt bevor der Wert klar ist — Abwehr entsteht', 'Man verliert Zeit', 'Der Einkäufer kauft dann beim Wettbewerb'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer: "Das ist gut, aber ich muss erstmal mit meinem Team sprechen." Was tust du?', opts:['Okay, ich warte', 'Mithelfen: "Was müsste Ihr Team hören um Ja zu sagen? Soll ich kurz eine Zusammenfassung schicken?"', 'Preis senken', 'Eine Woche warten und nochmal anrufen'], correct:1},
+      {q:'Du hast den Abschluss versucht — Einkäufer sagt vage "schauen wir mal". Wie interpretierst du das?', opts:['Das ist ein klares Ja', 'Das ist ein verstecktes Nein oder ein Zeichen dass ein Hindernis noch nicht adressiert ist — nachfragen', 'Das bedeutet er kauft bald', 'Das ist eine Verhandlungstaktik'], correct:1},
+      {q:'Welcher Fehler passiert häufig nach einem guten Termin?', opts:['Zu früh gehen', 'Kein klarer nächster Schritt vereinbart — der Termin endet ohne konkretes Commitment und der Impuls geht verloren', 'Zu viel Kaffee trinken', 'Zu früh über den Preis sprechen'], correct:1},
+      {q:'Was ist der Zusammenfassungs-Abschluss und warum ist er für Analytiker gut?', opts:['Alle Produkte nochmals nennen', 'Alle vereinbarten Punkte zusammenfassen und mit Ja-Frage abschließen — gibt Analytikern die Vollständigkeit die sie brauchen bevor sie entscheiden', 'Eine Technik die immer funktioniert', 'Eine schnelle Variante des Alternativ-Abschlusses'], correct:1},
+      {q:'Einkäufer kauft nicht aber ist positiv. Was ist das beste Abschluss-Resultat in diesem Fall?', opts:['Nichts — ohne Kauf ist der Termin gescheitert', 'Ein konkreter nächster Schritt mit Datum — Abschluss = nicht immer Kauf, sondern klarer Fortschritt', 'Ein weiterer Termin ohne Datum', 'Kontaktdaten tauschen'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist der psychologische Unterschied zwischen "Wollen Sie kaufen?" und "Ab dem 1. oder 15.?"', opts:['Keiner — beide fragen nach dem Kauf', 'Die erste löst Entscheidungsangst aus (Ja/Nein), die zweite setzt Kauf voraus und fragt nur nach Details — umgeht den psychologischen Widerstand', 'Die erste ist direkter', 'Die zweite ist zu manipulativ'], correct:1},
+      {q:'Profi-Verkäufer schließen früher als Durchschnitt — warum?', opts:['Sie sind aggressiver', 'Sie erkennen Kaufsignale früher und haben keine Angst die Frage zu stellen — Angst vor Ablehnung führt zu zu spätem Fragen', 'Sie haben mehr Erfahrung', 'Sie kennen mehr Techniken'], correct:1},
+      {q:'Einkäufer kauft. Du bist begeistert und zeigst es. Was ist das Problem?', opts:['Kein Problem — Freude ist gut', 'Sichtbare Begeisterung zeigt dem Einkäufer im Nachhinein dass er mehr hätte fordern können — Poker Face bis der Deal sicher ist', 'Es ist unnatürlich', 'Der Einkäufer fühlt sich dann schlechter'], correct:1},
+      {q:'Was ist die psychologisch stärkste Phase um Zusatzverkäufe anzusprechen?', opts:['Vor dem Abschluss', 'Direkt nach dem Ja — das Dankbarkeitsfenster. Der Einkäufer ist entspannt und offen, er hat gerade entschieden', 'Beim nächsten Termin', 'Beim Liefertermin'], correct:1},
+      {q:'Was unterscheidet "Abschluss" im Nasher-Sinne von "Closing" im klassischen Sinn?', opts:['Nichts', 'Nasher: Abschluss = logisches Ergebnis von Wert + Vertrauen — nicht Drucktechnik. Closing = Manipulation. Nachhaltiger Erfolg kommt aus dem ersten', 'Closing ist besser', 'Nasher hat keinen Abschluss'], correct:1},
+    ],
+  },
+  'preisverhandlung_ad': {
+    leicht: [
+      {q:'Was ist der Ankereffekt beim Preis?', opts:['Der erste Preis beeinflusst alle folgenden Preiswahrnehmungen stark', 'Ein Preis der fest verankert ist', 'Ein Mengenrabatt', 'Eine Preisgarantie'], correct:0},
+      {q:'Was sollst du tun wenn der Einkäufer nach deiner Preisnennung nichts sagt?', opts:['Sofort den Preis senken', 'Schweigen — nie zuerst sprechen nach einem Preisangebot', 'Fragen ob der Preis okay ist', 'Mehr Vorteile erklären'], correct:1},
+      {q:'Was ist der "Flinch"?', opts:['Eine aggressive Reaktion', 'Sichtbare Überraschungsreaktion auf den Preis des anderen um den Anker zu schwächen', 'Ein Rückzieher', 'Eine Preisverteidigungsstrategie'], correct:1},
+      {q:'Was ist das Prozesskosten-Argument?', opts:['Die Kosten unseres Produktionsprozesses', 'Jede Bestellung kostet intern 50-150€ unabhängig vom Warenwert — Bündelung spart Transaktionskosten', 'Eine Rechtfertigung für höhere Preise', 'Ein Argument für schnellere Lieferung'], correct:1},
+      {q:'Was bedeutet "Gegenleistung fordern"?', opts:['Den Einkäufer um etwas bitten', 'Jeder Rabatt ist ein Tausch: Preis runter nur gegen Menge rauf, Laufzeit, Zahlungsziel etc.', 'Eine Gegenforderung stellen', 'Einen Gegenvorschlag machen'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer: "10% Rabatt oder kein Deal." Deine BATNA ist solide. Was tust du?', opts:['Sofort 10% geben', 'Flinch + Pause + "Was geben Sie mir dafür? Menge, Laufzeit oder Zahlungsziel?"', 'Ablehnen und gehen', '5% anbieten als Kompromiss'], correct:1},
+      {q:'Warum ist der Kompromiss (beide gehen 50%) oft keine gute Lösung?', opts:['Kompromiss ist immer fair', 'Er hat keine Verbindung zur Wirtschaftlichkeit — wer zuerst ankert gewinnt systematisch beim 50/50-Split', 'Er ist zu langwierig', 'Er funktioniert nicht bei B2B'], correct:1},
+      {q:'Was ist das "Paketrückkaufen"?', opts:['Einen Vertrag zurückkaufen', 'Wenn du etwas Zugestanden hast und der Einkäufer nochmals fordert — zurückgehen auf Ausgangspunkt und Gesamtpaket neu verhandeln', 'Einen Auftrag zurückgeben', 'Einen früheren Rabatt streichen'], correct:1},
+      {q:'Einkäufer: "Euer Wettbewerber kostet 15% weniger." Profi-Reaktion?', opts:['Sofort 15% Rabatt geben', 'Ruhig: "Bei welcher Qualität, welchen Zertifikaten, welcher Liefersicherheit?" — Details fordern um Phantom-Angebot zu entzaubern', 'Den Wettbewerb schlecht machen', 'Auflegen'], correct:1},
+      {q:'Was ist ein "objektives Kriterium" in Preisverhandlungen (Harvard)?', opts:['Ein objektiver Beobachter', 'Ein externer Maßstab (Marktpreis, Kostenrechnung, Qualitätsstandard) um Preis als fair zu begründen', 'Eine Preisvergleichs-Datenbank', 'Ein Schiedsrichter'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer hat bereits 3 Zugeständnisse bekommen (Preis, Lieferzeit, Verpackung). Jetzt kommt nochmal eine Forderung. Was tust du?', opts:['Nochmals nachgeben', 'Paketrückkauf: "Wenn ich das noch eingehe müssen wir das gesamte Paket neu betrachten" — Salami stoppen', 'Abbrechen', 'Nur ein weiteres kleines Zugeständnis'], correct:1},
+      {q:'Was ist ZOPA-Verlassen und wie reagierst du?', opts:['Kein relevantes Konzept', 'Wenn der geforderte Preis unter deiner BATNA liegt — ruhig und klar: "Das ist unterhalb meiner Kalkulation, da kann ich nicht. Was ist Ihre Flexibilität bei [X]?"', 'Sofort abbrechen', 'Mehr Produkte anbieten'], correct:1},
+      {q:'Einkäufer: "Das ist alles was ich zahlen kann." Er wirkt überzeugend. Was prüfst du?', opts:['Ob er lügt', 'Ob das eine echte BATNA oder Budget-Theater ist — Frage: "Was wäre die Konsequenz wenn dieser Auftrag nicht zustande kommt?"', 'Ob der Preis fair ist', 'Ob du es günstiger produzieren kannst'], correct:1},
+      {q:'Welche Reihenfolge ist richtig: Anker setzen oder erst Beziehung aufbauen?', opts:['Immer erst Anker', 'Erst Beziehung und Informationssammlung — dann Anker wenn der Verhandlungspunkt kommt. Zu früher Anker ohne Rapport wirkt aggressiv', 'Gleichzeitig', 'Anker erst am Schluss'], correct:1},
+      {q:'Warum ist "Der Preis ist in Ordnung" vom Einkäufer nie einfach "ja"?', opts:['Weil Einkäufer lügen', 'Weil Einkäufer fast immer unter Druck stehen günstigere Konditionen zu erzielen — die Frage ist ob ihre BATNA stärker ist als deine', 'Weil der Preis nie stimmt', 'Weil es immer Verhandlung gibt'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist der psychologische Grund warum der erste Anker so viel Wirkung hat?', opts:['Weil erste Eindrücke wichtig sind', 'Kognitive Verankerung: das Gehirn bewertet alle folgenden Zahlen relativ zum ersten Wert — es gibt keinen absoluten Preismaßstab', 'Weil Zahlen schwer zu verarbeiten sind', 'Weil Einkäufer unerfahren sind'], correct:1},
+      {q:'Du hast 0,93€ als Anker gesetzt. Einkäufer: "Wir reden über 0,80€." Profi-Reaktion?', opts:['0,86€ als Kompromiss', 'Flinch + Sachlichkeit: "Das ist weit von meiner Kalkulation entfernt. Auf welcher Grundlage?" — niemals sofort auf seine Zahl einsteigen', '0,90€ anbieten', 'Ablehnen'], correct:1},
+      {q:'Was macht der Profi anders bei "Ich muss das intern genehmigen lassen"?', opts:['Er wartet geduldig', 'Er nutzt es als Information: "Was muss ich Ihnen geben damit die interne Genehmigung sicher ist?" — und adressiert den echten Entscheider indirekt', 'Er verliert Geduld', 'Er senkt den Preis um es zu vereinfachen'], correct:1},
+      {q:'Warum ist "Fairness" ein wichtigeres Argument als "günstig" in professionellen Preisverhandlungen?', opts:['Weil günstig nicht wichtig ist', 'Menschen kaufen lieber zu einem als "fair" empfundenen Preis als zum günstigsten — Fairness schafft Compliance und langfristige Partnerschaft', 'Weil günstig nicht möglich ist', 'Weil Fairness im B2B keine Rolle spielt'], correct:1},
+      {q:'Einkäufer kauft — aber du hast zu viel Rabatt gegeben und bereust es. Was lernst du daraus?', opts:['Nichts — Hauptsache Abschluss', 'BATNA war mental nicht stark genug. Nächstes Mal: Untergrenze vorab schriftlich festhalten und vor dem Gespräch lesen — gibt konkrete Standftestigkeit', 'Der Einkäufer war zu gut', 'Der Preis war zu hoch angesetzt'], correct:1},
+    ],
+  },
+  'haltung_id': {
+    leicht: [
+      {q:'Was ist die wichtigste Haltung im Innendienst?', opts:['So viele Kunden wie möglich durchstellen', 'Jedes Gespräch ist eine Verkaufschance — auch ein Bestellgespräch', 'Nur Bestellungen aufnehmen', 'Probleme schnell weiterleiten'], correct:1},
+      {q:'Was ist "stehendes Telefonieren"?', opts:['Telefonieren im Stehen um Rückenprobleme zu vermeiden', 'Im Stehen telefonieren macht die Stimme klarer und die Haltung aktiver — wirkt besser', 'Ein Training für Außendienstmitarbeiter', 'Eine Meditationstechnik'], correct:1},
+      {q:'Was ist das Ziel einer freundlichen aber professionellen Stimme am Telefon?', opts:['Sympathisch wirken', 'Vertrauen aufbauen und Kompetenz signalisieren', 'Schnell sprechen', 'Probleme vermeiden'], correct:1},
+      {q:'Was bedeutet "mentaler Reset" zwischen Telefonaten?', opts:['Eine Pause machen', '5 Sekunden Abstand nehmen damit das letzte Gespräch die Energie des nächsten nicht beeinflusst', 'Das Telefon auflegen', 'Kaffee trinken'], correct:1},
+      {q:'Warum ist die Haltung des ID entscheidend für Cross-Selling?', opts:['Weil ID mehr Umsatz bringt', 'Wer nur "Bestellungen annehmen" als Rolle sieht, fragt nie nach mehr — Haltung bestimmt Ambition', 'Weil Produkte sich von selbst verkaufen', 'Weil der Außendienst das nicht macht'], correct:1},
+    ],
+    mittel: [
+      {q:'Kunde ruft zum 3. Mal wegen desselben Problems an und wirkt genervt. Wie begegnest du ihm?', opts:['Kurz und effizient', 'Erst Empathie zeigen, dann Lösung — nicht sofort in den Lösungsmodus springen ohne Verständnis zu signalisieren', 'Das Problem erklären', 'Einen Kollegen holen'], correct:1},
+      {q:'Du hast einen schlechten Tag und der nächste Anruf kommt. Was ist professionell?', opts:['Kurz und sachlich bleiben', 'Den Reset machen — der Kunde hat nichts mit deinem Tag zu tun, jedes Gespräch startet neu', 'Ehrlich sagen dass man heute keine Kapazität hat', 'Das Gespräch auf später verschieben'], correct:1},
+      {q:'Was unterscheidet einen ID-Mitarbeiter mit Verkaufs-Haltung von einem reinen Bestellungsaufnehmer?', opts:['Mehr Umsatz', 'Er betrachtet jede Interaktion als Möglichkeit Wert zu liefern und Bedarf zu erkennen — aktiv statt reaktiv', 'Längere Gespräche', 'Mehr Produktkenntnisse'], correct:1},
+      {q:'Einkäufer ist unhöflich. Wie reagierst du professionell?', opts:['Genauso zurück', 'Ruhig und sachlich bleiben — Professionalität bedeutet nicht Mirror, sondern Standard halten', 'Gespräch beenden', 'Schweigen'], correct:1},
+      {q:'Was ist der Unterschied zwischen Freundlichkeit und Unterwürfigkeit im ID?', opts:['Kein Unterschied', 'Freundlichkeit ist warm und professionell — Unterwürfigkeit signalisiert dass man keine Grenzen hat und führt zu mehr Forderungen', 'Unterwürfigkeit ist besser für den Umsatz', 'Freundlichkeit ist nicht professionell'], correct:1},
+    ],
+    schwer: [
+      {q:'Stammkunde fragt nach einem unmöglichen Liefertermin. Du kannst nicht liefern. Beste Reaktion?', opts:['Lügen und später Entschuldigung schicken', 'Ehrlich und sofort mit Alternative: "Das schaffe ich nicht bis [X] — aber bis [Y] bin ich sicher. Wäre das möglich?"', 'Einfach Ja sagen', 'An den Chef weiterleiten'], correct:1},
+      {q:'Welchen psychologischen Effekt hat es wenn du immer "ich schaue mal" sagst statt konkreter Aussagen?', opts:['Es beruhigt den Kunden', 'Es signalisiert Unsicherheit und Unvorbereitetheit — der Kunde verliert Vertrauen in die Kompetenz', 'Es zeigt Bescheidenheit', 'Es ist ehrlich'], correct:1},
+      {q:'Du merkst dass ein Stammkunde weniger bestellt als vor 6 Monaten. Was tust du proaktiv?', opts:['Nichts — er meldet sich wenn er braucht', 'Proaktiv anrufen: "Ich habe gesehen dass wir in letzter Zeit weniger zusammenarbeiten — alles okay? Gibt es etwas das ich für Sie tun kann?"', 'Rabatt anbieten', 'Kollegen informieren'], correct:1},
+      {q:'Was ist das Risiko von zu viel Empathie ohne Lösungsorientierung?', opts:['Es gibt kein Risiko', 'Der Kunde fühlt sich verstanden aber sein Problem bleibt — Empathie + Lösung muss kommen', 'Es ist immer gut', 'Es kostet Zeit'], correct:1},
+      {q:'Wie erkennst du ob deine ID-Haltung wirklich verkaufsorientiert ist?', opts:['Wenn du viele Gespräche führst', 'Wenn du nach jedem Gespräch weißt ob es eine Chance gab die du aktiv genutzt oder verpasst hast', 'Wenn der Umsatz steigt', 'Wenn Kunden zufrieden sind'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist der Unterschied zwischen einem reaktiven und einem proaktiven ID-Mitarbeiter und was ist der Umsatzeffekt?', opts:['Kein Unterschied', 'Reaktiv: nur auf Anrufe reagieren. Proaktiv: Muster erkennen (sinkende Bestellungen, neue Bedarfe) und vor dem Kunden handeln. Proaktive haben typisch 30-50% mehr Cross-Selling', 'Proaktiv bedeutet mehr Arbeit', 'Reaktiv ist effizienter'], correct:1},
+      {q:'Wie nutzt ein Profi-ID seine CRM-Daten vor einem Anruf?', opts:['Er schaut nicht in CRM', 'Letzte Bestellung, Typ, offene Punkte, aktuelle Bedarfe — in 1 Minute Kontext aufbauen um nicht kalt zu starten', 'Er liest alle Notizen', 'Er fragt den Kunden nach Updates'], correct:1},
+      {q:'Stammkunde ruft an und du erkennst an der Stimme dass er gestresst ist. Du weißt er hat einen wichtigen Produktionsstart morgen. Was machst du anders?', opts:['Normal weiterarbeiten', 'Tempo anpassen, sofort auf seinen Bedarf eingehen, keine Zusatz-Themen an diesem Tag — Kundensituation erkennen und darauf eingehen', 'Ihn fragen ob alles okay ist', 'Das Gespräch kurz halten'], correct:1},
+      {q:'Ein neuer Kunde kauft zum ersten Mal und macht eine kleine Bestellung. Wie behandelst du ihn?', opts:['Schnell abwickeln', 'Wie deinen wichtigsten Kunden — erste Erfahrungen prägen Loyalität. Großes Kundenpotenzial steckt oft in kleinen ersten Aufträgen', 'Normal wie alle anderen', 'Mit Extra-Rabatten'], correct:1},
+      {q:'Was macht ID-Haltung im Sinne von WEWO-Philosophie aus?', opts:['Bestellungen effizient aufnehmen', 'Jeder Kontakt ist ein Chance zu zeigen dass WEWO mehr ist als ein Lieferant — Partner, Problemlöser, verlässliche Konstante', 'Freundlich sein', 'Günstig sein'], correct:1},
+    ],
+  },
+  'crossselling_id': {
+    leicht: [
+      {q:'Was ist Cross-Selling?', opts:['Einen Kunden an einen anderen Kunden weiterempfehlen', 'Ergänzende Produkte zum Hauptkauf anbieten', 'Einem Kunden mehr vom gleichen Produkt verkaufen', 'Ein Verkaufsansatz für neue Kunden'], correct:1},
+      {q:'Was ist das "Dankbarkeitsfenster"?', opts:['Ein Zeitfenster nach dem Dank', 'Der Moment direkt nach Problemlösung wo der Kunde offen für weitere Angebote ist', 'Ein Zeitplan für Dankesbriefe', 'Ein Fenster in der App'], correct:1},
+      {q:'Was ist das Bündelungsargument?', opts:['Produkte in Paketen verkaufen', 'Alles aus einer Hand vereinfacht Bestellprozesse und spart interne Transaktionskosten', 'Viele Produkte auf einmal bestellen', 'Ein Rabatt für große Bestellungen'], correct:1},
+      {q:'Wann ist der schlechteste Moment für Cross-Selling?', opts:['Nach einer guten Lösung', 'Mitten in einer offenen Reklamation oder während eines Problems', 'Bei der Bestellbestätigung', 'Am Ende des Gesprächs'], correct:1},
+      {q:'Was kostet eine interne Bestellung laut WEWO-Argumentation?', opts:['Nichts — ist ja intern', '50-150€ pro Bestellung unabhängig vom Warenwert durch Personal- und Prozesskosten', 'Den Warenwert', 'Die Versandkosten'], correct:1},
+    ],
+    mittel: [
+      {q:'Kunde bestellt Schrauben DIN 933 M8. Welche Cross-Selling-Frage ist am natürlichsten?', opts:['"Wollen Sie mehr kaufen?"', 'Kurz nach Bestellung: "Benötigen Sie dazu auch passende Muttern und Scheiben? Wir hätten beides sofort verfügbar."', 'Den Kunden fragen was er noch so kauft', 'Den Katalog vorlesen'], correct:1},
+      {q:'Kunde sagt: "Ich kaufe alles andere woanders." Profi-Reaktion?', opts:['Okay, danke für die Info', 'Interesse zeigen ohne Druck: "Interessant — darf ich fragen warum? Manchmal gibt es Vorteile bei uns die noch nicht bekannt sind."', 'Ihn überzeugen alles bei WEWO zu kaufen', 'Das Thema wechseln'], correct:1},
+      {q:'Was ist der Unterschied zwischen aufdringlichem und natürlichem Cross-Selling?', opts:['Aufdringlich = mehr Produkte, natürlich = weniger', 'Natürlich = kommt aus echtem Verständnis des Kundenbedarfs und fühlt sich wie Hilfe an. Aufdringlich = gepresste Produktliste die nicht passt', 'Aufdringlich ist effektiver', 'Es gibt keinen Unterschied'], correct:1},
+      {q:'Welcher Kundentyp reagiert am besten auf Prozesskosten-Argument im Cross-Selling?', opts:['Connector', 'Closer', 'Analyst', 'Verlässlich'], correct:2},
+      {q:'Was ist das Risiko von Cross-Selling bei einem unzufriedenen Kunden?', opts:['Kein Risiko', 'Der Kunde fühlt sich nicht ernst genommen — erst Problem lösen, dann Chancen nutzen', 'Es ist immer ein guter Zeitpunkt', 'Der Kunde kauft dann mehr'], correct:1},
+    ],
+    schwer: [
+      {q:'Du erkennst dass ein Kunde zwar Schrauben kauft aber wahrscheinlich auch Dichtungen und Normbuchsen braucht. Er fragt nicht danach. Was tust du?', opts:['Nichts — er soll fragen wenn er etwas braucht', 'Proaktiv: "Ich habe gesehen dass Sie regelmäßig [X] bestellen — haben Sie auch [Y] im Bedarf? Viele unserer Kunden kombinieren das bei uns."', 'Den Außendienst informieren', 'Im nächsten Gespräch ansprechen'], correct:1},
+      {q:'Welche Information aus CRM hilft am meisten beim Cross-Selling?', opts:['Geburtstag des Einkäufers', 'Kaufmuster: Was kauft er, wie oft, welche Produktgruppen fehlen die andere Kunden ähnlicher Größe kaufen', 'Letzte Reklamation', 'Zahlungshistorie'], correct:1},
+      {q:'Kunde sagt: "Das klingt interessant aber ich muss erst Preise vergleichen." Bester nächster Schritt?', opts:['Okay, melden Sie sich', 'Aktiv bleiben: "Das verstehe ich. Wann darf ich mich melden? Ich schicke Ihnen zwischendurch ein konkretes Vergleichsangebot."', 'Warten', 'Rabatt anbieten'], correct:1},
+      {q:'Was ist der ROI von Cross-Selling bei einem Stammkunden verglichen mit Neukundenakquise?', opts:['Neukundenakquise ist effizienter', 'Cross-Selling bei Stammkunden hat 5-10x niedrigere Akquisekosten bei höherer Abschlussrate — Beziehung und Vertrauen sind bereits vorhanden', 'Beide sind gleich', 'Hängt vom Produkt ab'], correct:1},
+      {q:'Du hast dem Kunden erfolgreich 3 zusätzliche Produktgruppen verkauft. Was ist jetzt wichtig?', opts:['Nichts mehr zu tun', 'Verlässliche Lieferung und Qualität sicherstellen — Cross-Selling-Erfolg verpflichtet zu noch besserem Service', 'Nochmal mehr verkaufen', 'Den Preis erhöhen'], correct:1},
+    ],
+    profi: [
+      {q:'Wie unterscheidest du einen Kunden mit echtem Bündelungspotenzial von einem der nie bundeln wird?', opts:['Gar nicht möglich', 'Bestellmuster, Unternehmenstyp und Gesprächssignale: spricht er von mehreren Lieferanten, Suchaufwand, Reklamationen? Das sind echte Bündelungssignale', 'Nur Umsatzhöhe', 'Nur wenn er danach fragt'], correct:1},
+      {q:'Was ist der strategische Unterschied zwischen Cross-Selling und Upselling?', opts:['Kein Unterschied', 'Cross-Selling = ergänzende Produktgruppen. Upselling = höherwertiges Produkt in derselben Gruppe. Beide nutzen dieselbe Beziehung aber aus anderen Winkeln', 'Upselling ist aggressiver', 'Cross-Selling ist für ID, Upselling für AD'], correct:1},
+      {q:'Ein Profi-ID erkennt "stille Bedarfe" — was sind das?', opts:['Bedarfe die der Kunde nicht nennt', 'Produkte die der Kunde kauft ohne zu wissen dass WEWO sie hat — erkennbar durch Branche, Produkteinsatz und Kaufmuster des Kunden', 'Bedarfe aus dem Katalog', 'Zukünftige Bedarfe'], correct:1},
+      {q:'Welche Cross-Selling-Methode hat den höchsten Erfolg bei rationalen Analysten-Einkäufern?', opts:['Emotionaler Nutzen', 'Konkrete Prozesskosten-Rechnung: Anzahl Bestellungen × Kostensatz = Einsparung durch Bündelung. Zahlen überzeugen Analytiker, keine Gefühle', 'Beziehungsargument', 'Liefervorteile'], correct:1},
+      {q:'Wie verknüpft ein Profi-ID Cross-Selling mit Kundenbindung strategisch?', opts:['Gar nicht — das sind verschiedene Aufgaben', 'Je mehr Produktgruppen ein Kunde bei WEWO kauft, desto höher die Wechselkosten und desto stärker die Bindung — Cross-Selling ist Retention-Strategie', 'Cross-Selling reduziert Bindung', 'Kundenbindung kommt zuerst'], correct:1},
+    ],
+  },
+  'einwand_id': {
+    leicht: [
+      {q:'Was tust du ZUERST wenn ein Kunde einen Einwand hat?', opts:['Sofort widersprechen', 'Den Einwand anerkennen bevor du antwortest', 'Den Preis senken', 'Einen Kollegen rufen'], correct:1},
+      {q:'Einkäufer: "Ihr seid zu teuer." Was ist das klassische erste Element der Antwort?', opts:['Preis sofort senken', 'Anerkennen: "Das ist ein verständlicher Punkt" — dann Wertargument', 'Das ist nicht wahr sagen', 'Schweigen'], correct:1},
+      {q:'Was bedeutet "Sicherheit geben" beim Verlässlich-Kunden bei Einwänden?', opts:['Preis garantieren', 'Signalisieren dass der Prozess bekannt, sicher und bewährt ist — kein Risiko für ihn', 'Lieferzeit garantieren', 'Ein Vertrag'], correct:1},
+      {q:'Welches Element gehört zu einer professionellen Einwandantwort am Telefon immer dazu?', opts:['Lange Erklärung', 'Kurze Anerkennung + klarer nächster Schritt oder konkrete Lösung', 'Preis', 'Produktdetails'], correct:1},
+      {q:'Was ist der Unterschied zwischen einer Reklamation und einem Einwand?', opts:['Kein Unterschied', 'Reklamation = Problem ist eingetreten. Einwand = Bedenken vor der Entscheidung. Beides braucht Empathie zuerst', 'Reklamation ist schlimmer', 'Einwände sind schwerer'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer: "Ich habe ein günstigeres Angebot." Best Response als ID?', opts:['Sofort den Preis unterbieten', 'Interesse zeigen + qualifizieren: "Darf ich fragen — bei gleicher Qualität und Lieferzuverlässigkeit? Was ist Ihnen da am wichtigsten?"', 'Das Angebot bestreiten', 'Rabatt anbieten'], correct:1},
+      {q:'Einkäufer: "Ihr habt letzte Mal zu spät geliefert." Was ist die stärkste Reaktion?', opts:['Das war eine Ausnahme erklären', 'Verantwortung übernehmen: "Das tut mir leid — das darf nicht passieren. Hier ist was ich jetzt sofort tue..." und Lösung nennen', 'Fragen wann das war', 'Den Außendienst informieren'], correct:1},
+      {q:'Welche Einwandtechnik passt am besten zu einem Analytiker-Einkäufer am Telefon?', opts:['Emotionale Ansprache', 'Fakten und Daten liefern: Vergleichszahlen, Qualitätszertifikate, messbare Lieferperformance', 'Beziehungsargument', 'Schnelle direkte Antwort'], correct:1},
+      {q:'Einkäufer sagt: "Kein Bedarf gerade." Was machst du?', opts:['Akzeptieren und auflegen', 'Konkret nachfragen: "Wann könnte das Thema wieder relevant werden? Darf ich mich dann melden?"', 'In 6 Monaten wieder anrufen', 'Direkt über Preis sprechen'], correct:1},
+      {q:'Was ist das Ziel der Einwandbehandlung im ID — über den einzelnen Einwand hinaus?', opts:['Den Kunden zu überzeugen', 'Vertrauen aufbauen dass WEWO ein verlässlicher Partner ist — jede Einwandbehandlung ist eine Gelegenheit die Beziehung zu stärken', 'Den Umsatz zu maximieren', 'Den Einwand zu widerlegen'], correct:1},
+    ],
+    schwer: [
+      {q:'Stammkunde droht mit Wechsel wegen Preis. Du weißt du kannst 3% anbieten. Wie gehst du vor?', opts:['Sofort 3% anbieten', 'Erst vollständig verstehen: "Was müsste sich ändern damit Sie bei uns bleiben?" — vielleicht ist Preis gar nicht das Hauptthema', 'Ihn gehen lassen', 'Chef informieren bevor du antwortest'], correct:1},
+      {q:'Einkäufer hat Reklamation und ist aggressiv. Du weißt ihr habt einen Fehler gemacht. Was tust du?', opts:['Dich verteidigen', 'Sofort Verantwortung übernehmen ohne Wenn und Aber + konkrete Lösung mit Zeitrahmen + eskalieren wenn nötig. Keine Ausreden.', 'Die Schuld auf Logistik schieben', 'Rabatt anbieten um die Situation zu lösen'], correct:1},
+      {q:'Was ist das Risiko wenn du zu schnell Einwände "lösst" ohne sie zu verstehen?', opts:['Kein Risiko — schnelle Lösung ist gut', 'Du löst vielleicht den falschen Einwand — der echte Grund (Unzufriedenheit, fehlendes Vertrauen) bleibt bestehen', 'Es kostet Zeit', 'Der Kunde wird verwirrt'], correct:1},
+      {q:'Wie unterscheidet sich Einwandbehandlung bei Bestandskunden vs. Neukunden?', opts:['Keine Unterschiede', 'Bestandskunden: Beziehungshistorie nutzen, auf gemeinsame Erfahrungen referenzieren. Neukunden: mehr Vertrauen aufbauen, mehr Beweise liefern', 'Neukunden brauchen günstigere Preise', 'Bestandskunden bekommen immer Nachlass'], correct:1},
+      {q:'Ein Einkäufer hat 3 verschiedene Einwände in einem Gespräch. Wie gehst du vor?', opts:['Alle gleichzeitig behandeln', 'Priorisieren: welcher ist der echte Haupteinwand? Oft sind 2 von 3 Vorwände. Den echten identifizieren und tief behandeln', 'Jeden einzeln der Reihe nach', 'Den ersten behandeln und aufhören'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist das psychologische Prinzip hinter "Erst anerkennen, dann antworten"?', opts:['Es kostet Zeit', 'Anerkennung senkt emotionale Abwehr (Amygdala) — danach ist die rationale Ebene wieder zugänglich. Ohne Anerkennung spricht der Einkäufer nicht zu, egal wie gut das Argument ist', 'Es zeigt Schwäche', 'Es ist höflich'], correct:1},
+      {q:'Welcher Einwand signalisiert im ID fast immer echtes Interesse und keinen Abbruch?', opts:['"Kein Bedarf"', '"Zu teuer" kombiniert mit nachfolgenden Detailfragen — wer wirklich nicht kaufen will fragt nicht nach Details', 'Aufhängen', '"Ich habe einen anderen Lieferanten"'], correct:1},
+      {q:'Ein Profi-ID führt kein Protokoll über Einwände. Was ist sein Fehler?', opts:['Er hat keinen — Protokoll kostet Zeit', 'Einwandmuster über Kunden zeigen systemische Probleme (Preispositionierung, Lieferzuverlässigkeit) die der Außendienst kennen muss — Dokumentation ist strategisch wertvoll', 'Er hat kein CRM', 'Protokolle sind nicht wichtig'], correct:1},
+      {q:'Was ist "präventive Einwandbehandlung"?', opts:['Einwände vorhersagen und dann entspannt reagieren', 'Bekannte Einwände proaktiv vor dem Gespräch ansprechen: "Sie werden sich vielleicht fragen ob..." — nimmt dem Einwand die Kraft bevor er kommt', 'Eine aggressive Technik', 'Nur für erfahrene Mitarbeiter'], correct:1},
+      {q:'Wann ist es richtig, dem Einkäufer in seinem Einwand vollständig Recht zu geben?', opts:['Nie', 'Wenn der Einwand berechtigt ist — z.B. echte Lieferverzögerung. Falsche Verteidigung kostet Vertrauen. Zustimmen + Lösung = stärkste Reaktion', 'Immer als Technik', 'Nur bei Reklamationen'], correct:1},
+    ],
+  },
+  'koerpersprache_ad': {
+    leicht: [
+      {q:'Was ist die wichtigste Aussage zur Körpersprache im Vertrieb?', opts:['Körpersprache ist angeboren und unveränderlich', '80% der Verhandlungsmacht entsteht aus wahrgenommener Körpersprache nicht Fakten', 'Kleidung ist wichtiger als Körpersprache', 'Körpersprache ist bei Telefongesprächen irrelevant'], correct:1},
+      {q:'Was signalisieren verschränkte Arme laut Körpersprachforschung?', opts:['Entspannung', 'Abwehr, Distanz oder mangelnde Offenheit', 'Konzentration', 'Dominanz'], correct:1},
+      {q:'Was ist "Spiegeln" in der Körpersprache?', opts:['In Spiegel schauen', 'Unbewusste Körpersprache des Gegenübers aufnehmen — schafft Rapport', 'Den Kunden imitieren', 'Eine Manipulationstechnik'], correct:1},
+      {q:'Was bewirkt langsames Sprechen auf den Hörer?', opts:['Langeweile', 'Souveränität und Kontrolle signalisieren', 'Unsicherheit zeigen', 'Kompetenz verbergen'], correct:1},
+      {q:'Warum ist Blickkontakt wichtig im Termin?', opts:['Um den Kunden einzuschüchtern', 'Es signalisiert Vertrauen, Interesse und Ehrlichkeit', 'Um dominant zu wirken', 'Es ist Pflicht'], correct:1},
+    ],
+    mittel: [
+      {q:'Welche Sitzposition stärkt deine Position im Termin?', opts:['Zusammengesunken, entspannt wirken', 'Aufrecht, leicht nach vorne, Hände sichtbar — signalisiert Engagement und Souveränität', 'Weit zurückgelehnt', 'Seitlich zum Tisch'], correct:1},
+      {q:'Einkäufer verschränkt Arme nach deiner Preisnennung. Was machst du?', opts:['Preis sofort senken', 'Pause machen, Frage stellen um Öffnung zu erzeugen: "Was geht Ihnen gerade durch den Kopf?"', 'Ignorieren und weitermachen', 'Das Gespräch beenden'], correct:1},
+      {q:'Was ist das Risiko von zu vielen Gesten beim Präsentieren?', opts:['Kein Risiko', 'Übermäßige Gestik signalisiert Nervosität und lenkt vom Inhalt ab — weniger ist mehr', 'Es wirkt zu langweilig ohne Gesten', 'Gesten sind immer positiv'], correct:1},
+      {q:'Welcher Körpersprache-Aspekt ist am Telefon relevant?', opts:['Gar keiner — Körpersprache ist nur physisch', 'Haltung und Lächeln beeinflussen die Stimme — aufrecht sitzen oder stehen verbessert messbar den Ton', 'Nur Handgesten', 'Nur Augenkontakt'], correct:1},
+      {q:'Wie nutzt du Körpersprache beim Abschluss?', opts:['Zurücklehnen und warten', 'Leicht nach vorne lehnen, Blickkontakt halten, offene Hände — signalisiert Erwartung und Sicherheit', 'Nichts ändern', 'Aufstehen'], correct:1},
+    ],
+    schwer: [
+      {q:'Du erkennst Micro-Expressions des Einkäufers — kurzes Stirnrunzeln bei deinem Preis. Was tust du?', opts:['Ignorieren', 'Ansprechen: "Ich habe kurz gesehen dass Sie gezögert haben — was geht Ihnen da durch den Kopf?"', 'Preis sofort senken', 'Weitermachen als ob nichts war'], correct:1},
+      {q:'Was ist das Problem wenn deine verbale und nonverbale Kommunikation nicht übereinstimmen?', opts:['Kein Problem', 'Das Gehirn glaubt der Körpersprache mehr als den Worten — Inkongruenz zerstört Vertrauen subtil aber sicher', 'Es passiert allen', 'Kunden merken das nicht'], correct:1},
+      {q:'Einkäufer lehnt sich weit zurück und schaut zur Seite während du präsentierst. Diagnose?', opts:['Er denkt nach', 'Er hat innerlich abgeschaltet oder ist in Abwehrhaltung — Thema wechseln oder direkte Frage stellen', 'Er ist müde', 'Er ist unhöflich'], correct:1},
+      {q:'Welche Technik hilft wenn du selbst nervös bist und es zeigen könntest?', opts:['Schneller sprechen', 'Bewusst verlangsamen: Tempo runter, tiefe Atemzüge, Hände ablegen — reduziert Cortisol und signalisiert Kontrolle', 'Nervosität zugeben', 'Viel trinken'], correct:1},
+      {q:'Was ist der Unterschied zwischen "Power Pose" Effekt und natürlicher Körpersprache im Termin?', opts:['Kein Unterschied', 'Natürliche Körpersprache kommt aus Mindset (BATNA, Selbstbewusstsein) — Power Pose ist kurzfristige Simulation. Langfristig siegt das Mindset', 'Power Pose funktioniert immer', 'Natürliche Körpersprache ist immer besser'], correct:1},
+    ],
+    profi: [
+      {q:'Warum sagt Nasher dass Verhandlungsmacht zu 80% aus Wahrnehmung entsteht?', opts:['Weil Fakten unwichtig sind', 'Entscheidungen werden emotional getroffen und rational begründet — wer mächtiger wirkt hat mehr Einfluss als wer faktisch stärker ist', 'Weil Menschen irrational sind', 'Weil Körpersprache alles ist'], correct:1},
+      {q:'Profi-Verkäufer steuern ihre Körpersprache bewusst. Was ist der häufigste Fehler dabei?', opts:['Zu wenig steuern', 'Übersteuern — sichtlich gestellte Körpersprache wirkt unnatürlich und unehrlich. Bewusstsein ja, Performance nein', 'Zu viel lächeln', 'Zu wenig Blickkontakt'], correct:1},
+      {q:'Du sitzt einem Analytiker gegenüber der sehr wenig körperlich reagiert. Was bedeutet das?', opts:['Er ist desinteressiert', 'Analytiker zeigen wenig emotionale Körpersprache — das ist Typ, kein Signal. Andere Signale: Fragen, Notizen, Blickkontakt bewerten', 'Er kauft nicht', 'Er ist unhöflich'], correct:1},
+      {q:'Wie nutzt ein Profi die "Statuserhöhung" durch Körpersprache?', opts:['Er dominiert physisch', 'Er nimmt Raum ein ohne zu drohen: mehr Platz, ruhigere Bewegungen, mehr Pausen — Qualität statt Quantität der Präsenz', 'Er sitzt höher', 'Er spricht lauter'], correct:1},
+      {q:'Was ist das Ziel von "Kalibrieren" in Verhandlungsgesprächen?', opts:['Den Kunden einschätzen', 'Die eigene Körpersprache kontinuierlich an die Reaktionen des Gegenübers anpassen — dynamische Körpersprache statt festes Schema', 'Die eigene Technik perfektionieren', 'Die Körpersprache des Kunden kopieren'], correct:1},
+    ],
+  },
+  'wewo_usp_ad': {
+    leicht: [
+      {q:'Was ist WEWOs einzigartiger Vorteil gegenüber reinen Händlern?', opts:['Günstiger Preis', 'WEWO ist gleichzeitig Hersteller UND Händler — ab 1 Stück', 'Mehr Produkte', 'Schnellere Lieferung'], correct:1},
+      {q:'Was bedeutet "Zeichnungsteile"?', opts:['Teile die gezeichnet werden', 'Teile die nach Kundenvorgaben/technischen Zeichnungen produziert werden', 'Standard-Normteile', 'Teile mit Aufkleber'], correct:1},
+      {q:'Was ist der Vorteil wenn WEWO selbst herstellt bei Marktknappheit?', opts:['WEWO kann günstig einkaufen', 'WEWO kann selbst produzieren wenn andere Händler nicht liefern können — Liefersicherheit', 'WEWO hat bessere Verbindungen', 'WEWO hat mehr Lagerplatz'], correct:1},
+      {q:'Welche Materialien kann WEWO als Hersteller verarbeiten?', opts:['Nur Stahl', 'Standard plus Sonderwerkstoffe: Titan, Duplex, Inconel, Sonderstähle', 'Nur Normteile', 'Nur Aluminium'], correct:1},
+      {q:'Was ist der USP-Kern in einem Satz?', opts:['Wir sind der Günstigste', 'Hersteller + Händler in einem: Normteile sofort, Sonderteile auf Anfrage, ab 1 Stück — alles aus einer Hand', 'Wir liefern am schnellsten', 'Wir haben den besten Service'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer: "Ihr seid teurer als Schnellhändler X." Wie nutzt du den Hersteller-USP?', opts:['Preis sofort senken', 'Hersteller-Argument: "Wir sind kein Händler mit Aufschlag — wir sind der Hersteller. Unser Preis ist unser Direktpreis ohne Zwischen-Marge."', 'Lieferzeit betonen', 'Produktqualität betonen'], correct:1},
+      {q:'Wann ist der Hersteller-USP am stärksten?', opts:['Immer', 'Bei Kunden mit Lieferproblemen, Sonderteilebedarf oder hohem Qualitätsanspruch — dort schlägt reiner Preisvergleich', 'Nur bei Großkunden', 'Nur bei technisch anspruchsvollen Projekten'], correct:1},
+      {q:'Was ist das stärkste Argument für den Händler-Aspekt von WEWO?', opts:['Große Lagerhaltung', 'Breites Normteilsortiment sofort verfügbar + Komplettlösung = weniger Lieferanten, weniger Transaktionen, mehr Überblick', 'Günstige Preise', 'Schnelle Website'], correct:1},
+      {q:'Wie verbindest du Hersteller-USP mit dem Bündelungsargument?', opts:['Das passt nicht zusammen', 'Wir sind Hersteller für Sonderteile UND Händler für Normteile — alles bei einem Lieferanten reduziert Transaktionskosten und Verwaltungsaufwand', 'Beides getrennt ansprechen', 'Nur Hersteller betonen'], correct:1},
+      {q:'Für welche Einkäufer ist der Liefersicherheits-USP das stärkste Argument?', opts:['Preissensitive Einkäufer', 'Einkäufer mit Produktionsverantwortung die Ausfallrisiken kennen — ein Lieferausfall kostet mehr als 5% Preisunterschied', 'Einkäufer großer Mengen', 'Alle Einkäufer gleich'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer: "Wir kaufen nur bei zertifizierten Serienlieferanten." Wie nutzt du den USP?', opts:['Wir werden zertifiziert sein', 'Hersteller-Argument + Zertifizierungsnachweis: "Wir produzieren nach DIN/ISO, haben [Zertifikate]. Für Serienlieferung sprechen wir über Rahmenvertrag."', 'Das passt nicht zu uns', 'Einen Spezialisten vorschlagen'], correct:1},
+      {q:'Was unterscheidet WEWOs Sonderteilkompetenz von der eines Standardhändlers in der Praxis?', opts:['Nichts wesentliches', 'WEWO kann Zeichnungsteile umsetzen, Materialien anpassen und Prototypen entwickeln — Händler können nur bestellen was es gibt. Bei Sonderlösungen ist WEWO Entwicklungspartner, nicht nur Lieferant', 'Schnellere Lieferzeit', 'Günstigerer Preis'], correct:1},
+      {q:'In welcher Situation ist WEWO als Direkthersteller klar im Vorteil gegenüber einem Großhändler?', opts:['Standardteile günstig kaufen', 'Wenn Normteile am Markt knapp sind — Großhändler hat auch nichts mehr, WEWO kann selbst produzieren. Liefersicherheit in Engpässen ist ein echter strategischer Vorteil', 'Bei der Bestellung großer Mengen', 'Bei sehr günstigen Preisen'], correct:1},
+      {q:'Wie formulierst du den Hersteller-Direktpreis-Vorteil überzeugend ohne Wettbewerber anzugreifen?', opts:['Indem du Wettbewerber nennst', 'Sachlich: "Wir haben keine Einkaufsmarge auf Normteile — wir produzieren selbst. Was Sie als Preis sehen ist unser Herstellerpreis." — Fakt, keine Wertung', 'Indem du günstiger wirst', 'Indem du Qualität betonst'], correct:1},
+      {q:'Welche drei USP-Argumente kombinierst du bei einem Einkäufer der Liefersicherheit, Qualität und Kostenkontrolle priorisiert?', opts:['Preis, Preis, Preis', 'Hersteller = Liefersicherheit bei Engpässen. Direkte Produktion = Qualitätskontrolle. Bündelung = weniger Bestellprozesse = Kostenkontrolle', 'Schnelllieferung, Rabatt, Service', 'Katalog, Service, Beziehung'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist das strategische Risiko wenn WEWO den USP nicht aktiv kommuniziert?', opts:['Kein Risiko', 'Einkäufer sehen WEWO als normalen Händler — preissensitiv, leicht ersetzbar. Ohne USP-Differenzierung wird nur nach Preis entschieden', 'Es spielt keine Rolle', 'Der USP ist offensichtlich'], correct:1},
+      {q:'Profi-Verkäufer bei WEWO internalisieren den USP. Was bedeutet das?', opts:['Sie können ihn auswendig', 'Sie glauben selbst an den Mehrwert — das kommt authentisch rüber. Wer selbst überzeugt ist überzeugt auch andere. Wer auswendig lernt klingt wie Werbung', 'Sie kennen alle Produkte', 'Sie haben Produkttraining gemacht'], correct:1},
+      {q:'Wie verändert der Hersteller-USP deine BATNA in Preisverhandlungen?', opts:['Gar nicht', 'WEWO muss keine Verhandlung gewinnen indem es unter Marktpreis geht — wer keine Alternative bei Marktknappheit hat kommt zurück. BATNA wird stärker weil der Mehrwert realer wird', 'Die BATNA bleibt gleich', 'Nur wenn der Markt eng ist'], correct:1},
+      {q:'Welcher USP-Aspekt wird am häufigsten vergessen und hat gleichzeitig das größte Differenzierungspotenzial?', opts:['Preis', 'Sonderwerkstoffe und Zeichnungsteile — kaum ein Wettbewerber kann das ab 1 Stück. Das öffnet Türen zu technischen Projekten die kein Händler bedienen kann', 'Lieferzeit', 'Normteile'], correct:1},
+      {q:'Ein Profi nutzt den USP auch intern. Was bedeutet das?', opts:['Er erklärt den USP dem Chef', 'Er nutzt das Wissen über WEWOs einzigartige Position um Vertrauen in die eigene BATNA zu stärken — "Ich verkaufe etwas das andere nicht können" gibt echte Sicherheit in Verhandlungen', 'Er schreibt den USP auf', 'Er lernt den USP auswendig'], correct:1},
+    ],
+  },
+  'normteile_id': {
+    leicht: [
+      {q:'Was sind Normteile?', opts:['Selbst hergestellte Teile', 'Standardisierte Verbindungselemente nach DIN/ISO-Norm (Schrauben, Muttern, Scheiben etc.)', 'Sonderanfertigungen', 'Teile ohne Norm'], correct:1},
+      {q:'Was ist ein C-Teil im Einkauf?', opts:['Ein günstiges Teil', 'Ein Teil mit geringem Wert aber hohem Verwaltungsaufwand — Schrauben, Muttern etc.', 'Ein kritisches Teil', 'Ein Teil der Kategorie C im Lager'], correct:1},
+      {q:'Was bedeutet "DIN 933"?', opts:['Eine Firmennorm', 'Eine Deutsche Industrie Norm für Sechskantschrauben mit Gewinde bis Kopf', 'Eine WEWO interne Bezeichnung', 'Eine internationale Norm'], correct:1},
+      {q:'Was ist der Prozesskosten-Vorteil von Bündelung?', opts:['Günstigere Einkaufspreise', 'Weniger Bestellvorgänge = weniger Verwaltungskosten (50-150€ pro Bestellung intern)', 'Schnellere Lieferung', 'Bessere Qualität'], correct:1},
+      {q:'Was ist WEWO als Normteilhändler-Vorteil gegenüber Online-Händlern?', opts:['Günstigerer Preis online', 'Technische Beratung + Zuverlässigkeit + persönlicher Ansprechpartner + WEWO ist auch Hersteller', 'Schnellere Lieferung', 'Mehr Auswahl'], correct:1},
+    ],
+    mittel: [
+      {q:'Einkäufer: "Ich kaufe Normteile günstig online." Stärkstes Argument?', opts:['Wir können auch günstig sein', 'Gesamtkosten-Argument: Online-Preis + interne Bestellkosten + Qualitätsrisiko + Lieferzuverlässigkeit. Was kostet ein Lieferausfall?', 'Wir haben mehr Auswahl', 'Wir liefern schneller'], correct:1},
+      {q:'Welches Normteil-Argument passt zum WEWO Hersteller-USP?', opts:['Günstigster Händler', 'Wenn Standard-Normteile am Markt knapp sind — WEWO produziert selbst. Andere Händler können dann nicht mehr liefern', 'Mehr Auswahl', 'Bessere Website'], correct:1},
+      {q:'Was bedeutet "Kanban" im C-Teile-Management?', opts:['Eine japanische Methode', 'Automatisches Nachbestellsystem — Behälter leer = Nachbestellung ausgelöst. Eliminiert Bestellaufwand komplett', 'Eine Qualitätsnorm', 'Eine Lagermethode'], correct:1},
+      {q:'Warum ist Normteil-Beratung ein Differenzierungsmerkmal?', opts:['Weil wir mehr Normen kennen', 'Online-Händler haben keine Beratung. WEWO-Mitarbeiter können Alternativen, Substitute, optimale Materialwahl empfehlen — das ist Mehrwert der nicht im Preis steht', 'Weil wir günstiger sind', 'Weil wir schneller liefern'], correct:1},
+      {q:'Kunde kauft DIN 933 M8 Stahl. Was ist eine sinnvolle Cross-Selling-Frage?', opts:['"Wollen Sie mehr kaufen?"', '"Benötigen Sie dazu passende DIN 934 Sechskantmuttern oder DIN 125 Unterlegscheiben? Wir haben beides sofort."', 'Den Katalog vorlesen', 'Fragen was er sonst noch kauft'], correct:1},
+    ],
+    schwer: [
+      {q:'Einkäufer findet online 10% günstiger das gleiche Teil. Wie argumentierst du ohne den Preis zu matchen?', opts:['Preis sofort matchen', 'Gesamtbild: interne Bestellkosten, Reklamationsrisiko, fehlende Beratung, keine Lagergarantie bei Online. "Was kostet Sie eine falsche Lieferung?" — dann Entscheidung ihm überlassen', 'Rabatt anbieten', 'Das Gespräch beenden'], correct:1},
+      {q:'Was ist der strategische Vorteil einer Normteil-Vollversorgung durch WEWO?', opts:['Günstigere Gesamtkosten', 'Hohe Wechselkosten für den Kunden durch Prozessintegration + WEWO-Wissen über Bedarfe = starke Kundenbindung', 'Bessere Qualität', 'Mehr Auswahl'], correct:1},
+      {q:'Kunden fragen manchmal: "Sind das echte DIN-Teile?" — Was steckt hinter dieser Frage?', opts:['Misstrauen gegenüber WEWO', 'Erfahrung mit Billigimporten ohne echte Norm-Einhaltung — Toleranzen außerhalb der Norm, falsche Materialgüte. Antwort: Zertifikate und Prüfprotokolle zeigen', 'Eine technische Frage', 'Eine Preisfrage'], correct:1},
+      {q:'Ein Einkäufer hat 15 verschiedene Schraubenlieferanten. Wie nutzt du das?', opts:['Das ist seine Entscheidung', 'Bündelungs-Potenzial: "15 Lieferanten = 15 Bestellprozesse, 15 Rechnungen, 15 Qualitätsprüfungen. Was kostet Sie das jährlich?"', 'Mehr Produkte anbieten', 'Günstigeren Preis anbieten'], correct:1},
+      {q:'Warum ist Normteil-Qualität kein "weiches" Argument sondern ein hartes?', opts:['Es ist tatsächlich weich', 'Toleranzabweichungen bei minderwertigen Importen führen zu Montagefehlern, Ausschuss und im schlimmsten Fall Produkthaftung — das ist messbar teurer als der Preisunterschied', 'Es ist immer nur ein Preisgespräch', 'Qualität spielt keine Rolle bei Normteilen'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist die Verbindung zwischen C-Teile-Management und strategischem Einkauf?', opts:['Keine Verbindung', 'C-Teile sind 80% der Lieferantenanzahl aber nur 20% des Einkaufsvolumens. Strategisch: Konsolidierung spart Verwaltungskosten exponentiell. WEWO als Vollsortimenter ist Konsolidierungspartner', 'C-Teile sind unwichtig', 'Nur für Großkonzerne relevant'], correct:1},
+      {q:'Wie erklärt ein Profi dem Einkäufer den Unterschied zwischen Einzelstück-Preis und Total Cost of Ownership?', opts:['Er berechnet einen Rabatt', 'Er rechnet vor: Einkaufspreis + Bestellkosten + Lagerhaltung + Qualitätsprüfung + Reklamationsrisiko = TCO. Bei C-Teilen übersteigen Prozesskosten oft den Warenwert', 'Er erklärt nur den Preis', 'Er bittet um ein Gespräch'], correct:1},
+      {q:'Was unterscheidet einen Normteil-Profi im ID von einem Bestellungsaufnehmer?', opts:['Mehr Produktwissen', 'Er kennt Anwendungen, erkennt Optimierungspotenziale, fragt nach dem Verwendungszweck und schlägt bessere Alternativen vor — Beratungskompetenz als Differenzierungsmerkmal', 'Er ist freundlicher', 'Er bearbeitet mehr Bestellungen'], correct:1},
+      {q:'Welche Normteil-Information ist für die Bindungsstrategie am wertvollsten?', opts:['Bestellmenge', 'Vollständiges Normteil-Portfolio des Kunden — wer alle Bedarfe kennt kann vollständige Konsolidierung anbieten und wird unersetzlich', 'Zahlungsziel', 'Lieferpräferenzen'], correct:1},
+      {q:'Profi-ID nutzt Normteil-Wissen um den Außendienst zu unterstützen. Wie konkret?', opts:['Er informiert AD über neue Produkte', 'Er identifiziert im Telefongespräch neue Bedarfe, Optimierungspotenziale und Wechselbereitschaft — gibt diese als qualifizierte Leads an AD weiter. Synergie statt Silos', 'Er bearbeitet auch AD-Aufgaben', 'Er hat die gleiche Rolle wie AD'], correct:1},
+    ],
+  },
+  'kundentypen_id': {
+    leicht: [
+      {q:'Welche 4 Kundentypen gibt es im DISC-Modell?', opts:['Freundlich, Sachlich, Laut, Leise', 'Closer (D), Connector (I), Verlässlich (S), Analyst (G)', 'Käufer, Entscheider, Beeinflusser, Nutzer', 'Privat, Business, SME, Enterprise'], correct:1},
+      {q:'Wie erkennst du einen Closer (D-Typ) am Telefon?', opts:['Er redet sehr viel', 'Er kommt schnell zum Punkt, wenig Smalltalk, klare direkte Sprache', 'Er fragt viele technische Details', 'Er ist sehr freundlich und persönlich'], correct:1},
+      {q:'Was braucht ein Verlässlich-Kunde (S-Typ) vor einer Entscheidung?', opts:['Schnelle Entscheidung', 'Sicherheit, keine Überraschungen, bekannte Prozesse, kein Druck', 'Viele Zahlen', 'Begeisterung und Energie'], correct:1},
+      {q:'Wie spricht man einen Analytiker (G-Typ) am besten an?', opts:['Mit Begeisterung und Energie', 'Mit präzisen Fakten, Zahlen, Daten, Qualitätsnachweisen', 'Mit persönlichen Geschichten', 'Mit schnellen Entscheidungsangeboten'], correct:1},
+      {q:'Was schätzt ein Connector (I-Typ) am meisten im Gespräch?', opts:['Kurze sachliche Informationen', 'Persönliche Verbindung, Wärme, Begeisterung, seinen Namen hören', 'Exakte technische Daten', 'Schnellen Abschluss'], correct:1},
+    ],
+    mittel: [
+      {q:'Stammkunde Herr Wagner antwortet immer kurz, will keine Smalltalk, entscheidet schnell. Welcher Typ?', opts:['Connector', 'Analyst', 'Closer', 'Verlässlich'], correct:2},
+      {q:'Einkäuferin Frau Schneider fragt immer nach technischen Spezifikationen, Zertifikaten und Toleranzen. Welcher Typ?', opts:['Connector', 'Closer', 'Verlässlich', 'Analyst'], correct:3},
+      {q:'Du erkennst einen Connector-Kunden. Welche Kommunikation passt?', opts:['Direkt, kurz, Zahlen zuerst', 'Persönlich, warm, Namen nutzen, Begeisterung zeigen', 'Sachlich, Fakten, keine Gefühle', 'Ruhig, keine Überraschungen, Prozess erklären'], correct:1},
+      {q:'Was passiert wenn du einen Verlässlich-Kunden unter Druck setzt?', opts:['Er entscheidet schneller', 'Er blockt und braucht danach noch mehr Zeit — Druck ist kontraproduktiv bei S-Typen', 'Er kauft mehr', 'Er schätzt die Direktheit'], correct:1},
+      {q:'Welcher Typ antwortet am positivsten wenn du Referenzkunden nennst?', opts:['Closer', 'Connector', 'Verlässlich — soziale Beweise und bewährte Lösungen geben Sicherheit', 'Analyst'], correct:2},
+    ],
+    schwer: [
+      {q:'Du hast einen Kunden der sowohl Daten will als auch persönlich ist — er fragt nach Spezifikationen UND erkundigt sich nach deinem Wochenende. Welcher Typ?', opts:['Das ist unmöglich', 'Wahrscheinlich Mischtyp I/G oder G/I — Haupttyp durch häufigeres Verhalten identifizieren, beide Elemente nutzen', 'Nur Connector', 'Nur Analyst'], correct:1},
+      {q:'Welcher Kundentyp reagiert am sensitivsten auf Inkonsistenz (du versprichst etwas und hältst es nicht)?', opts:['Closer', 'Connector', 'Verlässlich — Vertrauen ist ihre Währung, Bruch ist schwerer zu reparieren als bei anderen Typen', 'Analyst'], correct:2},
+      {q:'Closer-Einkäufer will Entscheidung jetzt, du brauchst noch intern klären. Wie gehst du vor?', opts:['Sofort Ja sagen und später erklären', 'Direkt und ehrlich: "Ich kläre das bis [konkreter Zeitpunkt] und melde mich — das ist mein Commitment." Closer schätzen Direktheit auch bei Nein', 'Vertrösten', 'An Kollegen weiterleiten'], correct:1},
+      {q:'Was ist der Fehler wenn du alle Kunden gleich behandelst (z.B. immer mit Daten und Zahlen)?', opts:['Kein Fehler — Fakten sind immer gut', 'Connector und Verlässlich-Kunden fühlen sich kalt behandelt, Closer haben keine Geduld für lange Erklärungen. Typ-Anpassung ist Respekt und Effizienz', 'Es wäre effizienter', 'Es würde Confusion erzeugen'], correct:1},
+      {q:'Wie verändert sich deine Cross-Selling-Strategie je nach Kundentyp?', opts:['Gar nicht', 'Closer: direkt nennen. Connector: über Vereinfachung und Beziehung. Verlässlich: bewährt, kein Risiko. Analyst: Prozesskosten-Rechnung — jeder Typ braucht anderes Argument für dieselbe Botschaft', 'Preis ist immer der Schlüssel', 'Beziehung ist immer der Schlüssel'], correct:1},
+    ],
+    profi: [
+      {q:'Was ist der strategische Unterschied zwischen Typenerkennung und Stereotypisierung?', opts:['Kein Unterschied', 'Typenerkennung ist Hypothese zum Effizienzgewinn — sie wird ständig angepasst. Stereotypisierung ist starr und blind für individuelle Abweichungen. Typen sind Werkzeug, keine Schublade', 'Stereotypisierung ist hilfreicher', 'Typenerkennung ist unwissenschaftlich'], correct:1},
+      {q:'Wie nutzt ein Profi Typenwissen beim Onboarding neuer Kunden?', opts:['Er erklärt dem Kunden seinen Typ', 'Er passt sofort im ersten Gespräch Kommunikationsstil an und merkt nach Gespräch welcher Typ er ist — jeder Folge-Kontakt wird effizienter und angenehmer', 'Er ignoriert Typen bei neuen Kunden', 'Er fragt den Kunden nach seinem Typ'], correct:1},
+      {q:'Was ist die Gefahr wenn ein Verkäufer nur mit seinem eigenen Typenpendant gut kann?', opts:['Keine Gefahr', 'Er verliert systematisch Kunden anderen Typs — ein Closer-Verkäufer der nur Closer bedienen kann verliert alle Verlässlich- und Analysten-Kunden im Laufe der Zeit', 'Das ist normal', 'Er kann das kompensieren'], correct:1},
+      {q:'Wie verändert Typenwissen das Timing von Cross-Selling?', opts:['Gar nicht', 'Closer: sofort nach Hauptbestellung. Connector: nach persönlichem Austausch. Verlässlich: nach bewährter Erfahrung. Analyst: nach Datengrundlage. Timing ist so wichtig wie das Argument selbst', 'Immer am Ende', 'Immer am Anfang'], correct:1},
+      {q:'Was ist der Beweis dass ein ID-Mitarbeiter Typen wirklich versteht und nicht nur lernt?', opts:['Er kann alle Typen aufzählen', 'Er passt spontan und unbewusst seinen Stil an — Typenflexibilität wird zur zweiten Natur statt bewusster Technik. Das erkennst du wenn er es ohne nachzudenken tut', 'Er hat gute Testergebnisse', 'Er kennt viele Beispiele'], correct:1},
+    ],
+  },
+};
+
+// Level config
+const QUIZ_LEVEL_NAMES = ['leicht', 'mittel', 'schwer', 'profi'];
+const QUIZ_LEVEL_LABELS = { leicht: '🟢 Leicht', mittel: '🟡 Mittel', schwer: '🔴 Schwer', profi: '⭐ Profi' };
+const QUIZ_LEVEL_COLORS = { leicht: '#2ecc71', mittel: '#f5c800', schwer: '#e63946', profi: '#a855f7' };
+const QUIZ_PASS_PCT = 0.7; // 70% to pass
+
+function getModuleQuizLevels(moduleId) {
+  const base = QUIZ_LEVELS[moduleId];
+  const override = STATE._quizLevelOverrides?.[moduleId];
+  if (!base && !override) return null;
+  if (!base) return override;
+  if (!override) return base;
+  // Merge: override wins per level
+  return { ...base, ...override };
+}
+
+// Load quiz level overrides from Firebase on startup
+async function loadQuizLevelOverrides(role) {
+  try {
+    const data = await storageGet('quiz_levels_override:' + role, true);
+    if (data) STATE._quizLevelOverrides = { ...(STATE._quizLevelOverrides || {}), ...data };
+  } catch {}
+}
+
+function getQuizLevelProgress(prog, moduleId) {
+  return (prog.quizLevels || {})[moduleId] || {};
+}
+
+function isLevelUnlocked(prog, moduleId, levelName) {
+  const idx = QUIZ_LEVEL_NAMES.indexOf(levelName);
+  if (idx === 0) return true; // Leicht always unlocked
+  const prevLevel = QUIZ_LEVEL_NAMES[idx - 1];
+  return !!(prog.quizLevels?.[moduleId]?.[prevLevel]?.passed);
+}
+
+function isLevelPassed(prog, moduleId, levelName) {
+  return !!(prog.quizLevels?.[moduleId]?.[levelName]?.passed);
+}
+
+function getModuleQuizCompletion(prog, moduleId) {
+  const levels = getModuleQuizLevels(moduleId);
+  if (!levels) return null;
+  const passed = QUIZ_LEVEL_NAMES.filter(l => isLevelPassed(prog, moduleId, l)).length;
+  return { passed, total: QUIZ_LEVEL_NAMES.length };
+}
+
+
 const AD_MODULES = [
   {
     id: 'persoenlichkeit_ad',
@@ -1683,7 +2183,7 @@ async function saveEmployee(emp) {
 }
 
 async function getEmployeeProgress(id) {
-  return await storageGet(`progress:${id}`, true) || { modules: {}, quizzes: {}, notes: {} };
+  return await storageGet(`progress:${id}`, true) || { modules: {}, quizzes: {}, quizLevels: {}, notes: {} };
 }
 
 async function saveEmployeeProgress(id, progress) {
@@ -3121,6 +3621,7 @@ async function renderModuleList_Editor(role) {
 
 // ── WYSIWYG Editor Modal ───────────────────────────────────────
 async function openWysiwyg(role, idx) {
+  STATE._editingRole = role;
   const modules = await getModules(role);
   const m = modules[idx];
   STATE.editingModule = { role, idx, backup: JSON.parse(JSON.stringify(m)) };
@@ -3284,6 +3785,55 @@ function switchWeTab(tab) {
 }
 
 // ── Quiz Editor ────────────────────────────────────────────────
+function buildQuizRowLevel(q, qi, lvl) {
+  const opts = (q.opts || ['','','','']).map((o, i) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <input type="radio" name="correct-${lvl}-${qi}" value="${i}" ${q.correct===i?'checked':''}>
+      <input class="input" style="flex:1" value="${escHtml(o)}"
+        oninput="updateLevelQuizOpt('${lvl}',${qi},${i},this.value)">
+    </div>`).join('');
+  return `<div style="background:var(--surface);border-radius:6px;padding:12px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--text-faint);font-weight:600">F${qi+1}</span>
+      <input class="input" style="flex:1" value="${escHtml(q.q||'')}"
+        oninput="updateLevelQuizQ('${lvl}',${qi},this.value)" placeholder="Frage...">
+      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeLevelQuizRow('${lvl}',${qi})">✕</button>
+    </div>
+    <div style="margin-bottom:4px;font-size:11px;color:var(--text-faint)">Antworten (● = Richtig):</div>
+    ${opts}
+  </div>`;
+}
+
+function updateLevelQuizQ(lvl, qi, val) {
+  if (!STATE._editingModQuizLevels) return;
+  if (!STATE._editingModQuizLevels[lvl]) STATE._editingModQuizLevels[lvl] = [];
+  if (!STATE._editingModQuizLevels[lvl][qi]) STATE._editingModQuizLevels[lvl][qi] = { q:'', opts:['','','',''], correct:0 };
+  STATE._editingModQuizLevels[lvl][qi].q = val;
+}
+
+function updateLevelQuizOpt(lvl, qi, optIdx, val) {
+  if (!STATE._editingModQuizLevels?.[lvl]?.[qi]) return;
+  STATE._editingModQuizLevels[lvl][qi].opts[optIdx] = val;
+}
+
+function addQuizRow_level(lvl) {
+  if (!STATE._editingModQuizLevels) STATE._editingModQuizLevels = {};
+  if (!STATE._editingModQuizLevels[lvl]) STATE._editingModQuizLevels[lvl] = [];
+  const qi = STATE._editingModQuizLevels[lvl].length;
+  STATE._editingModQuizLevels[lvl].push({ q: '', opts: ['', '', '', ''], correct: 0 });
+  const container = document.getElementById('quiz-rows-' + lvl);
+  if (container) {
+    container.innerHTML += buildQuizRowLevel(STATE._editingModQuizLevels[lvl][qi], qi, lvl);
+  }
+}
+
+function removeLevelQuizRow(lvl, qi) {
+  if (!STATE._editingModQuizLevels?.[lvl]) return;
+  STATE._editingModQuizLevels[lvl].splice(qi, 1);
+  const container = document.getElementById('quiz-rows-' + lvl);
+  if (container) container.innerHTML = (STATE._editingModQuizLevels[lvl]||[]).map((q,i) => buildQuizRowLevel(q,i,lvl)).join('');
+}
+
 function buildQuizRow(q, qi) {
   const opts = (q.opts||['','','','']).map((o, oi) => `
     <div class="flex items-center gap-8 mb-8">
@@ -3766,60 +4316,151 @@ async function renderModuleContent(user, prog, modules, role) {
     const isDone = prog.modules?.[mod.id];
   const quizState = STATE.quizState || null;
 
-  // Quiz rendering
+  // ── Multi-Level Quiz ──────────────────────────────────────────
+  const quizLevels = getModuleQuizLevels(mod.id);
   let quizHtml = '';
-  if (mod.quizzes && mod.quizzes.length > 0) {
+
+  if (quizLevels) {
+    const activeLevelName = quizState?.levelName || STATE.quizLevel || 'leicht';
+    const levelQuestions = quizLevels[activeLevelName] || [];
     const qi = quizState?.questionIndex ?? 0;
     const finished = quizState?.finished ?? false;
     const score = quizState?.score ?? 0;
 
+    // Level selector tabs
+    const levelTabs = QUIZ_LEVEL_NAMES.map(ln => {
+      const unlocked = isLevelUnlocked(prog, mod.id, ln);
+      const passed = isLevelPassed(prog, mod.id, ln);
+      const isActive = ln === activeLevelName;
+      const color = QUIZ_LEVEL_COLORS[ln];
+      return `<button onclick="if(${unlocked}){STATE.quizLevel='${ln}';STATE.quizState=null;render()}" 
+        style="padding:8px 16px;border-radius:6px;border:2px solid ${isActive ? color : passed ? color+'44' : 'var(--border)'};
+        background:${isActive ? color+'22' : 'transparent'};color:${unlocked ? (isActive ? color : passed ? color : 'var(--text-dim)') : 'var(--text-faint)'};
+        cursor:${unlocked ? 'pointer' : 'not-allowed'};font-size:12px;font-weight:600;transition:.15s">
+        ${QUIZ_LEVEL_LABELS[ln]}${passed ? ' ✓' : !unlocked ? ' 🔒' : ''}
+      </button>`;
+    }).join('');
+
+    const levelProgress = getQuizLevelProgress(prog, mod.id);
+    const passedCount = QUIZ_LEVEL_NAMES.filter(l => levelProgress[l]?.passed).length;
+
+    // Show level result or quiz questions
     if (finished) {
-      const passed = score >= Math.ceil(mod.quizzes.length * 0.6);
+      const passed = score >= Math.ceil(levelQuestions.length * QUIZ_PASS_PCT);
+      const nextIdx = QUIZ_LEVEL_NAMES.indexOf(activeLevelName) + 1;
+      const nextLevel = QUIZ_LEVEL_NAMES[nextIdx];
       quizHtml = `
         <div class="card mt-24" style="border-color:${passed ? 'rgba(46,204,113,0.3)' : 'rgba(230,57,70,0.3)'}">
+          <div class="card-header" style="border-bottom:1px solid var(--border)">
+            <span class="card-title">🧩 Quiz — ${QUIZ_LEVEL_LABELS[activeLevelName]}</span>
+          </div>
           <div class="card-body" style="text-align:center;padding:32px">
-            <div style="font-size:48px;margin-bottom:12px">${passed ? '🏆' : '📚'}</div>
-            <div style="font-size:20px;font-weight:700;margin-bottom:8px">${passed ? 'Bestanden!' : 'Noch nicht bestanden'}</div>
-            <div class="text-dim mb-16">${score} von ${mod.quizzes.length} Fragen richtig</div>
-            <div class="flex gap-10" style="justify-content:center">
-              ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">Als abgeschlossen markieren ✓</button>` : '<span class="badge badge-green">✓ Modul abgeschlossen</span>'}
-              <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Quiz wiederholen</button>
+            <div style="font-size:48px;margin-bottom:12px">${passed ? (activeLevelName === 'profi' ? '🏆' : '🎯') : '📚'}</div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:${passed ? 'var(--green)' : 'var(--red)'}">
+              ${passed ? 'Bestanden!' : 'Nicht bestanden'}
+            </div>
+            <div class="text-dim mb-16">${score} von ${levelQuestions.length} Fragen richtig · ${Math.ceil(levelQuestions.length * QUIZ_PASS_PCT)} zum Bestehen nötig</div>
+            <div class="flex gap-10" style="justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Wiederholen</button>
+              ${passed && nextLevel ? `<button class="btn btn-primary" onclick="STATE.quizLevel='${nextLevel}';STATE.quizState=null;render()">${QUIZ_LEVEL_LABELS[nextLevel]} starten →</button>` : ''}
+              ${passed && activeLevelName === 'profi' ? '<span class="badge badge-green" style="font-size:13px;padding:8px 16px">🏆 Modul vollständig abgeschlossen!</span>' : ''}
             </div>
           </div>
         </div>
       `;
+      // Auto-save result
+      saveQuizLevelResult(mod.id, user.empId, activeLevelName, score, levelQuestions.length);
+      // Don't call render() here to avoid loop - it was already saved
+    } else if (levelQuestions.length > 0) {
+      const isUnlocked = isLevelUnlocked(prog, mod.id, activeLevelName);
+      if (!isUnlocked) {
+        const prevLevel = QUIZ_LEVEL_NAMES[QUIZ_LEVEL_NAMES.indexOf(activeLevelName) - 1];
+        quizHtml = `<div class="card mt-24"><div class="card-body" style="text-align:center;padding:24px">
+          <div style="font-size:32px">🔒</div>
+          <div style="margin:8px 0;font-weight:600">Level gesperrt</div>
+          <div class="text-dim">Bestehe zuerst ${QUIZ_LEVEL_LABELS[prevLevel]}</div>
+        </div></div>`;
+      } else {
+        const q = levelQuestions[qi] || levelQuestions[0];
+        const answered = quizState?.answered ?? null;
+        const opts = q.opts.map((o, i) => {
+          let cls = '';
+          if (answered !== null) {
+            if (i === q.correct) cls = 'correct';
+            else if (i === answered && i !== q.correct) cls = 'wrong';
+          }
+          return `<div class="quiz-option ${cls}" onclick="${answered === null ? `answerQuizLevel(${i},${q.correct},${qi},${levelQuestions.length},'${activeLevelName}')` : ''}">${escHtml(o)}</div>`;
+        }).join('');
+
+        quizHtml = `
+          <div class="card mt-24">
+            <div class="card-header">
+              <span class="card-title">🧩 ${QUIZ_LEVEL_LABELS[activeLevelName]} — Frage ${qi+1}/${levelQuestions.length}</span>
+              <span style="margin-left:auto;font-size:12px;color:var(--text-dim)">${Math.ceil(levelQuestions.length * QUIZ_PASS_PCT)} zum Bestehen</span>
+            </div>
+            <div class="card-body">
+              <div style="background:var(--surface);border-radius:6px;padding:4px;display:flex;gap:4px;margin-bottom:16px">
+                ${levelTabs}
+              </div>
+              <div style="margin-bottom:8px">
+                <div style="height:4px;background:var(--border);border-radius:2px">
+                  <div style="width:${((qi)/(levelQuestions.length))*100}%;height:100%;background:${QUIZ_LEVEL_COLORS[activeLevelName]};border-radius:2px;transition:.3s"></div>
+                </div>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:16px;line-height:1.5">${escHtml(q.q)}</div>
+              ${opts}
+              ${answered !== null ? `<button class="btn btn-primary mt-16" onclick="nextQuizQuestion(${qi+1},${levelQuestions.length})">
+                ${qi+1 < levelQuestions.length ? 'Nächste Frage →' : 'Ergebnis ansehen →'}
+              </button>` : ''}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Level overview below content
+    const levelOverview = `
+      <div class="card mt-16">
+        <div class="card-header"><span class="card-title">📊 Quiz-Fortschritt</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-dim)">${passedCount}/${QUIZ_LEVEL_NAMES.length} Level bestanden</span>
+        </div>
+        <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap">
+          ${levelTabs}
+        </div>
+      </div>`;
+    quizHtml = levelOverview + quizHtml;
+
+  } else if (mod.quizzes && mod.quizzes.length > 0) {
+    // Fallback: old quiz format
+    const qi = quizState?.questionIndex ?? 0;
+    const finished = quizState?.finished ?? false;
+    const score = quizState?.score ?? 0;
+    if (finished) {
+      const passed = score >= Math.ceil(mod.quizzes.length * 0.6);
+      quizHtml = `<div class="card mt-24"><div class="card-body" style="text-align:center;padding:24px">
+        <div style="font-size:36px">${passed ? '✅' : '📚'}</div>
+        <div style="font-weight:700;margin:8px 0">${passed ? 'Bestanden!' : 'Nicht bestanden'}</div>
+        <div class="text-dim">${score}/${mod.quizzes.length} richtig</div>
+        <div class="flex gap-10 mt-16" style="justify-content:center">
+          ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">✓ Abschließen</button>` : ''}
+          <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Wiederholen</button>
+        </div>
+      </div></div>`;
     } else if (qi < mod.quizzes.length) {
       const q = mod.quizzes[qi];
       const answered = quizState?.answered ?? null;
       const opts = q.opts.map((o, i) => {
-        let cls = '';
-        if (answered !== null) {
-          if (i === q.correct) cls = 'correct';
-          else if (i === answered && i !== q.correct) cls = 'wrong';
-        }
+        let cls = answered !== null ? (i === q.correct ? 'correct' : i === answered ? 'wrong' : '') : '';
         return `<div class="quiz-option ${cls}" onclick="${answered === null ? `answerQuiz(${i},${q.correct},${qi},${mod.quizzes.length})` : ''}">${escHtml(o)}</div>`;
       }).join('');
-
-      quizHtml = `
-        <div class="card mt-24">
-          <div class="card-header">
-            <span class="card-title">🧩 Quiz — Frage ${qi + 1}/${mod.quizzes.length}</span>
-            ${quizState?.score ? `<span class="badge badge-green" style="margin-left:auto">✓ ${quizState.score} richtig</span>` : ''}
-          </div>
-          <div class="card-body">
-            <div style="font-size:15px;font-weight:600;margin-bottom:16px">${escHtml(q.q)}</div>
-            ${opts}
-            ${answered !== null ? `<button class="btn btn-primary mt-16" onclick="nextQuizQuestion(${qi + 1},${mod.quizzes.length})">
-              ${qi + 1 < mod.quizzes.length ? 'Nächste Frage →' : 'Ergebnis ansehen →'}
-            </button>` : ''}
-          </div>
-        </div>
-      `;
+      quizHtml = `<div class="card mt-24"><div class="card-header"><span class="card-title">🧩 Frage ${qi+1}/${mod.quizzes.length}</span></div>
+        <div class="card-body"><div style="font-size:15px;font-weight:600;margin-bottom:16px">${escHtml(q.q)}</div>${opts}
+        ${answered !== null ? `<button class="btn btn-primary mt-16" onclick="nextQuizQuestion(${qi+1},${mod.quizzes.length})">${qi+1 < mod.quizzes.length ? 'Weiter →' : 'Ergebnis →'}</button>` : ''}</div></div>`;
     }
   }
 
-  // Mark done button if no quiz
-  const actionBar = !mod.quizzes || mod.quizzes.length === 0 ? `
+  // Mark done button (only if no quiz levels)
+  const actionBar = !quizLevels && (!mod.quizzes || mod.quizzes.length === 0) ? `
     <div class="flex gap-10 mt-24">
       ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',0,0)">✓ Modul abschließen</button>` : '<span class="badge badge-green" style="font-size:13px;padding:8px 14px">✓ Abgeschlossen</span>'}
       <button class="btn btn-outline" onclick="navigate('${role}','modules')">← Zurück zur Übersicht</button>
@@ -3878,6 +4519,14 @@ function answerQuiz(chosen, correct, qi, total) {
   render();
 }
 
+function answerQuizLevel(chosen, correct, qi, total, levelName) {
+  if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false, levelName };
+  STATE.quizState.answered = chosen;
+  STATE.quizState.levelName = levelName;
+  if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
+  render();
+}
+
 function nextQuizQuestion(nextQi, total) {
   if (!STATE.quizState) return;
   if (nextQi >= total) {
@@ -3885,6 +4534,33 @@ function nextQuizQuestion(nextQi, total) {
   } else {
     STATE.quizState.questionIndex = nextQi;
     STATE.quizState.answered = null;
+  }
+  render();
+}
+
+async function saveQuizLevelResult(moduleId, empId, levelName, score, total) {
+  const prog = await getEmployeeProgress(empId);
+  prog.quizLevels = prog.quizLevels || {};
+  prog.quizLevels[moduleId] = prog.quizLevels[moduleId] || {};
+  const passed = score >= Math.ceil(total * QUIZ_PASS_PCT);
+  prog.quizLevels[moduleId][levelName] = { score, total, passed, date: new Date().toISOString() };
+  // Auto-complete module when Profi passed
+  if (levelName === 'profi' && passed) {
+    prog.modules = prog.modules || {};
+    prog.modules[moduleId] = true;
+  }
+  await saveEmployeeProgress(empId, prog);
+  STATE.quizState = null;
+  if (passed) {
+    const nextIdx = QUIZ_LEVEL_NAMES.indexOf(levelName) + 1;
+    const nextLevel = QUIZ_LEVEL_NAMES[nextIdx];
+    if (nextLevel) {
+      toast(`✅ ${QUIZ_LEVEL_LABELS[levelName]} bestanden! ${QUIZ_LEVEL_LABELS[nextLevel]} freigeschaltet 🎉`);
+    } else {
+      toast('🏆 Profi-Level bestanden! Modul vollständig abgeschlossen!');
+    }
+  } else {
+    toast(`❌ Nicht bestanden (${score}/${total}). Noch ${Math.ceil(total * QUIZ_PASS_PCT) - score} Frage(n) nötig.`, 'warning');
   }
   render();
 }
