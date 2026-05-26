@@ -2768,14 +2768,11 @@ async function renderEmployeeDetail() {
   const tasksTabHtml = await renderTasksTab(emp.id);
 
   // ── Tab-Header ───────────────────────────────────────────────
-  const tabs = [
-    { id:'overview', label:'📋 Übersicht' },
-    { id:'modules',  label:'📚 Module' },
-    { id:'sessions', label:`💬 Sessions ${sessions.length > 0 ? `(${sessions.length})` : ''}` },
-    { id:'tasks',    label:'✅ Aufgaben' },
-  ];
   const tabHeader = `<div class="tab-header mb-16">
-    ${tabs.map(t => `<button class="tab-btn ${activeTab===t.id?'active':''}" onclick="STATE.empDetailTab='${t.id}';render()">${t.label}</button>`).join('')}
+    <button class="tab-btn ${activeTab==='overview'?'active':''}" onclick="STATE.empDetailTab='overview';render()">Übersicht</button>
+    <button class="tab-btn ${activeTab==='modules'?'active':''}" onclick="STATE.empDetailTab='modules';render()">Module</button>
+    <button class="tab-btn ${activeTab==='sessions'?'active':''}" onclick="STATE.empDetailTab='sessions';render()">Sessions ${sessions.length>0?'('+sessions.length+')':''}</button>
+    <button class="tab-btn ${activeTab==='tasks'?'active':''}" onclick="STATE.empDetailTab='tasks';render()">Aufgaben</button>
   </div>`;
 
   const tabContent = activeTab==='modules' ? modulesTab
@@ -3150,54 +3147,157 @@ async function renderCoachingHistory() {
   `;
 }
 
-async function viewSession(sessionId, employeeId) {
+// ── Session Modal: View + Navigate + Edit ────────────────────────
+async function openSessionModal(sessionId, employeeId) {
   const sessions = await getCoachingSessions(employeeId);
   const s = sessions.find(x => x.id === sessionId);
   if (!s) { toast('Session nicht gefunden', 'error'); return; }
   const emp = await getEmployee(employeeId);
+  _showSessionModal(s, emp, sessions, false);
+}
+
+async function openSessionEdit(sessionId, employeeId) {
+  const sessions = await getCoachingSessions(employeeId);
+  const s = sessions.find(x => x.id === sessionId);
+  if (!s) return;
+  const emp = await getEmployee(employeeId);
+  _showSessionModal(s, emp, sessions, true);
+}
+
+function _showSessionModal(s, emp, allSessions, editMode) {
+  document.getElementById('_session_overlay')?.remove();
+
   const fields = s.fields || {};
   const measures = s.measures || {};
-  const fieldRows = Object.entries(fields).filter(([k,v]) => v.score || v.note).map(([k,v]) => `
-    <tr>
-      <td style="padding:8px 12px;font-size:13px;color:var(--text-dim)">${escHtml(k.replace(/_/g,' '))}</td>
-      <td style="padding:8px 12px"><span class="badge ${getAmpelClass(v.score)}">${v.score || '—'}/10</span></td>
-      <td style="padding:8px 12px;font-size:12px;color:var(--text-dim)">${escHtml(v.note || '—')}</td>
-    </tr>`).join('');
-  const measureRows = Object.entries(measures).filter(([k,v]) => v).map(([k,v]) => `
-    <div style="padding:6px 0;font-size:13px">• ${escHtml(typeof v === 'string' ? v : k)}</div>`).join('');
+  const idx = allSessions.findIndex(x => x.id === s.id);
+  const prev = allSessions[idx + 1]; // older
+  const next = allSessions[idx - 1]; // newer
 
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = `
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-weight:700">${escHtml(emp?.name || '')} — ${formatDate(s.date)}</div>
-          <div style="font-size:12px;color:var(--text-dim)">${s.sessionType || '—'}</div>
+  // Field rows
+  const fieldHtml = editMode
+    ? Object.entries(fields).map(([k, v]) => `
+        <div style="background:var(--surface);border-radius:6px;padding:10px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px">${escHtml(k.replace(/_/g,' '))}</div>
+          <div style="display:flex;gap:8px">
+            <select class="select" style="width:80px" data-fscore="${escHtml(k)}">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option ${v.score==n?'selected':''}>${n}</option>`).join('')}
+            </select>
+            <input class="input" style="flex:1" value="${escHtml(v.note||'')}" data-fnote="${escHtml(k)}" placeholder="Notiz...">
+          </div>
+        </div>`)
+      .join('')
+    : Object.entries(fields).filter(([k,v])=>v.score||v.note).map(([k,v])=>`
+        <div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:12px">
+          <div style="flex:2;font-size:13px;color:var(--text-dim)">${escHtml(k.replace(/_/g,' '))}</div>
+          <span class="badge ${getAmpelClass(v.score)}" style="flex-shrink:0">${v.score||'—'}/10</span>
+          <div style="flex:3;font-size:12px;color:var(--text-dim)">${escHtml(v.note||'—')}</div>
+        </div>`)
+      .join('');
+
+  const measureHtml = Object.entries(measures).filter(([k,v])=>v)
+    .map(([k,v])=>`<div style="padding:4px 0;font-size:13px">• ${escHtml(typeof v==='string'?v:k)}</div>`).join('');
+
+  const commitBlock = editMode ? `
+    <div style="margin-top:16px">
+      <label class="form-label">Gesamtscore (1–10)</label>
+      <select class="select" id="_es_score" style="width:100px;margin-bottom:12px">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option ${s.overallScore==n?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <label class="form-label">Commitment</label>
+      <textarea class="textarea" id="_es_commit" rows="2" style="margin-bottom:10px">${escHtml(s.commitment||'')}</textarea>
+      <label class="form-label">Commitment erfüllt?</label>
+      <select class="select" id="_es_fulfilled" style="width:180px;margin-bottom:12px">
+        <option value="">Nicht bewertet</option>
+        <option value="yes" ${s.commitmentFulfilled==='yes'?'selected':''}>✅ Ja, erfüllt</option>
+        <option value="partial" ${s.commitmentFulfilled==='partial'?'selected':''}>🟡 Teilweise</option>
+        <option value="no" ${s.commitmentFulfilled==='no'?'selected':''}>❌ Nicht erfüllt</option>
+      </select>
+      <label class="form-label">Reflexionsnotizen</label>
+      <textarea class="textarea" id="_es_reflect" rows="3">${escHtml(s.reflectionNotes||'')}</textarea>
+    </div>` : `
+    ${s.commitment ? `<div style="margin-top:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Commitment</div>
+      <div style="background:var(--yellow-glow);color:var(--yellow);padding:10px 12px;border-radius:6px;font-size:13px;font-weight:600">💬 ${escHtml(s.commitment)}</div>
+      ${s.commitmentFulfilled?`<div style="margin-top:5px;font-size:12px">${s.commitmentFulfilled==='yes'?'✅ Erfüllt':s.commitmentFulfilled==='partial'?'🟡 Teilweise':'❌ Nicht erfüllt'}</div>`:''}
+    </div>`:''}
+    ${s.reflectionNotes ? `<div style="margin-top:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Reflexion</div>
+      <div style="background:var(--surface);padding:10px;border-radius:6px;font-size:13px;color:var(--text-dim)">${escHtml(s.reflectionNotes)}</div>
+    </div>`:''}`;
+
+  const oid = s.id; const oeid = s.employeeId;
+
+  const overlay = document.createElement('div');
+  overlay.id = '_session_overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;max-width:700px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+      <!-- Header -->
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px">${escHtml(emp?.name||'')} — ${formatDate(s.date)}</div>
+          <div style="font-size:12px;color:var(--text-dim)">${escHtml(s.sessionType||'—')}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span class="badge ${getAmpelClass(s.overallScore)}" style="font-size:16px;padding:6px 14px">${s.overallScore || '—'}/10</span>
-          <button class="btn btn-ghost btn-sm" onclick="this.closest('[style*="position:fixed"]').remove()">✕</button>
-        </div>
+        <span class="badge ${getAmpelClass(s.overallScore)}" style="padding:5px 10px;font-size:14px;flex-shrink:0">${s.overallScore||'—'}/10</span>
+        ${editMode
+          ? `<button class="btn btn-primary btn-sm" onclick="_saveSessionEdits('${oid}','${oeid}')">💾 Speichern</button>
+             <button class="btn btn-ghost btn-sm" onclick="openSessionModal('${oid}','${oeid}')">Abbrechen</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="openSessionEdit('${oid}','${oeid}')">✏️ Bearbeiten</button>`}
+        <button class="btn btn-ghost btn-sm" style="font-size:16px;line-height:1;padding:4px 8px" onclick="document.getElementById('_session_overlay').remove()">✕</button>
       </div>
-      <div style="padding:20px">
-        ${fieldRows ? `
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:8px">Beobachtungsfelder</div>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-            <thead><tr style="font-size:11px;color:var(--text-faint)">
-              <th style="padding:6px 12px;text-align:left">Feld</th>
-              <th style="padding:6px 12px;text-align:left">Score</th>
-              <th style="padding:6px 12px;text-align:left">Notiz</th>
-            </tr></thead>
-            <tbody>${fieldRows}</tbody>
-          </table>` : ''}
-        ${s.reflectionNotes ? `<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:8px">Reflexion</div><div style="font-size:13px;color:var(--text-dim);background:var(--surface);padding:12px;border-radius:6px">${escHtml(s.reflectionNotes)}</div></div>` : ''}
-        ${measureRows ? `<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:8px">Maßnahmen</div><div style="background:var(--surface);padding:12px;border-radius:6px">${measureRows}</div></div>` : ''}
-        ${s.commitment ? `<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:8px">Commitment</div><div style="font-size:13px;font-weight:600;background:var(--yellow-glow);color:var(--yellow);padding:12px;border-radius:6px;border:1px solid rgba(245,200,0,0.2)">${escHtml(s.commitment)}</div></div>` : ''}
+      <!-- Navigation -->
+      ${allSessions.length > 1 ? `
+      <div style="padding:6px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;background:var(--surface);flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" ${!prev?'disabled style="opacity:.3;pointer-events:none"':''} onclick="openSessionModal('${prev?.id||''}','${oeid}')">← Älter</button>
+        <span style="flex:1;text-align:center;font-size:11px;color:var(--text-faint)">Session ${idx+1} / ${allSessions.length}</span>
+        <button class="btn btn-ghost btn-sm" ${!next?'disabled style="opacity:.3;pointer-events:none"':''} onclick="openSessionModal('${next?.id||''}','${oeid}')">Neuer →</button>
+      </div>` : ''}
+      <!-- Body -->
+      <div style="padding:18px;overflow-y:auto;flex:1">
+        ${fieldHtml ? `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Beobachtungsfelder</div>${fieldHtml}` : ''}
+        ${measureHtml ? `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Maßnahmen</div><div style="background:var(--surface);padding:10px;border-radius:6px">${measureHtml}</div>` : ''}
+        ${commitBlock}
       </div>
     </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function _saveSessionEdits(sessionId, employeeId) {
+  const sessions = await getCoachingSessions(employeeId);
+  const s = sessions.find(x => x.id === sessionId);
+  if (!s) return;
+  s.fields = s.fields || {};
+  document.querySelectorAll('[data-fscore]').forEach(el => {
+    const k = el.dataset.fscore;
+    s.fields[k] = s.fields[k] || {};
+    s.fields[k].score = parseInt(el.value);
+  });
+  document.querySelectorAll('[data-fnote]').forEach(el => {
+    const k = el.dataset.fnote;
+    s.fields[k] = s.fields[k] || {};
+    s.fields[k].note = el.value;
+  });
+  const sc = document.getElementById('_es_score');
+  const cm = document.getElementById('_es_commit');
+  const rf = document.getElementById('_es_reflect');
+  const fl = document.getElementById('_es_fulfilled');
+  if (sc) s.overallScore = parseInt(sc.value);
+  if (cm) s.commitment = cm.value;
+  if (rf) s.reflectionNotes = rf.value;
+  if (fl) s.commitmentFulfilled = fl.value;
+  s.lastEdited = new Date().toISOString();
+  await saveCoachingSession(s);
+  toast('Session gespeichert ✓');
+  document.getElementById('_session_overlay')?.remove();
+  openSessionModal(sessionId, employeeId);
+  render();
+}
+
+// Legacy alias
+async function viewSession(sessionId, employeeId) {
+  return openSessionModal(sessionId, employeeId);
 }
 
 async function renderAdmin() {
