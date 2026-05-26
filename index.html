@@ -2272,7 +2272,9 @@ function renderTypeBars(types) {
 
 function dominantType(types) {
   if (!types) return null;
-  return Object.entries(types).sort((a, b) => b[1] - a[1])[0][0];
+  const entries = Object.entries(types).filter(([, v]) => v > 0);
+  if (!entries.length) return null;
+  return entries.sort((a, b) => b[1] - a[1])[0][0];
 }
 
 function getAmpelClass(score) {
