@@ -4623,6 +4623,7 @@ async function renderEmployeePortal() {
         ${empNavItem('home', '🏠', 'Dashboard', page)}
         ${empNavItem('modules', '📚', 'Lernmodule', page)}
         ${empNavItem('roleplay', '🎭', 'Live Roleplay', page)}
+        ${await empNavItemTasks(user.empId, page, STATE.sidebarCollapsed)}
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
         ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
         ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
@@ -4643,6 +4644,7 @@ async function renderEmployeePortal() {
     case 'module_content': content = await renderModuleContent(user, prog, modules, role); break;
     case 'roleplay': content = renderRoleplaySelection(scenarios, role); break;
     case 'active_roleplay': content = renderActiveRoleplay(); break;
+    case 'tasks': content = await renderEmpTasks(user); break;
     case 'progress': content = await renderEmpProgress(user, prog, modules, empData); break;
     case 'types': content = await renderTypesPage(user.empId); break;
     default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
@@ -4659,10 +4661,81 @@ function empNavItem(id, icon, label, current) {
   </div>`;
 }
 
+async function empNavItemTasks(empId, page, collapsed) {
+  const tasks = await getTasks(empId);
+  const openCount = tasks.filter(t => !t.done).length;
+  const active = page === 'tasks' ? 'active' : '';
+  const badge = openCount > 0
+    ? `<span style="background:var(--yellow);color:#000;border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;line-height:1.6">${openCount}</span>`
+    : '';
+  return `<div class="nav-item ${active}" onclick="navigate('${STATE.currentUser.role}','tasks')" style="position:relative">
+    <span class="nav-icon">✅</span>
+    ${!collapsed ? `<span style="flex:1">Aufgaben</span>${badge}` : (openCount > 0 ? `<span style="position:absolute;top:6px;right:6px;background:var(--yellow);color:#000;border-radius:999px;font-size:9px;font-weight:700;padding:0 4px;line-height:1.6">${openCount}</span>` : '')}
+  </div>`;
+}
+
+async function renderEmpTasks(user) {
+  const tasks = await getTasks(user.empId);
+  const open = tasks.filter(t => !t.done);
+  const done = tasks.filter(t => t.done);
+
+  function taskRow(t) {
+    const overdue = !t.done && t.deadline && new Date(t.deadline) < new Date();
+    const deadlineStr = t.deadline ? new Date(t.deadline).toLocaleDateString('de-DE') : '';
+    return `
+      <div class="flex items-center gap-12 mb-10 p-12" style="background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+        <div onclick="toggleEmpTask('${user.empId}','${t.id}')" style="cursor:pointer;width:22px;height:22px;border-radius:6px;border:2px solid ${t.done ? 'var(--green)' : 'var(--border)'};background:${t.done ? 'var(--green)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:13px;font-weight:700">
+          ${t.done ? '✓' : ''}
+        </div>
+        <div class="flex-1">
+          <div style="font-size:14px;font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${escHtml(t.title)}</div>
+          ${t.module ? `<div class="text-dim text-sm">📚 ${escHtml(t.module)}</div>` : ''}
+          ${deadlineStr ? `<div class="text-sm" style="color:${overdue ? 'var(--red)' : 'var(--text-dim)'}">📅 ${deadlineStr}${overdue ? ' · Überfällig!' : ''}</div>` : ''}
+        </div>
+        ${t.done ? `<span class="badge badge-green">Erledigt</span>` : `<button class="btn btn-ghost btn-sm" onclick="toggleEmpTask('${user.empId}','${t.id}')">Erledigen</button>`}
+      </div>`;
+  }
+
+  return `
+    <div class="page-header">
+      <div><div class="page-title">✅ Meine Aufgaben</div><div class="page-sub">${open.length} offen · ${done.length} erledigt</div></div>
+    </div>
+    <div class="page-content">
+      ${open.length === 0 && done.length === 0 ? `
+        <div class="empty-state">
+          <div style="font-size:48px;margin-bottom:12px">🎉</div>
+          <div class="empty-title">Keine Aufgaben</div>
+          <div class="empty-sub">Dein Trainer hat dir noch keine Aufgaben zugewiesen.</div>
+        </div>
+      ` : ''}
+
+      ${open.length > 0 ? `
+        <div class="card mb-16">
+          <div class="card-header"><span class="card-title">Offene Aufgaben</span><span class="badge badge-yellow" style="margin-left:auto">${open.length}</span></div>
+          <div class="card-body">${open.map(taskRow).join('')}</div>
+        </div>
+      ` : ''}
+
+      ${done.length > 0 ? `
+        <div class="card">
+          <div class="card-header"><span class="card-title">Erledigte Aufgaben</span><span class="badge badge-green" style="margin-left:auto">${done.length}</span></div>
+          <div class="card-body">${done.map(taskRow).join('')}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+async function toggleEmpTask(empId, taskId) {
+  await toggleTask(empId, taskId);
+}
+
 async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
   const empData = await getEmployee(user.empId);
   const dt = dominantType(empData?.types);
   const done = Object.values(prog.modules || {}).filter(v => v).length;
+  const allTasks = await getTasks(user.empId);
+  const openTasks = allTasks.filter(t => !t.done);
 
   // Next module to complete
   const nextModule = modules.find(m => !prog.modules?.[m.id]);
@@ -4746,6 +4819,29 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
           </div>
         </div>
       </div>
+
+      ${openTasks.length > 0 ? `
+        <div class="card mt-16">
+          <div class="card-header">
+            <span class="card-title">✅ Offene Aufgaben</span>
+            <span class="badge badge-yellow" style="margin-left:auto">${openTasks.length}</span>
+            <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="navigate('${role}','tasks')">Alle →</button>
+          </div>
+          <div class="card-body">
+            ${openTasks.slice(0, 3).map(t => {
+              const overdue = t.deadline && new Date(t.deadline) < new Date();
+              return `<div class="flex items-center gap-10 mb-10">
+                <div onclick="toggleEmpTask('${user.empId}','${t.id}')" style="cursor:pointer;width:20px;height:20px;border-radius:5px;border:2px solid var(--border);flex-shrink:0"></div>
+                <div class="flex-1">
+                  <div style="font-size:13px;font-weight:600">${escHtml(t.title)}</div>
+                  ${t.deadline ? `<div class="text-sm" style="color:${overdue ? 'var(--red)' : 'var(--text-dim)'}">📅 ${new Date(t.deadline).toLocaleDateString('de-DE')}${overdue ? ' · Überfällig!' : ''}</div>` : ''}
+                </div>
+              </div>`;
+            }).join('')}
+            ${openTasks.length > 3 ? `<div class="text-dim text-sm">+ ${openTasks.length - 3} weitere Aufgaben</div>` : ''}
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 }
