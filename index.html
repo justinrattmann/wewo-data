@@ -6313,12 +6313,21 @@ const PERSONALITY_TEST = {
 
 // ── Test State ─────────────────────────────────────────────────
 let testState = {
+  empId: null,      // welcher User gerade testet
   answers: {},      // questionIndex -> typeKey
   finished: false,
   result: null
 };
 
+function resetTestStateIfNeeded(empId) {
+  // Wenn ein anderer User den Test öffnet → State komplett zurücksetzen
+  if (testState.empId !== empId) {
+    testState = { empId, answers: {}, finished: false, result: null };
+  }
+}
+
 function renderPersonalityTest(empId, role) {
+  resetTestStateIfNeeded(empId);
   if (testState.finished && testState.result) {
     return renderTestResult(empId);
   }
@@ -6385,6 +6394,8 @@ function renderPersonalityTest(empId, role) {
 }
 
 function selectTestAnswer(qi, typeKey) {
+  // Sicherheit: State gehört zum aktuell eingeloggten User
+  if (!testState.empId) testState.empId = STATE.currentUser?.empId || null;
   testState.answers[qi] = typeKey;
   // Re-render just this question card
   const card = document.getElementById(`q-${qi}`);
@@ -6627,6 +6638,8 @@ function logout() {
   chatHistory = [];
   currentScenario = null;
   roleplaying = false;
+  // Persönlichkeitstest-State beim Logout immer zurücksetzen
+  testState = { empId: null, answers: {}, finished: false, result: null };
   render();
 }
 
