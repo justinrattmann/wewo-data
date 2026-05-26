@@ -4611,6 +4611,8 @@ async function renderEmployeePortal() {
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const empData = await getEmployee(user.empId);
   const dt = dominantType(empData?.types);
+  const allTasksNav = await getTasks(user.empId);
+  const openTaskCount = allTasksNav.filter(t => !t.done).length;
 
   const nav = `
     <div class="sidebar ${STATE.sidebarCollapsed ? 'collapsed' : ''}">
@@ -4623,7 +4625,13 @@ async function renderEmployeePortal() {
         ${empNavItem('home', '🏠', 'Dashboard', page)}
         ${empNavItem('modules', '📚', 'Lernmodule', page)}
         ${empNavItem('roleplay', '🎭', 'Live Roleplay', page)}
-        ${await empNavItemTasks(user.empId, page, STATE.sidebarCollapsed)}
+        <div class="nav-item ${page === 'tasks' ? 'active' : ''}" onclick="navigate('${role}','tasks')" style="position:relative">
+          <span class="nav-icon">✅</span>
+          ${!STATE.sidebarCollapsed
+            ? `<span style="flex:1">Aufgaben</span>${openTaskCount > 0 ? `<span style="background:var(--yellow);color:#000;border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px;line-height:1.6">${openTaskCount}</span>` : ''}`
+            : (openTaskCount > 0 ? `<span style="position:absolute;top:6px;right:6px;background:var(--yellow);color:#000;border-radius:999px;font-size:9px;font-weight:700;padding:0 4px;line-height:1.6">${openTaskCount}</span>` : '')
+          }
+        </div>
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
         ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
         ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
