@@ -3190,11 +3190,11 @@ function _showSessionModal(s, emp, allSessions, editMode) {
           </div>
         </div>`)
       .join('')
-    : Object.entries(fields).filter(([k,v])=>v.score||v.note).map(([k,v])=>`
-        <div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:12px">
-          <div style="flex:2;font-size:13px;color:var(--text-dim)">${escHtml(k.replace(/_/g,' '))}</div>
-          <span class="badge ${getAmpelClass(v.score)}" style="flex-shrink:0">${v.score||'—'}/10</span>
-          <div style="flex:3;font-size:12px;color:var(--text-dim)">${escHtml(v.note||'—')}</div>
+    : Object.entries(fields).map(([k,v])=>`
+        <div style="display:flex;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);gap:12px">
+          <div style="flex:2;font-size:13px;color:var(--text-dim);padding-top:2px">${escHtml(k.replace(/_/g,' '))}</div>
+          <span class="badge ${getAmpelClass(v.score)}" style="flex-shrink:0;margin-top:1px">${v.score||'—'}/10</span>
+          <div style="flex:3;font-size:12px;color:${v.note?'var(--text)':'var(--text-faint)'};">${escHtml(v.note||'Keine Notiz')}</div>
         </div>`)
       .join('');
 
@@ -3246,7 +3246,8 @@ function _showSessionModal(s, emp, allSessions, editMode) {
         ${editMode
           ? `<button class="btn btn-primary btn-sm" onclick="_saveSessionEdits('${oid}','${oeid}')">💾 Speichern</button>
              <button class="btn btn-ghost btn-sm" onclick="openSessionModal('${oid}','${oeid}')">Abbrechen</button>`
-          : `<button class="btn btn-outline btn-sm" onclick="openSessionEdit('${oid}','${oeid}')">✏️ Bearbeiten</button>`}
+          : `<button class="btn btn-outline btn-sm" onclick="openSessionEdit('${oid}','${oeid}')">✏️ Bearbeiten</button>
+             <button class="btn btn-danger btn-sm" onclick="_showDeleteConfirm('${oid}','${oeid}','${escHtml(emp?.name||'')} — ${formatDate(s.date)}')">🗑 Löschen</button>`}
         <button class="btn btn-ghost btn-sm" style="font-size:16px;line-height:1;padding:4px 8px" onclick="document.getElementById('_session_overlay').remove()">✕</button>
       </div>
       <!-- Navigation -->
@@ -3258,8 +3259,65 @@ function _showSessionModal(s, emp, allSessions, editMode) {
       </div>` : ''}
       <!-- Body -->
       <div style="padding:18px;overflow-y:auto;flex:1">
-        ${fieldHtml ? `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Beobachtungsfelder</div>${fieldHtml}` : ''}
-        ${measureHtml ? `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Maßnahmen</div><div style="background:var(--surface);padding:10px;border-radius:6px">${measureHtml}</div>` : ''}
+
+        ${!editMode ? `
+        <!-- Meta-Infos -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+          <div style="background:var(--surface);border-radius:6px;padding:10px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Datum</div>
+            <div style="font-size:13px">${formatDate(s.date)}</div>
+          </div>
+          <div style="background:var(--surface);border-radius:6px;padding:10px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Sessiontyp</div>
+            <div style="font-size:13px">${escHtml(s.sessionType||'—')}</div>
+          </div>
+          ${s.anlass ? `<div style="background:var(--surface);border-radius:6px;padding:10px;grid-column:1/-1">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Anlass</div>
+            <div style="font-size:13px">${escHtml(s.anlass)}</div>
+          </div>` : ''}
+          ${s.lastEdited ? `<div style="background:var(--surface);border-radius:6px;padding:10px;grid-column:1/-1">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Zuletzt bearbeitet</div>
+            <div style="font-size:12px;color:var(--text-dim)">${formatDate(s.lastEdited)}</div>
+          </div>` : ''}
+        </div>` : ''}
+
+        <!-- Beobachtungsfelder -->
+        ${fieldHtml ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Beobachtungsfelder</div>
+          ${fieldHtml}` : ''}
+
+        ${!editMode && s.observations && Object.keys(s.observations).length ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Detailbeobachtungen</div>
+          <div style="background:var(--surface);border-radius:6px;padding:10px">
+            ${Object.entries(s.observations).filter(([,v])=>v).map(([k,v])=>`
+              <div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+                <span style="color:var(--text-dim);font-size:11px">${escHtml(k.replace(/_/g,' '))}:</span> ${escHtml(String(v))}
+              </div>`).join('')}
+          </div>` : ''}
+
+        ${!editMode && s.causes && Object.keys(s.causes).length ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Ursachen</div>
+          <div style="background:var(--surface);border-radius:6px;padding:10px">
+            ${Object.entries(s.causes).filter(([,v])=>v).map(([k,v])=>`
+              <div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+                <span style="color:var(--text-dim);font-size:11px">${escHtml(k.replace(/_/g,' '))}:</span> ${escHtml(String(v))}
+              </div>`).join('')}
+          </div>` : ''}
+
+        ${!editMode && s.notes && Object.keys(s.notes).length ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Notizen</div>
+          <div style="background:var(--surface);border-radius:6px;padding:10px">
+            ${Object.entries(s.notes).filter(([,v])=>v).map(([k,v])=>`
+              <div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+                <span style="color:var(--text-dim);font-size:11px">${escHtml(k.replace(/_/g,' '))}:</span> ${escHtml(String(v))}
+              </div>`).join('')}
+          </div>` : ''}
+
+        <!-- Maßnahmen -->
+        ${measureHtml ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Maßnahmen</div>
+          <div style="background:var(--surface);padding:10px;border-radius:6px">${measureHtml}</div>` : ''}
+
         ${commitBlock}
       </div>
     </div>`;
@@ -3297,6 +3355,40 @@ async function _saveSessionEdits(sessionId, employeeId) {
   document.getElementById('_session_overlay')?.remove();
   openSessionModal(sessionId, employeeId);
   render();
+}
+
+// ── Session löschen ───────────────────────────────────────────
+async function deleteCoachingSession(sessionId, employeeId) {
+  await storageDel(`session:${employeeId}:${sessionId}`, true);
+  document.getElementById('_session_overlay')?.remove();
+  toast('Session gelöscht', 'success');
+  render();
+}
+
+function _showDeleteConfirm(sessionId, employeeId, sessionLabel) {
+  const overlay = document.getElementById('_session_overlay');
+  if (!overlay) return;
+  const existing = overlay.querySelector('#_delete_confirm_box');
+  if (existing) { existing.remove(); return; }
+
+  const box = document.createElement('div');
+  box.id = '_delete_confirm_box';
+  box.style.cssText = `
+    position:sticky; bottom:0; left:0; right:0;
+    background:#1a0000; border-top:2px solid var(--red);
+    padding:16px 20px; display:flex; flex-direction:column; gap:10px;
+    z-index:10;
+  `;
+  box.innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:var(--red)">⚠️ Session wirklich löschen?</div>
+    <div style="font-size:12px;color:var(--text-dim)">„${escHtml(sessionLabel)}" — diese Aktion kann <strong style="color:var(--text)">nicht rückgängig</strong> gemacht werden.</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-danger" onclick="deleteCoachingSession('${sessionId}','${employeeId}')">🗑 Ja, endgültig löschen</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('_delete_confirm_box').remove()">Abbrechen</button>
+    </div>
+  `;
+  overlay.querySelector('[style*="overflow-y:auto"]')?.appendChild(box)
+    || overlay.querySelector('div').appendChild(box);
 }
 
 // Legacy alias
