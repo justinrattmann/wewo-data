@@ -2125,10 +2125,14 @@ function keyToPath(key) {
 }
 
 // ── Storage API (Firebase) ─────────────────────────────────────
+// Session-Draft-Key ist Trainer-spezifisch — kein Überschreiben zwischen Trainern
+function _draftKey() {
+  return `wewo_session_draft_${STATE.currentUser?.id || STATE.currentUser?.name || 'default'}`;
+}
+
 async function storageGet(key, shared = false) {
-  // session_draft is personal → localStorage
   if (key === 'session_draft') {
-    try { return JSON.parse(localStorage.getItem('wewo_session_draft') || 'null'); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem(_draftKey()) || 'null'); } catch { return null; }
   }
   try {
     const snap = await db.ref(keyToPath(key)).get();
@@ -2138,7 +2142,7 @@ async function storageGet(key, shared = false) {
 
 async function storageSet(key, val, shared = false) {
   if (key === 'session_draft') {
-    try { localStorage.setItem('wewo_session_draft', JSON.stringify(val)); return true; } catch { return false; }
+    try { localStorage.setItem(_draftKey(), JSON.stringify(val)); return true; } catch { return false; }
   }
   try {
     await db.ref(keyToPath(key)).set(val);
@@ -2161,7 +2165,7 @@ async function storageList(prefix, shared = false) {
 
 async function storageDel(key, shared = false) {
   if (key === 'session_draft') {
-    localStorage.removeItem('wewo_session_draft'); return;
+    localStorage.removeItem(_draftKey()); return;
   }
   try { await db.ref(keyToPath(key)).remove(); } catch (e) {}
 }
@@ -5689,7 +5693,12 @@ function updateSessionTypes() {
 
 // Override renderCoachingSession to use session-type-specific fields
 async function renderCoachingSession() {
-  const draft = await storageGet('session_draft', false);
+  let draft = await storageGet('session_draft', false);
+  // Sicherheitscheck: Draft muss zum eingeloggten Trainer gehören (via _draftKey), sonst verwerfen
+  if (draft && STATE.selectedEmployee && draft.employeeId !== STATE.selectedEmployee) {
+    await storageDel('session_draft', false);
+    draft = null;
+  }
   if (!draft) return `<div class="page-content"><div class="empty-state"><div>Keine aktive Session — <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">Neue Session starten</button></div></div></div>`;
 
   const emp = await getEmployee(draft.employeeId);
@@ -6638,6 +6647,9 @@ function logout() {
   chatHistory = [];
   currentScenario = null;
   roleplaying = false;
+  aiTyping = false;
+  STATE.selectedModule = null;
+  STATE.modalOpen = null;
   // Persönlichkeitstest-State beim Logout immer zurücksetzen
   testState = { empId: null, answers: {}, finished: false, result: null };
   render();
