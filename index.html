@@ -3084,21 +3084,43 @@ async function buildMeasuresHtml() {
   return lowScores.map(([fieldId, score]) => {
     const field = fields.find(f => f.id === fieldId);
     const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
-    const mass_dt = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
-    const secondaryType = types ? Object.entries(types).sort((a,b)=>b[1]-a[1]).filter(([k]) => k !== dt && types[k] >= 25)[0]?.[0] : null;
-    const mass_secondary = secondaryType && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][secondaryType] : null;
+    const massnahmen = COACHING_LIB.massnahmen[libKey] || {};
     const savedMeasure = draft.measures?.[fieldId] || '';
+
+    let empfehlungHtml = '';
+    if (dt && types) {
+      // Persönlichkeitstyp bekannt — zeige Haupttyp + ggf. Sekundärtyp
+      const mass_dt = massnahmen[dt];
+      const secondaryType = Object.entries(types).sort((a,b)=>b[1]-a[1]).filter(([k])=>k!==dt&&types[k]>=25)[0]?.[0];
+      const mass_sec = secondaryType ? massnahmen[secondaryType] : null;
+      if (mass_dt) empfehlungHtml += `<div class="tip-box mb-8"><p>💡 <strong>${TYPES[dt].emoji} ${typeName(dt)} (${types[dt]}%):</strong> ${escHtml(mass_dt)}</p></div>`;
+      if (mass_sec) empfehlungHtml += `<div class="info-box mb-8"><p>📌 <strong>${TYPES[secondaryType].emoji} ${typeName(secondaryType)} (${types[secondaryType]}%):</strong> ${escHtml(mass_sec)}</p></div>`;
+      if (!mass_dt && !mass_sec) empfehlungHtml += `<div class="info-box mb-8"><p style="color:var(--text-dim)">Kein Persönlichkeitstyp-spezifischer Eintrag für dieses Feld. Nutze das Freitextfeld.</p></div>`;
+    } else {
+      // Kein Persönlichkeitstyp — alle 4 Empfehlungen anzeigen
+      const typen = ['C','I','S','G'];
+      const vorhandene = typen.filter(t => massnahmen[t]);
+      if (vorhandene.length) {
+        empfehlungHtml += `<div style="font-size:11px;color:var(--text-faint);margin-bottom:6px">Kein Typ hinterlegt — alle Empfehlungen:</div>`;
+        empfehlungHtml += vorhandene.map(t => `
+          <div style="background:var(--dark);border:1px solid ${typeColor(t)}33;border-left:3px solid ${typeColor(t)};border-radius:4px;padding:8px 10px;margin-bottom:6px">
+            <div style="font-size:11px;font-weight:700;color:${typeColor(t)};margin-bottom:3px">${TYPES[t].emoji} ${typeName(t)}</div>
+            <div style="font-size:12px;color:var(--text-dim)">${escHtml(massnahmen[t])}</div>
+          </div>`).join('');
+      } else {
+        empfehlungHtml += `<div class="info-box mb-8"><p style="color:var(--text-dim)">Kein spezifischer Eintrag für dieses Feld — nutze das Freitextfeld.</p></div>`;
+      }
+    }
+
     return `
       <div class="card mb-12">
         <div class="card-body">
           <div class="flex items-center gap-8 mb-10">
             <span class="ampel ${getAmpelClass(score)}"></span>
-            <span class="font-bold">${escHtml(field?.label || fieldId)}</span>
+            <span class="font-bold">${escHtml(field?.label || fieldId.replace(/_/g,' '))}</span>
             <span class="badge badge-red" style="margin-left:auto">Score: ${score}/10</span>
           </div>
-          ${mass_dt ? `<div class="tip-box mb-8"><p>💡 <strong>Maßnahme (${typeName(dt)}, ${types?.[dt]||''}%):</strong> ${escHtml(mass_dt)}</p></div>` : ''}
-          ${mass_secondary ? `<div class="info-box mb-8"><p>📌 <strong>Auch relevant (${typeName(secondaryType)}, ${types?.[secondaryType]||''}%):</strong> ${escHtml(mass_secondary)}</p></div>` : ''}
-          ${!mass_dt && !mass_secondary ? `<div class="info-box mb-8"><p>Keine spezifische Maßnahme für dieses Feld hinterlegt. Nutze das Freitextfeld.</p></div>` : ''}
+          ${empfehlungHtml}
           <textarea class="textarea" style="min-height:60px" placeholder="Eigene Maßnahme / Feedforward-Frage..."
             onchange="setMeasure('${fieldId}',this.value)">${escHtml(savedMeasure)}</textarea>
         </div>
@@ -3271,10 +3293,28 @@ function _showSessionModal(s, emp, allSessions, editMode) {
   const empfehlungenHtml = lowFieldScores.length ? lowFieldScores.map(([fieldId, score]) => {
     const field = sessionFields.find(f=>f.id===fieldId);
     const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
-    const mass_dt = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
-    const secondaryType = empTypes ? Object.entries(empTypes).sort((a,b)=>b[1]-a[1]).filter(([k])=>k!==dt&&empTypes[k]>=25)[0]?.[0] : null;
-    const mass_sec = secondaryType && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][secondaryType] : null;
+    const massnahmen = COACHING_LIB.massnahmen[libKey] || {};
     const custom = measures[fieldId] || '';
+
+    let empHtml = '';
+    if (dt && empTypes) {
+      const mass_dt = massnahmen[dt];
+      const secondaryType = Object.entries(empTypes).sort((a,b)=>b[1]-a[1]).filter(([k])=>k!==dt&&empTypes[k]>=25)[0]?.[0];
+      const mass_sec = secondaryType ? massnahmen[secondaryType] : null;
+      if (mass_dt) empHtml += `<div class="tip-box" style="margin-bottom:6px"><p style="font-size:12px">💡 <strong>${TYPES[dt].emoji} ${typeName(dt)} (${empTypes[dt]}%):</strong> ${escHtml(mass_dt)}</p></div>`;
+      if (mass_sec) empHtml += `<div class="info-box" style="margin-bottom:6px"><p style="font-size:12px">📌 <strong>${TYPES[secondaryType].emoji} ${typeName(secondaryType)} (${empTypes[secondaryType]}%):</strong> ${escHtml(mass_sec)}</p></div>`;
+    } else {
+      const vorhandene = ['C','I','S','G'].filter(t => massnahmen[t]);
+      if (vorhandene.length) {
+        empHtml += vorhandene.map(t => `
+          <div style="background:var(--dark);border:1px solid ${typeColor(t)}33;border-left:3px solid ${typeColor(t)};border-radius:4px;padding:7px 10px;margin-bottom:5px">
+            <div style="font-size:10px;font-weight:700;color:${typeColor(t)};margin-bottom:2px">${TYPES[t].emoji} ${typeName(t)}</div>
+            <div style="font-size:12px;color:var(--text-dim)">${escHtml(massnahmen[t])}</div>
+          </div>`).join('');
+      }
+    }
+    if (custom) empHtml += `<div style="font-size:12px;color:var(--text-dim);padding:6px 8px;background:var(--panel);border-radius:4px;border-left:2px solid var(--yellow);margin-top:4px">✍️ ${escHtml(custom)}</div>`;
+
     return `
       <div style="background:var(--surface);border-radius:6px;padding:12px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -3282,9 +3322,7 @@ function _showSessionModal(s, emp, allSessions, editMode) {
           <span style="font-weight:700;font-size:13px">${escHtml(field?.label||fieldId.replace(/_/g,' '))}</span>
           <span class="badge badge-red" style="margin-left:auto">Score ${score}/10</span>
         </div>
-        ${mass_dt ? `<div class="tip-box" style="margin-bottom:6px"><p style="font-size:12px">💡 <strong>${typeName(dt)}:</strong> ${escHtml(mass_dt)}</p></div>` : ''}
-        ${mass_sec ? `<div class="info-box" style="margin-bottom:6px"><p style="font-size:12px">📌 <strong>${typeName(secondaryType)}:</strong> ${escHtml(mass_sec)}</p></div>` : ''}
-        ${custom ? `<div style="font-size:12px;color:var(--text-dim);padding:6px 8px;background:var(--panel);border-radius:4px;border-left:2px solid var(--yellow)">✍️ ${escHtml(custom)}</div>` : ''}
+        ${empHtml || '<div class="info-box"><p style="font-size:12px;color:var(--text-dim)">Kein Eintrag für dieses Feld.</p></div>'}
       </div>`;
   }).join('') : '';
 
