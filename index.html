@@ -221,7 +221,7 @@ input[type=range]::-webkit-slider-thumb {
 .table tbody tr:hover { background: rgba(255,255,255,0.03); }
 
 /* TABS */
-.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; }
 .tab {
   padding: 7px 16px; border-radius: 4px; cursor: pointer;
   font-size: 13px; font-weight: 500; color: var(--text-dim); transition: all .15s;
@@ -478,9 +478,12 @@ input[type=range]::-webkit-slider-thumb {
   .sidebar.mobile-open { transform: translateX(0); }
   .page-content { padding: 16px; }
   .page-header { padding: 14px 16px; }
+  .main { width: 100%; }
+  #sidebar-toggle { display: flex !important; }
 }
 
 /* UTIL */
+.ml-auto { margin-left: auto; }
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
 .empty-icon { font-size: 48px; margin-bottom: 12px; }
@@ -2318,9 +2321,9 @@ let aiTyping = false;
 async function callClaude(messages, systemPrompt, maxTokens = 600) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-api-key": getApiKey(), "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: maxTokens,
       system: systemPrompt,
       messages
@@ -2523,6 +2526,7 @@ async function renderTrainerDashboard() {
   
   return `
     <div class="page-header">
+      <button class="btn btn-ghost btn-icon" id="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" style="display:none">☰</button>
       <div><div class="page-title">Dashboard</div><div class="page-sub">Gesamtübersicht Team</div></div>
       <div class="flex gap-8" style="margin-left:auto">
         <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">+ Neue Coaching Session</button>
@@ -2700,7 +2704,7 @@ async function renderEmployeeDetail() {
       return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:${passed ? colors[l]+'22' : 'var(--surface)'};color:${passed ? colors[l] : 'var(--text-faint)'};border:1px solid ${passed ? colors[l]+'44' : 'var(--border)'}">${l==='leicht'?'L':l==='mittel'?'M':l==='schwer'?'S':'P'}${passed?' ✓':''}</span>`;
     }).join('') : '';
     return `
-      <div style="display:flex;align-items:center;gap-12;padding:10px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid var(--border)">
         <span style="font-size:16px;width:24px">${m.icon}</span>
         <div style="flex:1;min-width:0;margin-left:10px">
           <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
@@ -2769,10 +2773,10 @@ async function renderEmployeeDetail() {
 
   // ── Tab-Header ───────────────────────────────────────────────
   const tabHeader = `<div class="tab-header mb-16">
-    <button class="tab-btn ${activeTab==='overview'?'active':''}" onclick="STATE.empDetailTab='overview';render()">Übersicht</button>
-    <button class="tab-btn ${activeTab==='modules'?'active':''}" onclick="STATE.empDetailTab='modules';render()">Module</button>
-    <button class="tab-btn ${activeTab==='sessions'?'active':''}" onclick="STATE.empDetailTab='sessions';render()">Sessions ${sessions.length>0?'('+sessions.length+')':''}</button>
-    <button class="tab-btn ${activeTab==='tasks'?'active':''}" onclick="STATE.empDetailTab='tasks';render()">Aufgaben</button>
+    <button class="tab ${activeTab==='overview'?'active':''}" onclick="STATE.empDetailTab='overview';render()">Übersicht</button>
+    <button class="tab ${activeTab==='modules'?'active':''}" onclick="STATE.empDetailTab='modules';render()">Module</button>
+    <button class="tab ${activeTab==='sessions'?'active':''}" onclick="STATE.empDetailTab='sessions';render()">Sessions ${sessions.length>0?'('+sessions.length+')':''}</button>
+    <button class="tab ${activeTab==='tasks'?'active':''}" onclick="STATE.empDetailTab='tasks';render()">Aufgaben</button>
   </div>`;
 
   const tabContent = activeTab==='modules' ? modulesTab
@@ -2820,7 +2824,7 @@ async function trainerToggleModule(empId, moduleId, currentlyDone) {
 async function saveTrainerNotes(empId) {
   const emp = await getEmployee(empId);
   if (!emp) return;
-  const el = document.getElementById(`trainer-notes-${empId}`);
+  const el = document.getElementById('trainer-notes-textarea');
   if (!el) return;
   emp.trainerNotes = el.value;
   await saveEmployee(emp);
@@ -3062,7 +3066,7 @@ async function setObsScore(fieldId, score) {
   draft.observations[fieldId] = score;
   await storageSet('session_draft', draft, false);
   // Re-render just the score buttons for this field
-  const container = document.querySelector(`[onclick*="setObsScore('${fieldId}'"]`)?.closest('.obs-item');
+  const container = document.querySelector(`[onclick*="setObsScore('${fieldId}')"]`)?.closest('.obs-item');
   if (container) {
     // Update button states
     container.querySelectorAll('.score-btn').forEach((btn, i) => {
@@ -3119,7 +3123,7 @@ async function renderCoachingHistory() {
   allSessions.sort((a,b) => new Date(b.date) - new Date(a.date));
   
   const rows = allSessions.map(s => `
-    <tr style="cursor:pointer">
+    <tr style="cursor:pointer" onclick="openSessionModal ? openSessionModal('${s.id}','${s.employeeId}') : null">
       <td style="padding:10px 12px;font-size:12px;color:var(--text-dim)">${formatDate(s.date)}</td>
       <td style="padding:10px 12px"><span class="font-bold">${escHtml(s.employeeName||'—')}</span></td>
       <td style="padding:10px 12px;font-size:13px">${escHtml(s.sessionType||'—')}</td>
@@ -3625,7 +3629,7 @@ async function renderEmployeeComparison() {
     </tr>
   `).join('');
 
-`
+  return `
     <div class="page-header">
       <div><div class="page-title">👥 Teamvergleich</div><div class="page-sub">${allEmp.length} Mitarbeiter</div></div>
     </div>
@@ -4343,7 +4347,8 @@ async function renderEmployeePortal() {
 
   const prog = await getEmployeeProgress(user.empId);
   const done = Object.values(prog.modules || {}).filter(v => v).length;
-  const pct = Math.round(done / modules.length * 100);
+  const activeMods = modules.filter(m => !m.disabled && !m.locked);
+  const pct = activeMods.length ? Math.round(done / activeMods.length * 100) : 0;
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const empData = await getEmployee(user.empId);
@@ -5227,7 +5232,7 @@ async function renderTypesPage(empId) {
         <div class="page-title">🧠 Persönlichkeitstypen</div>
         <div class="page-sub">Die 4 Verhandler-Profile — Stärken, Fallen und wie du damit umgehst</div>
       </div>
-      ${!myTypes ? `<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_ad'})">Test starten →</button>` : ''}
+      ${!myTypes ? `<button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_${STATE.currentUser?.role || 'ad'}'})">Test starten →</button>` : ''}
     </div>
     <div class="page-content">
       ${myTypes ? `
@@ -5237,7 +5242,7 @@ async function renderTypesPage(empId) {
             <div class="type-bars">${renderTypeBars(myTypes)}</div>
           </div>
         </div>
-      ` : `<div class="info-box mb-20"><p>💡 Du hast den Persönlichkeitstest noch nicht gemacht. <strong onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_ad'})" style="color:var(--yellow);cursor:pointer">Jetzt starten →</strong></p></div>`}
+      ` : `<div class="info-box mb-20"><p>💡 Du hast den Persönlichkeitstest noch nicht gemacht. <strong onclick="navigate('${STATE.currentUser?.role}','module_content',{subModule:'persoenlichkeit_${STATE.currentUser?.role || 'ad'}'})" style="color:var(--yellow);cursor:pointer">Jetzt starten →</strong></p></div>`}
       ${cards}
     </div>
   `;
@@ -6194,8 +6199,8 @@ async function finishPersonalityTest(empId) {
     // Mark module as done
     const prog = await getEmployeeProgress(empId);
     prog.modules = prog.modules || {};
-    prog.modules['persoenlichkeit_ad'] = true;
-    prog.modules['persoenlichkeit_id'] = true;
+    const empRole = STATE.employees?.find(e => e.id === empId)?.role || 'ad';
+    prog.modules[`persoenlichkeit_${empRole}`] = true;
     await saveEmployeeProgress(empId, prog);
   }
 
