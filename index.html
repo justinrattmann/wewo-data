@@ -3177,18 +3177,22 @@ function _showSessionModal(s, emp, allSessions, editMode) {
   const prev = allSessions[idx + 1]; // older
   const next = allSessions[idx - 1]; // newer
 
-  // Field rows
+  // Field rows — edit mode uses all role fields, view mode shows all saved fields
+  const roleFields = (s.employeeRole === 'id' ? COACHING_LIB.fields_id : COACHING_LIB.fields_ad) || [];
   const fieldHtml = editMode
-    ? Object.entries(fields).map(([k, v]) => `
+    ? roleFields.map(f => {
+        const v = fields[f.id] || {};
+        return `
         <div style="background:var(--surface);border-radius:6px;padding:10px;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px">${escHtml(k.replace(/_/g,' '))}</div>
-          <div style="display:flex;gap:8px">
-            <select class="select" style="width:80px" data-fscore="${escHtml(k)}">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px">${escHtml(f.label)}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="select" style="width:80px;flex-shrink:0" data-fscore="${escHtml(f.id)}">
+              <option value="">—</option>
               ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option ${v.score==n?'selected':''}>${n}</option>`).join('')}
             </select>
-            <input class="input" style="flex:1" value="${escHtml(v.note||'')}" data-fnote="${escHtml(k)}" placeholder="Notiz...">
+            <input class="input" style="flex:1" value="${escHtml(v.note||'')}" data-fnote="${escHtml(f.id)}" placeholder="Notiz...">
           </div>
-        </div>`)
+        </div>`})
       .join('')
     : Object.entries(fields).map(([k,v])=>`
         <div style="display:flex;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);gap:12px">
@@ -3202,22 +3206,47 @@ function _showSessionModal(s, emp, allSessions, editMode) {
     .map(([k,v])=>`<div style="padding:4px 0;font-size:13px">• ${escHtml(typeof v==='string'?v:k)}</div>`).join('');
 
   const commitBlock = editMode ? `
-    <div style="margin-top:16px">
-      <label class="form-label">Gesamtscore (1–10)</label>
-      <select class="select" id="_es_score" style="width:100px;margin-bottom:12px">
-        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option ${s.overallScore==n?'selected':''}>${n}</option>`).join('')}
-      </select>
-      <label class="form-label">Commitment</label>
-      <textarea class="textarea" id="_es_commit" rows="2" style="margin-bottom:10px">${escHtml(s.commitment||'')}</textarea>
-      <label class="form-label">Commitment erfüllt?</label>
-      <select class="select" id="_es_fulfilled" style="width:180px;margin-bottom:12px">
-        <option value="">Nicht bewertet</option>
-        <option value="yes" ${s.commitmentFulfilled==='yes'?'selected':''}>✅ Ja, erfüllt</option>
-        <option value="partial" ${s.commitmentFulfilled==='partial'?'selected':''}>🟡 Teilweise</option>
-        <option value="no" ${s.commitmentFulfilled==='no'?'selected':''}>❌ Nicht erfüllt</option>
-      </select>
-      <label class="form-label">Reflexionsnotizen</label>
-      <textarea class="textarea" id="_es_reflect" rows="3">${escHtml(s.reflectionNotes||'')}</textarea>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Sessiontyp</label>
+          <select class="select" id="_es_stype">
+            <option value="feldbegleitung" ${s.sessionType==='feldbegleitung'?'selected':''}>Feldbegleitung</option>
+            <option value="feldbegleitung_akquise" ${s.sessionType==='feldbegleitung_akquise'?'selected':''}>Feldbegleitung Akquise</option>
+            <option value="coaching_gespraech" ${s.sessionType==='coaching_gespraech'?'selected':''}>Coaching-Gespräch</option>
+            <option value="telefoncoaching" ${s.sessionType==='telefoncoaching'?'selected':''}>Telefoncoaching</option>
+            <option value="sonstiges" ${s.sessionType==='sonstiges'?'selected':''}>Sonstiges</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Gesamtscore (1–10)</label>
+          <select class="select" id="_es_score">
+            <option value="">— nicht bewertet —</option>
+            ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option ${s.overallScore==n?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Anlass</label>
+        <input class="input" id="_es_anlass" value="${escHtml(s.anlass||'')}" placeholder="z.B. Quartalsgespräch, Einwandbehandlung...">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Commitment</label>
+        <textarea class="textarea" id="_es_commit" rows="2">${escHtml(s.commitment||'')}</textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Commitment erfüllt?</label>
+        <select class="select" id="_es_fulfilled">
+          <option value="">Nicht bewertet</option>
+          <option value="yes" ${s.commitmentFulfilled==='yes'?'selected':''}>✅ Ja, erfüllt</option>
+          <option value="partial" ${s.commitmentFulfilled==='partial'?'selected':''}>🟡 Teilweise</option>
+          <option value="no" ${s.commitmentFulfilled==='no'?'selected':''}>❌ Nicht erfüllt</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Reflexionsnotizen</label>
+        <textarea class="textarea" id="_es_reflect" rows="3">${escHtml(s.reflectionNotes||'')}</textarea>
+      </div>
     </div>` : `
     ${s.commitment ? `<div style="margin-top:12px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Commitment</div>
@@ -3345,10 +3374,14 @@ async function _saveSessionEdits(sessionId, employeeId) {
   const cm = document.getElementById('_es_commit');
   const rf = document.getElementById('_es_reflect');
   const fl = document.getElementById('_es_fulfilled');
-  if (sc) s.overallScore = parseInt(sc.value);
+  const st = document.getElementById('_es_stype');
+  const al = document.getElementById('_es_anlass');
+  if (sc) s.overallScore = sc.value ? parseInt(sc.value) : null;
   if (cm) s.commitment = cm.value;
   if (rf) s.reflectionNotes = rf.value;
   if (fl) s.commitmentFulfilled = fl.value;
+  if (st) s.sessionType = st.value;
+  if (al) s.anlass = al.value;
   s.lastEdited = new Date().toISOString();
   await saveCoachingSession(s);
   toast('Session gespeichert ✓');
