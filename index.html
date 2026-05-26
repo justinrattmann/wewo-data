@@ -2938,7 +2938,7 @@ async function renderCoachingSession() {
     const scoreButtons = [1,2,3,4,5,6,7,8,9,10].map(n => {
       let cls = '';
       if (score === n) cls = n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red';
-      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n})">${n}</button>`;
+      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n},this)">${n}</button>`;
     }).join('');
     const ampelCls = score ? getAmpelClass(score) : '';
     return `
@@ -3060,27 +3060,36 @@ function switchCoachingTab(tab) {
   });
 }
 
-async function setObsScore(fieldId, score) {
+async function setObsScore(fieldId, score, clickedBtn) {
   const draft = await storageGet('session_draft', false) || {};
   if (!draft.observations) draft.observations = {};
   draft.observations[fieldId] = score;
   await storageSet('session_draft', draft, false);
-  // Re-render just the score buttons for this field
-  const container = document.querySelector(`[onclick*="setObsScore('${fieldId}')"]`)?.closest('.obs-item');
+  // Update DOM via clicked button — no fragile querySelector needed
+  const container = clickedBtn?.closest('.obs-item');
   if (container) {
-    // Update button states
     container.querySelectorAll('.score-btn').forEach((btn, i) => {
       const n = i + 1;
       btn.className = 'score-btn';
       if (score === n) btn.classList.add(n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red');
     });
-    // Update header
-    const header = container.querySelector('.obs-item-header');
-    const scoreEl = header?.lastElementChild;
-    if (scoreEl && !scoreEl.classList.contains('flex')) {
-      scoreEl.textContent = `${score}/10`;
-      scoreEl.style.color = score >= 7 ? 'var(--green)' : score >= 4 ? 'var(--yellow)' : 'var(--red)';
+    // Update score display in header
+    let scoreEl = container.querySelector('.obs-score-display');
+    if (!scoreEl) {
+      scoreEl = document.createElement('span');
+      scoreEl.className = 'obs-score-display font-bold';
+      container.querySelector('.obs-item-header')?.appendChild(scoreEl);
     }
+    scoreEl.textContent = `${score}/10`;
+    scoreEl.style.color = score >= 7 ? 'var(--green)' : score >= 4 ? 'var(--yellow)' : 'var(--red)';
+    // Update ampel dot
+    let ampel = container.querySelector('.ampel');
+    if (!ampel) {
+      ampel = document.createElement('span');
+      ampel.className = 'ampel';
+      container.querySelector('.obs-item-header .flex')?.prepend(ampel);
+    }
+    ampel.className = `ampel ${getAmpelClass(score)}`;
   }
 }
 
@@ -5574,7 +5583,7 @@ async function renderCoachingSession() {
     const scoreButtons = [1,2,3,4,5,6,7,8,9,10].map(n => {
       let cls = '';
       if (score === n) cls = n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red';
-      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n})">${n}</button>`;
+      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n},this)">${n}</button>`;
     }).join('');
     return `
       <div class="obs-item">
