@@ -2619,82 +2619,205 @@ async function renderEmployeeList(role) {
 async function renderEmployeeDetail() {
   const emp = STATE.selectedEmployee ? await getEmployee(STATE.selectedEmployee) : null;
   if (!emp) return `<div class="page-content"><div class="empty-state"><div>Mitarbeiter nicht gefunden</div></div></div>`;
-  
+
+  // Always use getModules() — reads from Firebase, auto-merges new defaults
+  const modules = await getModules(emp.role);
   const prog = await getEmployeeProgress(emp.id);
-  const modules = emp.role === 'ad' ? AD_MODULES : ID_MODULES;
   const sessions = await getCoachingSessions(emp.id);
-  const done = Object.values(prog.modules || {}).filter(v => v).length;
-  const pct = modules.length > 0 ? Math.round(done/modules.length*100) : 0;
+  const activeTab = STATE.empDetailTab || 'overview';
+
+  const visibleModules = modules.filter(m => !m.disabled);
+  const done = visibleModules.filter(m => prog.modules?.[m.id]).length;
+  const pct = visibleModules.length > 0 ? Math.round(done / visibleModules.length * 100) : 0;
   const dt = dominantType(emp.types);
-  const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  
-  const moduleRows = modules.map(m => {
-    const isDone = prog.modules?.[m.id];
-    const quiz = prog.quizzes?.[m.id];
-    return `
-      <div class="flex items-center gap-12 mb-12">
-        <span style="font-size:18px">${m.icon}</span>
-        <div class="flex-1">
-          <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
-          ${quiz ? `<div class="text-sm text-dim">Quiz: ${quiz.correct}/${quiz.total} richtig</div>` : ''}
+  const initials = emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const lastSession = sessions[0];
+
+  // ── Tab: Übersicht ──────────────────────────────────────────
+  const overviewTab = `
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Persönlichkeitsprofil</span></div>
+        <div class="card-body">
+          ${emp.types ? `<div class="type-bars mb-12">${renderTypeBars(emp.types)}</div>` : '<div class="text-dim text-sm mb-12">Kein Test durchgeführt</div>'}
+          ${dt ? `<div class="info-box"><p>Primärtyp <strong>${typeName(dt)}</strong>: ${TYPES[dt].desc}</p></div>` : ''}
         </div>
-        ${isDone ? '<span class="badge badge-green">✓ Abgeschlossen</span>' : '<span class="badge badge-gray">Ausstehend</span>'}
       </div>
-    `;
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Lernfortschritt</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-dim)">${done}/${visibleModules.length} Module</span>
+        </div>
+        <div class="card-body">
+          <div class="stat-value mb-8">${pct}%</div>
+          <div class="progress-wrap mb-12"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <button class="btn btn-ghost btn-sm" onclick="STATE.empDetailTab='modules';render()">Alle Module ansehen →</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Letzte Session</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="STATE.empDetailTab='sessions';render()">Alle →</button>
+        </div>
+        <div class="card-body">
+          ${lastSession ? `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span class="badge ${getAmpelClass(lastSession.overallScore)}">${lastSession.overallScore||'—'}/10</span>
+              <div>
+                <div style="font-size:13px;font-weight:600">${escHtml(lastSession.sessionType||'—')}</div>
+                <div style="font-size:11px;color:var(--text-dim)">${formatDate(lastSession.date)}</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="openSessionModal('${lastSession.id}','${emp.id}')">Details</button>
+            </div>
+            ${lastSession.commitment ? `<div style="font-size:12px;padding:8px;background:var(--yellow-glow);border-radius:6px;color:var(--yellow)">💬 ${escHtml(lastSession.commitment)}</div>` : ''}
+          ` : '<div class="text-dim text-sm">Noch keine Sessions</div>'}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">📝 Trainer-Notizen</span>
+          <span id="trainer-notes-indicator" style="margin-left:auto;font-size:11px;color:var(--text-faint)"></span>
+        </div>
+        <div class="card-body">
+          <textarea class="textarea" id="trainer-notes-textarea" rows="5"
+            placeholder="Beobachtungen, Stärken, Entwicklungsfelder..."
+            oninput="onNotesChange('${emp.id}')">${escHtml(emp.trainerNotes || '')}</textarea>
+          <button class="btn btn-outline btn-sm mt-8" onclick="saveTrainerNotes('${emp.id}')">Speichern</button>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Tab: Module (mit echtem Sync-Status) ───────────────────
+  const moduleRows = visibleModules.map(m => {
+    const isDone = !!prog.modules?.[m.id];
+    const levelProg = prog.quizLevels?.[m.id] || {};
+    const passedLevels = ['leicht','mittel','schwer','profi'].filter(l => levelProg[l]?.passed);
+    const hasLevels = !!QUIZ_LEVELS[m.id];
+    const levelBadges = hasLevels ? ['leicht','mittel','schwer','profi'].map(l => {
+      const passed = levelProg[l]?.passed;
+      const colors = {leicht:'#2ecc71',mittel:'#f5c800',schwer:'#e63946',profi:'#a855f7'};
+      return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:${passed ? colors[l]+'22' : 'var(--surface)'};color:${passed ? colors[l] : 'var(--text-faint)'};border:1px solid ${passed ? colors[l]+'44' : 'var(--border)'}">${l==='leicht'?'L':l==='mittel'?'M':l==='schwer'?'S':'P'}${passed?' ✓':''}</span>`;
+    }).join('') : '';
+    return `
+      <div style="display:flex;align-items:center;gap-12;padding:10px;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px;width:24px">${m.icon}</span>
+        <div style="flex:1;min-width:0;margin-left:10px">
+          <div style="font-size:13px;font-weight:600">${escHtml(m.title)}</div>
+          ${hasLevels ? `<div style="display:flex;gap:4px;margin-top:4px">${levelBadges}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:10px">
+          ${isDone
+            ? '<span class="badge badge-green" style="font-size:11px">✓ Fertig</span>'
+            : hasLevels && passedLevels.length
+              ? `<span class="badge" style="background:var(--yellow-glow);color:var(--yellow);font-size:11px">${passedLevels.length}/4 Level</span>`
+              : '<span class="badge badge-gray" style="font-size:11px">Ausstehend</span>'}
+          <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="trainerToggleModule('${emp.id}','${m.id}',${isDone})">
+            ${isDone ? '↩ Reset' : '✓ Setzen'}
+          </button>
+        </div>
+      </div>`;
   }).join('');
-  
-  const sessionRows = await renderCommitmentTimeline(emp.id);
-  
+
+  const modulesTab = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Lernmodule — ${done}/${visibleModules.length} abgeschlossen</span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="resetEmployeeProgress('${emp.id}')">🔄 Alles zurücksetzen</button>
+        </div>
+      </div>
+      <div style="max-height:600px;overflow-y:auto">${moduleRows}</div>
+    </div>`;
+
+  // ── Tab: Sessions ───────────────────────────────────────────
+  const sessionRows2 = sessions.map((s, idx) => `
+    <tr style="cursor:pointer" onclick="openSessionModal('${s.id}','${emp.id}')">
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-dim)">${formatDate(s.date)}</td>
+      <td style="padding:10px 12px;font-size:13px">${escHtml(s.sessionType||'—')}</td>
+      <td style="padding:10px 12px"><span class="badge ${getAmpelClass(s.overallScore)}">${s.overallScore||'—'}/10</span></td>
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.commitment||'—')}</td>
+      <td style="padding:10px 12px">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSessionModal('${s.id}','${emp.id}')">👁 Ansehen</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openSessionEdit('${s.id}','${emp.id}')">✏️ Bearbeiten</button>
+      </td>
+    </tr>`).join('');
+
+  const sessionsTab = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Coaching-Sessions — ${sessions.length} gesamt</span>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">+ Neue Session</button>
+      </div>
+      ${renderScoreChart(sessions)}
+      ${sessions.length === 0
+        ? '<div class="card-body text-dim text-sm">Noch keine Sessions</div>'
+        : `<table style="width:100%;border-collapse:collapse">
+            <thead><tr style="font-size:11px;color:var(--text-faint);text-transform:uppercase;border-bottom:1px solid var(--border)">
+              <th style="padding:8px 12px;text-align:left">Datum</th>
+              <th style="padding:8px 12px;text-align:left">Typ</th>
+              <th style="padding:8px 12px;text-align:left">Score</th>
+              <th style="padding:8px 12px;text-align:left">Commitment</th>
+              <th style="padding:8px 12px"></th>
+            </tr></thead>
+            <tbody>${sessionRows2}</tbody>
+          </table>`}
+    </div>`;
+
+  // ── Tab: Aufgaben ────────────────────────────────────────────
+  const tasksTabHtml = await renderTasksTab(emp.id);
+
+  // ── Tab-Header ───────────────────────────────────────────────
+  const tabs = [
+    { id:'overview', label:'📋 Übersicht' },
+    { id:'modules',  label:'📚 Module' },
+    { id:'sessions', label:`💬 Sessions ${sessions.length > 0 ? `(${sessions.length})` : ''}` },
+    { id:'tasks',    label:'✅ Aufgaben' },
+  ];
+  const tabHeader = `<div class="tab-header mb-16">
+    ${tabs.map(t => `<button class="tab-btn ${activeTab===t.id?'active':''}" onclick="STATE.empDetailTab='${t.id}';render()">${t.label}</button>`).join('')}
+  </div>`;
+
+  const tabContent = activeTab==='modules' ? modulesTab
+    : activeTab==='sessions' ? sessionsTab
+    : activeTab==='tasks' ? tasksTabHtml
+    : overviewTab;
+
   return `
     <div class="page-header">
-      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','${emp.role}_list')">← Zurück</button>
+      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','${emp.role==='ad'?'ad':'id'}');STATE.empDetailTab=null">← Zurück</button>
       <div class="flex items-center gap-12">
-        <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'}; width:44px;height:44px;font-size:17px">${initials}</div>
-        <div><div class="page-title">${escHtml(emp.name)}</div><div class="page-sub">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'}</div></div>
+        <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'};width:44px;height:44px;font-size:17px">${initials}</div>
+        <div>
+          <div class="page-title">${escHtml(emp.name)}</div>
+          <div class="page-sub">${emp.role==='ad'?'Außendienst':'Innendienst'} · ${done}/${visibleModules.length} Module · ${sessions.length} Sessions</div>
+        </div>
       </div>
       <div class="flex gap-8" style="margin-left:auto">
-        <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">Coaching starten</button>
-        <button class="btn btn-outline btn-sm" onclick="exportEmployeePDF('${emp.id}')">📄 PDF Export</button>
-        <button class="btn btn-outline btn-sm" onclick="openEditEmployee('${emp.id}')">Profil bearbeiten</button>
+        <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">+ Coaching</button>
+        <button class="btn btn-outline btn-sm" onclick="exportEmployeePDF('${emp.id}')">📄 PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditEmployee('${emp.id}')">✏️ Profil</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteEmployee('${emp.id}')">🗑</button>
       </div>
     </div>
     <div class="page-content">
-      <div class="grid-2 mb-16">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Persönlichkeitsprofil</span></div>
-          <div class="card-body">
-            ${emp.types ? `<div class="type-bars mb-12">${renderTypeBars(emp.types)}</div>` : '<div class="text-dim text-sm mb-12">Noch nicht hinterlegt</div>'}
-            ${dt ? `<div class="info-box"><p>Primärtyp <strong>${typeName(dt)}</strong>: ${TYPES[dt].desc}</p></div>` : ''}
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Lernfortschritt</span></div>
-          <div class="card-body">
-            <div class="stat-value mb-8">${pct}%</div>
-            <div class="progress-wrap mb-16"><div class="progress-fill" style="width:${pct}%"></div></div>
-            <div style="max-height:200px;overflow-y:auto">${moduleRows}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Letzte Coaching Sessions</span>
-            <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="navigate('trainer','coaching_history')">Alle →</button>
-          </div>
-          <div class="card-body">${sessionRows}</div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Trainer-Notizen</span></div>
-          <div class="card-body">
-            <textarea class="textarea" id="trainer-notes-${emp.id}" placeholder="Interne Notizen (nur für Trainer sichtbar)..." rows="4">${escHtml(emp.trainerNotes||'')}</textarea>
-            <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="saveTrainerNotes('${emp.id}')">Speichern</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+      ${tabHeader}
+      ${tabContent}
+    </div>`;
+}
+
+// Trainer kann Modul-Status direkt setzen/zurücksetzen
+async function trainerToggleModule(empId, moduleId, currentlyDone) {
+  const prog = await getEmployeeProgress(empId);
+  prog.modules = prog.modules || {};
+  if (currentlyDone) {
+    delete prog.modules[moduleId];
+  } else {
+    prog.modules[moduleId] = true;
+  }
+  await saveEmployeeProgress(empId, prog);
+  toast(currentlyDone ? 'Modul zurückgesetzt' : 'Modul als abgeschlossen markiert ✓');
+  render();
 }
 
 async function saveTrainerNotes(empId) {
@@ -2999,12 +3122,16 @@ async function renderCoachingHistory() {
   allSessions.sort((a,b) => new Date(b.date) - new Date(a.date));
   
   const rows = allSessions.map(s => `
-    <tr onclick="viewSession('${s.id}','${s.employeeId}')">
-      <td>${formatDate(s.date)}</td>
-      <td><span class="font-bold">${escHtml(s.employeeName||'—')}</span></td>
-      <td>${escHtml(s.sessionType||'—')}</td>
-      <td>${s.overallScore ? `<span class="font-bold text-yellow">${s.overallScore}/10</span>` : '—'}</td>
-      <td class="truncate" style="max-width:200px">${escHtml(s.commitment||'—')}</td>
+    <tr style="cursor:pointer">
+      <td style="padding:10px 12px;font-size:12px;color:var(--text-dim)">${formatDate(s.date)}</td>
+      <td style="padding:10px 12px"><span class="font-bold">${escHtml(s.employeeName||'—')}</span></td>
+      <td style="padding:10px 12px;font-size:13px">${escHtml(s.sessionType||'—')}</td>
+      <td style="padding:10px 12px">${s.overallScore ? `<span class="badge ${getAmpelClass(s.overallScore)}">${s.overallScore}/10</span>` : '—'}</td>
+      <td style="padding:10px 12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${escHtml(s.commitment||'—')}</td>
+      <td style="padding:10px 12px">
+        <button class="btn btn-ghost btn-sm" onclick="openSessionModal('${s.id}','${s.employeeId}')">👁 Ansehen</button>
+        <button class="btn btn-ghost btn-sm" onclick="openSessionEdit('${s.id}','${s.employeeId}')">✏️ Bearbeiten</button>
+      </td>
     </tr>
   `).join('');
   
