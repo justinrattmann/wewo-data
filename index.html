@@ -3051,13 +3051,59 @@ async function renderCoachingSession() {
   `;
 }
 
-function switchCoachingTab(tab) {
+async function switchCoachingTab(tab) {
   ['obs','measures','commitment'].forEach(t => {
     const el = document.getElementById(`coaching-tab-${t}`);
     const btn = document.getElementById(`tab-${t}`);
     if (el) el.style.display = t === tab ? '' : 'none';
     if (btn) btn.className = `tab ${t === tab ? 'active' : ''}`;
   });
+  // Maßnahmen immer frisch rendern wenn der Tab geöffnet wird
+  if (tab === 'measures') {
+    const measuresEl = document.getElementById('coaching-tab-measures');
+    if (measuresEl) {
+      measuresEl.innerHTML = '<div class="section-head mb-16"><div class="section-title">Entwicklungsfelder & Maßnahmen</div></div><div class="loading-spin"></div>';
+      const html = await buildMeasuresHtml();
+      measuresEl.innerHTML = '<div class="section-head mb-16"><div class="section-title">Entwicklungsfelder & Maßnahmen</div></div>' + html;
+    }
+  }
+}
+
+async function buildMeasuresHtml() {
+  const draft = await storageGet('session_draft', false);
+  if (!draft) return '<div class="tip-box"><p>Keine aktive Session.</p></div>';
+  const emp = await getEmployee(draft.employeeId);
+  const fields = getSessionFields(draft.sessionType, emp?.role || 'ad');
+  const dt = dominantType(emp?.types);
+  const types = emp?.types;
+  const lowScores = Object.entries(draft.observations || {})
+    .filter(([k, v]) => v && v < 7)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 6);
+  if (!lowScores.length) return '<div class="tip-box"><p>✅ Alle bewerteten Felder im grünen Bereich — oder noch keine Scores eingetragen.</p></div>';
+  return lowScores.map(([fieldId, score]) => {
+    const field = fields.find(f => f.id === fieldId);
+    const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
+    const mass_dt = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
+    const secondaryType = types ? Object.entries(types).sort((a,b)=>b[1]-a[1]).filter(([k]) => k !== dt && types[k] >= 25)[0]?.[0] : null;
+    const mass_secondary = secondaryType && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][secondaryType] : null;
+    const savedMeasure = draft.measures?.[fieldId] || '';
+    return `
+      <div class="card mb-12">
+        <div class="card-body">
+          <div class="flex items-center gap-8 mb-10">
+            <span class="ampel ${getAmpelClass(score)}"></span>
+            <span class="font-bold">${escHtml(field?.label || fieldId)}</span>
+            <span class="badge badge-red" style="margin-left:auto">Score: ${score}/10</span>
+          </div>
+          ${mass_dt ? `<div class="tip-box mb-8"><p>💡 <strong>Maßnahme (${typeName(dt)}, ${types?.[dt]||''}%):</strong> ${escHtml(mass_dt)}</p></div>` : ''}
+          ${mass_secondary ? `<div class="info-box mb-8"><p>📌 <strong>Auch relevant (${typeName(secondaryType)}, ${types?.[secondaryType]||''}%):</strong> ${escHtml(mass_secondary)}</p></div>` : ''}
+          ${!mass_dt && !mass_secondary ? `<div class="info-box mb-8"><p>Keine spezifische Maßnahme für dieses Feld hinterlegt. Nutze das Freitextfeld.</p></div>` : ''}
+          <textarea class="textarea" style="min-height:60px" placeholder="Eigene Maßnahme / Feedforward-Frage..."
+            onchange="setMeasure('${fieldId}',this.value)">${escHtml(savedMeasure)}</textarea>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 async function setObsScore(fieldId, score, clickedBtn) {
@@ -3214,6 +3260,34 @@ function _showSessionModal(s, emp, allSessions, editMode) {
   const measureHtml = Object.entries(measures).filter(([k,v])=>v)
     .map(([k,v])=>`<div style="padding:4px 0;font-size:13px">• ${escHtml(typeof v==='string'?v:k)}</div>`).join('');
 
+  // Coaching-Empfehlungen aus Beobachtungsscores + Persönlichkeitstyp
+  const sessionObs = s.observations || {};
+  const sessionFieldScores = Object.entries(s.fields||{}).reduce((acc,[k,v])=>{ if(v.score) acc[k]=v.score; return acc; }, {});
+  const allScores = { ...sessionObs, ...sessionFieldScores };
+  const dt = dominantType(emp?.types);
+  const empTypes = emp?.types;
+  const sessionFields = getSessionFields ? getSessionFields(s.sessionType, s.employeeRole||'ad') : [];
+  const lowFieldScores = Object.entries(allScores).filter(([,v])=>v&&v<7).sort((a,b)=>a[1]-b[1]).slice(0,6);
+  const empfehlungenHtml = lowFieldScores.length ? lowFieldScores.map(([fieldId, score]) => {
+    const field = sessionFields.find(f=>f.id===fieldId);
+    const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
+    const mass_dt = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
+    const secondaryType = empTypes ? Object.entries(empTypes).sort((a,b)=>b[1]-a[1]).filter(([k])=>k!==dt&&empTypes[k]>=25)[0]?.[0] : null;
+    const mass_sec = secondaryType && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][secondaryType] : null;
+    const custom = measures[fieldId] || '';
+    return `
+      <div style="background:var(--surface);border-radius:6px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="ampel ${getAmpelClass(score)}"></span>
+          <span style="font-weight:700;font-size:13px">${escHtml(field?.label||fieldId.replace(/_/g,' '))}</span>
+          <span class="badge badge-red" style="margin-left:auto">Score ${score}/10</span>
+        </div>
+        ${mass_dt ? `<div class="tip-box" style="margin-bottom:6px"><p style="font-size:12px">💡 <strong>${typeName(dt)}:</strong> ${escHtml(mass_dt)}</p></div>` : ''}
+        ${mass_sec ? `<div class="info-box" style="margin-bottom:6px"><p style="font-size:12px">📌 <strong>${typeName(secondaryType)}:</strong> ${escHtml(mass_sec)}</p></div>` : ''}
+        ${custom ? `<div style="font-size:12px;color:var(--text-dim);padding:6px 8px;background:var(--panel);border-radius:4px;border-left:2px solid var(--yellow)">✍️ ${escHtml(custom)}</div>` : ''}
+      </div>`;
+  }).join('') : '';
+
   const commitBlock = editMode ? `
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
       <div class="form-row">
@@ -3351,10 +3425,16 @@ function _showSessionModal(s, emp, allSessions, editMode) {
               </div>`).join('')}
           </div>` : ''}
 
-        <!-- Maßnahmen -->
-        ${measureHtml ? `
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">Maßnahmen</div>
-          <div style="background:var(--surface);padding:10px;border-radius:6px">${measureHtml}</div>` : ''}
+        <!-- Maßnahmen & Coaching-Empfehlungen -->
+        ${!editMode && (empfehlungenHtml || measureHtml) ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">⚡ Entwicklungsfelder & Maßnahmen</div>
+          ${empfehlungenHtml}
+          ${!empfehlungenHtml && measureHtml ? `<div style="background:var(--surface);padding:10px;border-radius:6px">${measureHtml}</div>` : ''}
+        ` : ''}
+        ${!editMode && !empfehlungenHtml && !measureHtml ? `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin:14px 0 8px">⚡ Entwicklungsfelder & Maßnahmen</div>
+          <div class="tip-box"><p>✅ Keine Entwicklungsfelder — alle Scores im grünen Bereich oder keine Bewertung vorhanden.</p></div>
+        ` : ''}
 
         ${commitBlock}
       </div>
@@ -5661,7 +5741,7 @@ async function renderCoachingSession() {
       </div>
       <div id="coaching-tab-measures" style="display:none">
         <div class="section-head mb-16"><div class="section-title">Entwicklungsfelder & Maßnahmen</div></div>
-        ${measuresHtml}
+        <div class="tip-box"><p>⚡ Wechsle zu diesem Tab um Maßnahmen zu laden.</p></div>
       </div>
       <div id="coaching-tab-commitment" style="display:none">
         <div class="card" style="max-width:600px">
