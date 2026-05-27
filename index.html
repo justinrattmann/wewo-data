@@ -15979,10 +15979,14 @@ function _showSessionModal(s, emp, allSessions, editMode) {
   const next = allSessions[idx - 1]; // newer
 
   // Field rows — edit mode uses all role fields, view mode shows all saved fields
+  // Data may be stored in s.fields (after editing) or s.observations (original session form)
   const roleFields = (s.employeeRole === 'id' ? COACHING_LIB.fields_id : COACHING_LIB.fields_ad) || [];
   const fieldHtml = editMode
     ? roleFields.map(f => {
-        const v = fields[f.id] || {};
+        // Prefer s.fields (edited values), fall back to s.observations (original scores) and s.notes
+        const score = fields[f.id]?.score ?? s.observations?.[f.id] ?? null;
+        const note  = fields[f.id]?.note  ?? s.notes?.[f.id]        ?? '';
+        const v = { score, note };
         return `
         <div style="background:var(--surface);border-radius:6px;padding:10px;margin-bottom:8px">
           <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:6px">${escHtml(f.label)}</div>
@@ -15995,12 +15999,17 @@ function _showSessionModal(s, emp, allSessions, editMode) {
           </div>
         </div>`})
       .join('')
-    : Object.entries(fields).map(([k,v])=>`
+    : roleFields.map(f => {
+        // View mode: also read from observations/notes as fallback
+        const score = fields[f.id]?.score ?? s.observations?.[f.id] ?? null;
+        const note  = fields[f.id]?.note  ?? s.notes?.[f.id]        ?? '';
+        if (!score && !note) return '';
+        return `
         <div style="display:flex;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);gap:12px">
-          <div style="flex:2;font-size:13px;color:var(--text-dim);padding-top:2px">${escHtml(k.replace(/_/g,' '))}</div>
-          <span class="badge ${getAmpelClass(v.score)}" style="flex-shrink:0;margin-top:1px">${v.score||'—'}/10</span>
-          <div style="flex:3;font-size:12px;color:${v.note?'var(--text)':'var(--text-faint)'};">${escHtml(v.note||'Keine Notiz')}</div>
-        </div>`)
+          <div style="flex:2;font-size:13px;color:var(--text-dim);padding-top:2px">${escHtml(f.label)}</div>
+          <span class="badge ${getAmpelClass(score)}" style="flex-shrink:0;margin-top:1px">${score||'—'}/10</span>
+          <div style="flex:3;font-size:12px;color:${note?'var(--text)':'var(--text-faint)'};">${escHtml(note||'Keine Notiz')}</div>
+        </div>`})
       .join('');
 
   const measureHtml = Object.entries(measures).filter(([k,v])=>v)
