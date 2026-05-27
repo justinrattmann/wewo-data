@@ -7,18 +7,21 @@
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sanchez&display=swap" rel="stylesheet">
 <style>
 /* ══ WEWO DESIGN SYSTEM ══ */
 :root {
-  --black: #0a0a0a;
-  --dark: #111111;
-  --panel: #1a1a1a;
-  --surface: #222222;
-  --border: #2e2e2e;
-  --border-bright: #3d3d3d;
-  --yellow: #f5c800;
-  --yellow-dim: #b89400;
-  --yellow-glow: rgba(245,200,0,0.12);
+  --black: #0d0f10;
+  --dark: #161a1d;
+  --panel: #1e2328;
+  --surface: #252b30;
+  --border: #2e3236;
+  --border-bright: #3a4047;
+  --yellow: #ecea41;
+  --yellow-dim: #c8c730;
+  --yellow-glow: rgba(236,234,65,0.10);
   --red: #e63946;
   --green: #2ecc71;
   --blue: #3b82f6;
@@ -29,8 +32,9 @@
   --radius: 6px;
   --radius-lg: 10px;
   --shadow: 0 4px 20px rgba(0,0,0,0.5);
-  --shadow-y: 0 2px 8px rgba(245,200,0,0.15);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --shadow-y: 0 2px 8px rgba(236,234,65,0.15);
+  --font-heading: 'Sanchez', Georgia, serif;
+  font-family: 'Helvetica Neue', Helvetica, system-ui, -apple-system, sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--black); color: var(--text); overflow-x: hidden; }
@@ -139,7 +143,7 @@ html, body { height: 100%; background: var(--black); color: var(--text); overflo
   border: none; transition: all .15s; white-space: nowrap;
 }
 .btn-primary { background: var(--yellow); color: var(--black); }
-.btn-primary:hover { background: #ffd700; }
+.btn-primary:hover { background: #d4d339; }
 .btn-outline { background: transparent; border: 1px solid var(--border-bright); color: var(--text); }
 .btn-outline:hover { background: var(--surface); border-color: var(--yellow); color: var(--yellow); }
 .btn-ghost { background: transparent; color: var(--text-dim); }
@@ -156,7 +160,7 @@ html, body { height: 100%; background: var(--black); color: var(--text); overflo
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
 }
-.badge-yellow { background: rgba(245,200,0,0.15); color: var(--yellow); border: 1px solid rgba(245,200,0,0.3); }
+.badge-yellow { background: rgba(236,234,65,0.15); color: var(--yellow); border: 1px solid rgba(236,234,65,0.3); }
 .badge-green { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
 .badge-red { background: rgba(230,57,70,0.15); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
 .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
@@ -189,7 +193,7 @@ input[type=range] {
 input[type=range]::-webkit-slider-thumb {
   appearance: none; width: 18px; height: 18px;
   border-radius: 50%; background: var(--yellow); cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(245,200,0,0.2);
+  box-shadow: 0 0 0 3px rgba(236,234,65,0.2);
 }
 
 /* PROGRESS BAR */
@@ -340,7 +344,7 @@ input[type=range]::-webkit-slider-thumb {
   width: 64px; height: 64px; background: var(--yellow);
   border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
   font-size: 28px; font-weight: 900; color: var(--black); margin-bottom: 12px;
-  box-shadow: 0 0 30px rgba(245,200,0,0.3);
+  box-shadow: 0 0 30px rgba(236,234,65,0.3);
 }
 .login-logo h1 { font-size: 24px; font-weight: 900; color: var(--yellow); }
 .login-logo p { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
@@ -362,7 +366,7 @@ input[type=range]::-webkit-slider-thumb {
   max-width: 70%; padding: 12px 16px; border-radius: 12px;
   font-size: 14px; line-height: 1.6;
 }
-.chat-bubble.user { background: var(--yellow-glow); border: 1px solid rgba(245,200,0,0.2); margin-left: auto; }
+.chat-bubble.user { background: var(--yellow-glow); border: 1px solid rgba(236,234,65,0.2); margin-left: auto; }
 .chat-bubble.ai { background: var(--surface); border: 1px solid var(--border); margin-right: auto; }
 .chat-bubble.system { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); text-align: center; font-size: 12px; color: var(--blue); margin: 0 auto; max-width: 90%; }
 .chat-bubble.feedback { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); margin: 0 auto; max-width: 95%; }
@@ -496,13 +500,13 @@ input[type=range]::-webkit-slider-thumb {
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* HIGHLIGHT */
-.hl-yellow { background: rgba(245,200,0,0.15); border-radius: 3px; padding: 1px 4px; color: var(--yellow); font-weight: 600; }
+.hl-yellow { background: rgba(236,234,65,0.15); border-radius: 3px; padding: 1px 4px; color: var(--yellow); font-weight: 600; }
 .hl-red { background: rgba(230,57,70,0.15); border-radius: 3px; padding: 1px 4px; color: var(--red); font-weight: 600; }
 .hl-green { background: rgba(46,204,113,0.15); border-radius: 3px; padding: 1px 4px; color: var(--green); font-weight: 600; }
 
 /* API KEY NOTICE */
 .api-notice {
-  background: rgba(245,200,0,0.08); border: 1px solid rgba(245,200,0,0.2);
+  background: rgba(236,234,65,0.08); border: 1px solid rgba(236,234,65,0.2);
   border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px;
   font-size: 12px; color: var(--text-dim);
 }
@@ -513,6 +517,15 @@ input[type=range]::-webkit-slider-thumb {
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 15px; flex-shrink: 0;
 }
+
+/* ── WEWO CI — Sanchez Headlines ── */
+.page-title, .card-title, .section-title, .stat-value,
+.logo-text, h1, h2, h3, .modal-title,
+.module-title, .emp-name {
+  font-family: var(--font-heading);
+}
+.logo-text { letter-spacing: 0.5px; }
+.page-title { font-size: 21px; }
 </style>
 </head>
 <body>
@@ -13823,7 +13836,7 @@ const QUIZ_LEVELS = {
 // Level config
 const QUIZ_LEVEL_NAMES = ['leicht', 'mittel', 'schwer', 'profi'];
 const QUIZ_LEVEL_LABELS = { leicht: '🟢 Leicht', mittel: '🟡 Mittel', schwer: '🔴 Schwer', profi: '⭐ Profi' };
-const QUIZ_LEVEL_COLORS = { leicht: '#2ecc71', mittel: '#f5c800', schwer: '#e63946', profi: '#a855f7' };
+const QUIZ_LEVEL_COLORS = { leicht: '#2ecc71', mittel: '#ecea41', schwer: '#e63946', profi: '#a855f7' };
 const QUIZ_PASS_PCT = 0.7; // 70% to pass
 
 function getModuleQuizLevels(moduleId) {
@@ -15218,7 +15231,7 @@ async function renderTrainerPortal() {
   const nav = `
     <div class="sidebar ${STATE.sidebarCollapsed ? 'collapsed' : ''}">
       <div class="sidebar-header" onclick="STATE.sidebarCollapsed=!STATE.sidebarCollapsed;render()">
-        <div class="logo-mark">WW</div>
+        <div class="logo-mark" style="font-size:16px; letter-spacing:0px;">W</div>
         ${!STATE.sidebarCollapsed ? `<div><div class="logo-text">WEWO</div><div class="logo-sub">Trainer-Tool</div></div>` : ''}
       </div>
       <nav class="sidebar-nav">
@@ -15480,7 +15493,7 @@ async function renderEmployeeDetail() {
     const hasLevels = !!QUIZ_LEVELS[m.id];
     const levelBadges = hasLevels ? ['leicht','mittel','schwer','profi'].map(l => {
       const passed = levelProg[l]?.passed;
-      const colors = {leicht:'#2ecc71',mittel:'#f5c800',schwer:'#e63946',profi:'#a855f7'};
+      const colors = {leicht:'#2ecc71',mittel:'#ecea41',schwer:'#e63946',profi:'#a855f7'};
       return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:${passed ? colors[l]+'22' : 'var(--surface)'};color:${passed ? colors[l] : 'var(--text-faint)'};border:1px solid ${passed ? colors[l]+'44' : 'var(--border)'}">${l==='leicht'?'L':l==='mittel'?'M':l==='schwer'?'S':'P'}${passed?' ✓':''}</span>`;
     }).join('') : '';
     return `
@@ -15723,7 +15736,7 @@ async function renderCoachingSession() {
       <div id="coaching-tab-obs">
         <div class="grid-2 mb-16">
           ${dt ? `<div class="info-box"><p>Mitarbeitertyp: <strong style="color:${typeColor(dt)}">${TYPES[dt].emoji} ${typeName(dt)}</strong> — ${escHtml(TYPES[dt].desc)}</p></div>` : ''}
-          <div class="api-notice">Scores: <span class="hl-green">7-10 = Grün ✓</span> · <span class="hl-yellow" style="background:rgba(245,200,0,0.15)">4-6 = Gelb ⚡</span> · <span class="hl-red">1-3 = Rot ✗</span></div>
+          <div class="api-notice">Scores: <span class="hl-green">7-10 = Grün ✓</span> · <span class="hl-yellow" style="background:rgba(236,234,65,0.15)">4-6 = Gelb ⚡</span> · <span class="hl-red">1-3 = Rot ✗</span></div>
         </div>
         <div class="obs-grid">${obsFields}</div>
       </div>
@@ -16036,11 +16049,12 @@ function _showSessionModal(s, emp, allSessions, editMode) {
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Sessiontyp</label>
           <select class="select" id="_es_stype">
-            <option value="feldbegleitung" ${s.sessionType==='feldbegleitung'?'selected':''}>Feldbegleitung</option>
-            <option value="feldbegleitung_akquise" ${s.sessionType==='feldbegleitung_akquise'?'selected':''}>Feldbegleitung Akquise</option>
-            <option value="coaching_gespraech" ${s.sessionType==='coaching_gespraech'?'selected':''}>Coaching-Gespräch</option>
-            <option value="telefoncoaching" ${s.sessionType==='telefoncoaching'?'selected':''}>Telefoncoaching</option>
-            <option value="sonstiges" ${s.sessionType==='sonstiges'?'selected':''}>Sonstiges</option>
+            <option value="feldbegleitung_akquise" ${s.sessionType==='feldbegleitung_akquise'?'selected':''}>📞 Feldbegleitung — Akquise</option>
+            <option value="feldbegleitung_termin" ${s.sessionType==='feldbegleitung_termin'?'selected':''}>🤝 Feldbegleitung — Vor-Ort-Termin</option>
+            <option value="feldbegleitung_online" ${s.sessionType==='feldbegleitung_online'?'selected':''}>💻 Feldbegleitung — Online-Termin</option>
+            <option value="nachbereitung" ${s.sessionType==='nachbereitung'?'selected':''}>📋 Nachbereitungs-Gespräch</option>
+            <option value="telefon_coaching" ${s.sessionType==='telefon_coaching'?'selected':''}>📲 Telefon-Coaching</option>
+            <option value="online_coaching" ${s.sessionType==='online_coaching'?'selected':''}>🖥️ Online-Coaching</option>
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0">
@@ -16822,7 +16836,7 @@ async function openWysiwyg(role, idx) {
   const quizHtml = (m.quizzes||[]).map((q,qi) => buildQuizRow(q,qi)).join('');
 
   // Level-Quiz-HTML aufbauen
-  const _lc = { leicht:'#2ecc71', mittel:'#f5c800', schwer:'#e63946', profi:'#a855f7' };
+  const _lc = { leicht:'#2ecc71', mittel:'#ecea41', schwer:'#e63946', profi:'#a855f7' };
   const _ll = { leicht:'🟢 Leicht', mittel:'🟡 Mittel', schwer:'🔴 Schwer', profi:'⭐ Profi' };
   const levelQuizHtml = ['leicht','mittel','schwer','profi'].map(lvl => {
     const qs = (STATE._editingModQuizLevels[lvl] || []);
@@ -17005,7 +17019,7 @@ function switchWeTab(tab) {
 
 // ── Quiz Editor ────────────────────────────────────────────────
 function buildQuizRowLevel(q, qi, lvl) {
-  const lc = { leicht:'#2ecc71', mittel:'#f5c800', schwer:'#e63946', profi:'#a855f7' };
+  const lc = { leicht:'#2ecc71', mittel:'#ecea41', schwer:'#e63946', profi:'#a855f7' };
   const opts = (q.opts || ['','','','']).map((o, i) => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
       <input type="radio" name="correct-${lvl}-${qi}" value="${i}" ${q.correct===i?'checked':''}
@@ -17367,7 +17381,7 @@ async function renderEmployeePortal() {
   const nav = `
     <div class="sidebar ${STATE.sidebarCollapsed ? 'collapsed' : ''}">
       <div class="sidebar-header" onclick="STATE.sidebarCollapsed=!STATE.sidebarCollapsed;render()">
-        <div class="logo-mark">WW</div>
+        <div class="logo-mark" style="font-size:16px; letter-spacing:0px;">W</div>
         ${!STATE.sidebarCollapsed ? `<div><div class="logo-text">WEWO</div><div class="logo-sub">${roleLabel}</div></div>` : ''}
       </div>
       <nav class="sidebar-nav">
@@ -17525,7 +17539,7 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
       </div>
 
       ${nextModule ? `
-        <div class="card mb-16" style="border-color:rgba(245,200,0,0.3);background:rgba(245,200,0,0.04)">
+        <div class="card mb-16" style="border-color:rgba(236,234,65,0.3);background:rgba(236,234,65,0.04)">
           <div class="card-body">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-12">
@@ -18379,7 +18393,7 @@ async function renderTypesPage(empId) {
     </div>
     <div class="page-content">
       ${myTypes ? `
-        <div class="card mb-20" style="border-color:rgba(245,200,0,0.3);background:rgba(245,200,0,0.04)">
+        <div class="card mb-20" style="border-color:rgba(236,234,65,0.3);background:rgba(236,234,65,0.04)">
           <div class="card-body">
             <div style="font-size:13px;font-weight:600;margin-bottom:12px">Deine Typ-Verteilung</div>
             <div class="type-bars">${renderTypeBars(myTypes)}</div>
@@ -18678,7 +18692,7 @@ async function renderCoachingSession() {
             `).join('')}
           </div>
         ` : ''}
-        <div class="api-notice mb-16">Scores: <span class="hl-green">7–10 = Grün ✓</span> · <span style="background:rgba(245,200,0,0.15);border-radius:3px;padding:1px 4px;color:var(--yellow)">4–6 = Gelb ⚡</span> · <span class="hl-red">1–3 = Rot ✗</span></div>
+        <div class="api-notice mb-16">Scores: <span class="hl-green">7–10 = Grün ✓</span> · <span style="background:rgba(236,234,65,0.15);border-radius:3px;padding:1px 4px;color:var(--yellow)">4–6 = Gelb ⚡</span> · <span class="hl-red">1–3 = Rot ✗</span></div>
         <div class="obs-grid">${obsFields}</div>
       </div>
       <div id="coaching-tab-measures" style="display:none">
@@ -18740,7 +18754,7 @@ function renderScoreChart(sessions) {
     const y = H - PAD - ((s / maxS) * (H - PAD*2));
     return `${x},${y}`;
   }).join(' ');
-  const dotColor = s => s >= 7 ? '#2ecc71' : s >= 4 ? '#f5c800' : '#e63946';
+  const dotColor = s => s >= 7 ? '#2ecc71' : s >= 4 ? '#ecea41' : '#e63946';
   const dots = scores.map((s, i) => {
     const x = PAD + (i / (scored.length - 1)) * (W - PAD*2);
     const y = H - PAD - ((s / maxS) * (H - PAD*2));
@@ -18783,7 +18797,7 @@ async function renderCommitmentTimeline(empId) {
     return `
       <div style="display:flex;gap:14px;margin-bottom:16px">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:36px;height:36px;border-radius:50%;background:${s.overallScore >= 7 ? 'rgba(46,204,113,0.15)' : s.overallScore >= 4 ? 'rgba(245,200,0,0.15)' : 'rgba(230,57,70,0.15)'};border:2px solid ${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'}">
+          <div style="width:36px;height:36px;border-radius:50%;background:${s.overallScore >= 7 ? 'rgba(46,204,113,0.15)' : s.overallScore >= 4 ? 'rgba(236,234,65,0.15)' : 'rgba(230,57,70,0.15)'};border:2px solid ${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:${s.overallScore >= 7 ? 'var(--green)' : s.overallScore >= 4 ? 'var(--yellow)' : 'var(--red)'}">
             ${s.overallScore || '—'}
           </div>
           ${idx < sessions.length - 1 ? '<div style="flex:1;width:2px;background:var(--border);min-height:20px;margin:4px 0"></div>' : ''}
@@ -18857,7 +18871,7 @@ function exportSessionPDF() {
           <tr>
             <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px">${f.label}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">
-              <span style="font-weight:700;color:${score>=7?'#2ecc71':score>=4?'#f5c800':'#e63946'}">${score}/10</span>
+              <span style="font-weight:700;color:${score>=7?'#2ecc71':score>=4?'#ecea41':'#e63946'}">${score}/10</span>
             </td>
             <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555">${note||'—'}</td>
           </tr>
@@ -18875,12 +18889,12 @@ function exportSessionPDF() {
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
   h1 { font-size: 22px; margin-bottom: 4px; }
-  h2 { font-size: 16px; border-bottom: 2px solid #f5c800; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
+  h2 { font-size: 16px; border-bottom: 2px solid #ecea41; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
   .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-size: 12px; border-bottom: 2px solid #ddd; }
-  .commitment-box { background: #f9f9f9; border-left: 4px solid #f5c800; padding: 14px 16px; border-radius: 4px; }
-  .logo { color: #f5c800; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
+  .commitment-box { background: #f9f9f9; border-left: 4px solid #ecea41; padding: 14px 16px; border-radius: 4px; }
+  .logo { color: #ecea41; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
   @media print { body { padding: 15px; } }
 </style>
 </head><body>
@@ -18906,7 +18920,7 @@ ${measures ? `<h2>⚡ Maßnahmen</h2><div>${measures}</div>` : ''}
 <h2>🎯 Commitment</h2>
 <div class="commitment-box">
   ${draft.lastCommitment ? `<div style="margin-bottom:8px"><strong>Letztes Commitment:</strong> ${draft.lastCommitment} &nbsp;
-    <span style="color:${draft.commitmentFulfilled==='yes'?'#2ecc71':draft.commitmentFulfilled==='no'?'#e63946':'#f5c800'}">
+    <span style="color:${draft.commitmentFulfilled==='yes'?'#2ecc71':draft.commitmentFulfilled==='no'?'#e63946':'#ecea41'}">
       ${draft.commitmentFulfilled==='yes'?'✅ Erfüllt':draft.commitmentFulfilled==='partial'?'⚡ Teilweise':'❌ Nicht erfüllt'}
     </span></div>` : ''}
   <div><strong>Neues Commitment:</strong> ${draft.commitment||'—'}</div>
@@ -18954,9 +18968,9 @@ async function exportEmployeePDF(empId) {
     return `<tr>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${formatDate(s.date)}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${SESSION_TYPE_FIELDS[s.sessionType]?.label||s.sessionType||'—'}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:${s.overallScore>=7?'#2ecc71':s.overallScore>=4?'#f5c800':'#e63946'}">${s.overallScore||'—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:${s.overallScore>=7?'#2ecc71':s.overallScore>=4?'#ecea41':'#e63946'}">${s.overallScore||'—'}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${s.commitment||'—'}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;color:${cf==='yes'?'#2ecc71':cf==='no'?'#e63946':'#f5c800'}">
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;color:${cf==='yes'?'#2ecc71':cf==='no'?'#e63946':'#ecea41'}">
         ${cf==='yes'?'✅ Erfüllt':cf==='partial'?'⚡ Teilweise':cf==='no'?'❌ Nicht erfüllt':'—'}
       </td>
     </tr>`;
@@ -18970,14 +18984,14 @@ async function exportEmployeePDF(empId) {
 <html><head><meta charset="UTF-8"><title>Mitarbeiterprofil — ${emp?.name}</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
-  h1 { font-size: 22px; } h2 { font-size: 16px; border-bottom: 2px solid #f5c800; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
+  h1 { font-size: 22px; } h2 { font-size: 16px; border-bottom: 2px solid #ecea41; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
   .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
   th { background: #f5f5f5; padding: 8px 12px; text-align: left; font-size: 12px; border-bottom: 2px solid #ddd; }
   .kpi { display: inline-block; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; padding: 12px 20px; margin-right: 12px; margin-bottom: 12px; text-align: center; }
-  .kpi-val { font-size: 24px; font-weight: 800; color: #f5c800; }
+  .kpi-val { font-size: 24px; font-weight: 800; color: #ecea41; }
   .kpi-label { font-size: 11px; color: #666; margin-top: 2px; }
-  .logo { color: #f5c800; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
+  .logo { color: #ecea41; font-weight: 900; font-size: 18px; margin-bottom: 4px; }
   @media print { body { padding: 15px; } }
 </style>
 </head><body>
@@ -19257,7 +19271,7 @@ function renderPersonalityTest(empId, role) {
               return `
                 <div onclick="selectTestAnswer(${qi},'${o.type}')"
                   style="padding:12px 14px;border-radius:6px;cursor:pointer;border:1px solid ${isSelected ? 'var(--yellow)' : 'var(--border)'};
-                    background:${isSelected ? 'rgba(245,200,0,0.1)' : 'var(--surface)'};
+                    background:${isSelected ? 'rgba(236,234,65,0.1)' : 'var(--surface)'};
                     color:${isSelected ? 'var(--yellow)' : 'var(--text)'};
                     font-size:13px;line-height:1.5;transition:all .15s">
                   ${isSelected ? '● ' : '○ '}${escHtml(o.text)}
@@ -19314,7 +19328,7 @@ function selectTestAnswer(qi, typeKey) {
         ${q.opts.map(o => `
           <div onclick="selectTestAnswer(${qi},'${o.type}')"
             style="padding:12px 14px;border-radius:6px;cursor:pointer;border:1px solid ${o.type === typeKey ? 'var(--yellow)' : 'var(--border)'};
-              background:${o.type === typeKey ? 'rgba(245,200,0,0.1)' : 'var(--surface)'};
+              background:${o.type === typeKey ? 'rgba(236,234,65,0.1)' : 'var(--surface)'};
               color:${o.type === typeKey ? 'var(--yellow)' : 'var(--text)'};
               font-size:13px;line-height:1.5;transition:all .15s">
             ${o.type === typeKey ? '● ' : '○ '}${escHtml(o.text)}
