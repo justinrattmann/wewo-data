@@ -15611,75 +15611,6 @@ async function saveTrainerNotes(empId) {
   toast('Notizen gespeichert');
 }
 
-async function renderCoachingNew() {
-  const allEmp = await getAllEmployees();
-  // Load last session if employee selected
-  let lastSessionHtml = '';
-  if (STATE.coachingEmpId) {
-    const sessions = await getCoachingSessions(STATE.coachingEmpId);
-    const last = sessions[0];
-    if (last) {
-      lastSessionHtml = `
-        <div class="card" style="border-color:var(--border-bright);margin-bottom:16px">
-          <div class="card-header"><span class="card-title" style="font-size:12px;color:var(--text-dim)">📋 Letzte Session — ${formatDate(last.date)}</span>
-            <span class="badge ${getAmpelClass(last.overallScore)}" style="margin-left:auto">${last.overallScore || '—'}/10</span>
-          </div>
-          <div class="card-body" style="font-size:12px;color:var(--text-dim)">
-            <strong>Typ:</strong> ${last.sessionType || '—'} &nbsp;|&nbsp;
-            <strong>Commitment:</strong> ${escHtml(last.commitment || 'Keines')}
-          </div>
-        </div>`;
-    }
-  }
-  
-  const empOptions = allEmp.map(e => `<option value="${e.id}" data-role="${e.role}">${escHtml(e.name)} (${e.role === 'ad' ? 'AD' : 'ID'})</option>`).join('');
-  
-  return `
-    <div class="page-header">
-      <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter auswählen und Session starten</div></div>
-    </div>
-    <div class="page-content">
-      <div class="card" style="max-width:600px">
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label">Mitarbeiter</label>
-            <select class="select" id="coaching-emp-select">
-              <option value="">— Mitarbeiter wählen —</option>
-              ${empOptions}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Session-Typ</label>
-            <select class="select" id="coaching-type-select">
-              <option value="feldbegleitung">Feldbegleitung</option>
-              <option value="telefon-coaching">Telefon-Coaching</option>
-              <option value="online-coaching">Online-Coaching</option>
-              <option value="nachbereitung">Nachbereitung</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kundentermin / Anlass (optional)</label>
-            <input class="input" type="text" id="coaching-anlass" placeholder="z.B. Kundenbesuch Müller GmbH, Telefonaktion...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kundentyp (Gesprächspartner)</label>
-            <select class="select" id="coaching-kundentyp">
-              <option value="">— Kundentyp wählen (optional) —</option>
-              <option value="C">&#128308; Closer / Entscheider</option>
-              <option value="I">&#128992; Impulstyp / Netzwerker</option>
-              <option value="S">&#128994; Beziehungstyp / Verlässlicher</option>
-              <option value="G">&#128309; Analytiker / Genauer</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="startCoachingSession()">Session starten →</button>
-        </div>
-      </div>
-      
-      ${allEmp.length === 0 ? `<div class="info-box mt-16"><p>Keine Mitarbeiter gefunden. <a onclick="navigate('trainer','admin')" style="color:var(--yellow);cursor:pointer">Jetzt anlegen →</a></p></div>` : ''}
-    </div>
-  `;
-}
-
 async function startCoachingSession() {
   const empSel = document.getElementById('coaching-emp-select');
   const typeSel = document.getElementById('coaching-type-select');
@@ -18557,8 +18488,6 @@ async function renderCoachingNew() {
     { v: 'online_coaching', l: '🖥️ Online-Coaching' },
     { v: 'nachbereitung', l: '📋 Nachbereitungs-Gespräch' }
   ];
-  const allTypes = [...adSessionTypes, ...idSessionTypes];
-
   return `
     <div class="page-header">
       <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter und Session-Typ auswählen</div></div>
@@ -18576,7 +18505,7 @@ async function renderCoachingNew() {
           <div class="form-group">
             <label class="form-label">Session-Typ</label>
             <select class="select" id="coaching-type-select">
-              ${allTypes.map(t => `<option value="${t.v}">${t.l}</option>`).join('')}
+              ${adSessionTypes.map(t => `<option value="${t.v}">${t.l}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
