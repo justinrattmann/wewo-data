@@ -6260,7 +6260,30 @@ async function openWysiwyg(role, idx) {
   const m = modules[idx];
   STATE.editingModule = { role, idx, backup: JSON.parse(JSON.stringify(m)) };
 
+  // Initialisiere Level-Quiz-Bearbeitungsstatus aus QUIZ_LEVELS + Overrides
+  const existingLevels = getModuleQuizLevels(m.id);
+  STATE._editingModQuizLevels = existingLevels
+    ? JSON.parse(JSON.stringify(existingLevels))
+    : { leicht: [], mittel: [], schwer: [], profi: [] };
+
   const quizHtml = (m.quizzes||[]).map((q,qi) => buildQuizRow(q,qi)).join('');
+
+  // Level-Quiz-HTML aufbauen
+  const _lc = { leicht:'#2ecc71', mittel:'#f5c800', schwer:'#e63946', profi:'#a855f7' };
+  const _ll = { leicht:'🟢 Leicht', mittel:'🟡 Mittel', schwer:'🔴 Schwer', profi:'⭐ Profi' };
+  const levelQuizHtml = ['leicht','mittel','schwer','profi'].map(lvl => {
+    const qs = (STATE._editingModQuizLevels[lvl] || []);
+    const rowsHtml = qs.map((q,qi) => buildQuizRowLevel(q,qi,lvl)).join('');
+    return `<div style="margin-bottom:20px;padding:14px;background:var(--surface);border-radius:6px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700;color:${_lc[lvl]}">${_ll[lvl]}<span style="font-weight:400;color:var(--text-faint);margin-left:6px">(${qs.length} Fragen)</span></span>
+        <button class="btn btn-primary btn-sm" onclick="addQuizRow_level('${lvl}')">+ Frage</button>
+      </div>
+      <div id="quiz-rows-${lvl}">${rowsHtml || '<div style="font-size:12px;color:var(--text-faint);padding:4px">Noch keine Fragen — klicke auf + Frage.</div>'}</div>
+    </div>`;
+  }).join('');
+
+  const totalLevelQ = ['leicht','mittel','schwer','profi'].reduce((s,l) => s+(STATE._editingModQuizLevels[l]||[]).length, 0);
 
   const modal = document.getElementById('wysiwyg-modal');
   modal.style.display = 'block';
@@ -6314,7 +6337,7 @@ async function openWysiwyg(role, idx) {
         <!-- Tabs: Inhalt / Quiz -->
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0">
           <div id="wetab-content" style="padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid var(--yellow);color:var(--yellow)" onclick="switchWeTab('content')">📄 Inhalt</div>
-          <div id="wetab-quiz" style="padding:10px 20px;cursor:pointer;font-size:13px;color:var(--text-dim);border-bottom:2px solid transparent" onclick="switchWeTab('quiz')">🧩 Quiz (${(m.quizzes||[]).length} Fragen)</div>
+          <div id="wetab-quiz" style="padding:10px 20px;cursor:pointer;font-size:13px;color:var(--text-dim);border-bottom:2px solid transparent" onclick="switchWeTab('quiz')">🧩 Quiz (${totalLevelQ + (m.quizzes||[]).length} Fragen)</div>
         </div>
 
         <!-- Editor Area -->
@@ -6327,12 +6350,21 @@ async function openWysiwyg(role, idx) {
           </div>
           <!-- Quiz Tab -->
           <div id="we-quiz-tab" style="display:none;padding:24px 32px">
-            <div class="flex justify-between items-center mb-16">
-              <div style="font-size:14px;font-weight:600">Quizfragen</div>
+            <!-- Level-basierte Quizfragen (QUIZ_LEVELS) -->
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">📊 Level-Quizfragen <span style="font-weight:400;font-size:12px;color:var(--text-faint)">(${totalLevelQ} Fragen gesamt)</span></div>
+            <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px">Diese Fragen erscheinen im Lern-Portal nach Schwierigkeitsgrad gestaffelt.</div>
+            ${levelQuizHtml}
+            <!-- Trennlinie -->
+            <div style="border-top:1px solid var(--border);margin:24px 0 16px"></div>
+            <!-- Flat Quizfragen (Legacy / ohne Level) -->
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">📝 Allgemeine Quizfragen <span style="font-weight:400;font-size:12px;color:var(--text-faint)">(ohne Level-Zuordnung)</span></div>
+            <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px">Diese Fragen sind keinem Level zugeordnet.</div>
+            <div class="flex justify-between items-center mb-12">
+              <div></div>
               <button class="btn btn-primary btn-sm" onclick="addQuizRow_we()">+ Frage hinzufügen</button>
             </div>
             <div id="we-quiz-rows">${quizHtml}</div>
-            ${!m.quizzes?.length ? '<div class="text-dim text-sm">Noch keine Quizfragen — klicke oben auf + um eine hinzuzufügen.</div>' : ''}
+            ${!m.quizzes?.length ? '<div style="font-size:12px;color:var(--text-faint)">Noch keine allgemeinen Quizfragen.</div>' : ''}
           </div>
         </div>
 
@@ -6420,20 +6452,23 @@ function switchWeTab(tab) {
 
 // ── Quiz Editor ────────────────────────────────────────────────
 function buildQuizRowLevel(q, qi, lvl) {
+  const lc = { leicht:'#2ecc71', mittel:'#f5c800', schwer:'#e63946', profi:'#a855f7' };
   const opts = (q.opts || ['','','','']).map((o, i) => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <input type="radio" name="correct-${lvl}-${qi}" value="${i}" ${q.correct===i?'checked':''}>
-      <input class="input" style="flex:1" value="${escHtml(o)}"
-        oninput="updateLevelQuizOpt('${lvl}',${qi},${i},this.value)">
+      <input type="radio" name="correct-${lvl}-${qi}" value="${i}" ${q.correct===i?'checked':''}
+        style="accent-color:${lc[lvl]||'var(--yellow)'};width:15px;height:15px;cursor:pointer"
+        onchange="updateLevelQuizCorrect('${lvl}',${qi},${i})">
+      <input class="input" style="flex:1;font-size:13px" value="${escHtml(o)}"
+        oninput="updateLevelQuizOpt('${lvl}',${qi},${i},this.value)" placeholder="Antwort ${i+1}...">
     </div>`).join('');
-  return `<div style="background:var(--surface);border-radius:6px;padding:12px;margin-bottom:10px">
+  return `<div style="background:var(--dark);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <span style="font-size:11px;color:var(--text-faint);font-weight:600">F${qi+1}</span>
-      <input class="input" style="flex:1" value="${escHtml(q.q||'')}"
-        oninput="updateLevelQuizQ('${lvl}',${qi},this.value)" placeholder="Frage...">
-      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removeLevelQuizRow('${lvl}',${qi})">✕</button>
+      <span style="font-size:11px;color:${lc[lvl]||'var(--text-faint)'};font-weight:700;background:${lc[lvl]||'#888'}22;padding:2px 7px;border-radius:3px">F${qi+1}</span>
+      <input class="input" style="flex:1;font-size:13px" value="${escHtml(q.q||'')}"
+        oninput="updateLevelQuizQ('${lvl}',${qi},this.value)" placeholder="Frage eingeben...">
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);padding:3px 8px" onclick="removeLevelQuizRow('${lvl}',${qi})">✕</button>
     </div>
-    <div style="margin-bottom:4px;font-size:11px;color:var(--text-faint)">Antworten (● = Richtig):</div>
+    <div style="margin-bottom:6px;font-size:11px;color:var(--text-faint)">Antworten (● = richtige Antwort):</div>
     ${opts}
   </div>`;
 }
@@ -6443,6 +6478,11 @@ function updateLevelQuizQ(lvl, qi, val) {
   if (!STATE._editingModQuizLevels[lvl]) STATE._editingModQuizLevels[lvl] = [];
   if (!STATE._editingModQuizLevels[lvl][qi]) STATE._editingModQuizLevels[lvl][qi] = { q:'', opts:['','','',''], correct:0 };
   STATE._editingModQuizLevels[lvl][qi].q = val;
+}
+
+function updateLevelQuizCorrect(lvl, qi, val) {
+  if (!STATE._editingModQuizLevels?.[lvl]?.[qi]) return;
+  STATE._editingModQuizLevels[lvl][qi].correct = parseInt(val);
 }
 
 function updateLevelQuizOpt(lvl, qi, optIdx, val) {
@@ -6529,17 +6569,29 @@ async function saveWysiwyg() {
   const { role, idx } = STATE.editingModule || {};
   if (role === undefined) return;
   const modules = await getModules(role);
+  const m = modules[idx];
   const ed = document.getElementById('we-editor');
   modules[idx] = {
-    ...modules[idx],
-    icon: document.getElementById('we-icon')?.value?.trim() || modules[idx].icon,
-    title: document.getElementById('we-title')?.value?.trim() || modules[idx].title,
-    desc: document.getElementById('we-desc')?.value?.trim() || modules[idx].desc,
-    duration: document.getElementById('we-duration')?.value?.trim() || modules[idx].duration,
-    content: ed ? ed.innerHTML : modules[idx].content,
+    ...m,
+    icon: document.getElementById('we-icon')?.value?.trim() || m.icon,
+    title: document.getElementById('we-title')?.value?.trim() || m.title,
+    desc: document.getElementById('we-desc')?.value?.trim() || m.desc,
+    duration: document.getElementById('we-duration')?.value?.trim() || m.duration,
+    content: ed ? ed.innerHTML : m.content,
     quizzes: collectQuizzes_we()
   };
   await saveModules(role, modules);
+  // Level-Quiz-Overrides in Firebase speichern
+  if (STATE._editingModQuizLevels && m.id) {
+    try {
+      const overrideKey = 'quiz_levels_override:' + role;
+      const existing = await storageGet(overrideKey, true) || {};
+      existing[m.id] = STATE._editingModQuizLevels;
+      await storageSet(overrideKey, existing, true);
+      if (!STATE._quizLevelOverrides) STATE._quizLevelOverrides = {};
+      STATE._quizLevelOverrides[m.id] = STATE._editingModQuizLevels;
+    } catch(e) { console.warn('Level-Quiz-Override speichern fehlgeschlagen', e); }
+  }
   toast('Modul gespeichert ✓');
   closeWysiwyg();
   render();
