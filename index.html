@@ -17705,7 +17705,7 @@ async function renderModuleContent(user, prog, modules, role) {
             </div>
             <div class="text-dim mb-16">${score} von ${levelQuestions.length} Fragen richtig · ${Math.ceil(levelQuestions.length * QUIZ_PASS_PCT)} zum Bestehen nötig</div>
             <div class="flex gap-10" style="justify-content:center;flex-wrap:wrap">
-              <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Wiederholen</button>
+              <button class="btn btn-outline" onclick="resetQuiz()">Wiederholen</button>
               ${passed && nextLevel ? `<button class="btn btn-primary" onclick="STATE.quizLevel='${nextLevel}';STATE.quizState=null;render()">${QUIZ_LEVEL_LABELS[nextLevel]} starten →</button>` : ''}
               ${passed && activeLevelName === 'profi' ? '<span class="badge badge-green" style="font-size:13px;padding:8px 16px">🏆 Modul vollständig abgeschlossen!</span>' : ''}
             </div>
@@ -17725,8 +17725,13 @@ async function renderModuleContent(user, prog, modules, role) {
           <div class="text-dim">Bestehe zuerst ${QUIZ_LEVEL_LABELS[prevLevel]}</div>
         </div></div>`;
       } else {
-        const q = levelQuestions[qi] || levelQuestions[0];
+        const q_raw = levelQuestions[qi] || levelQuestions[0];
         const answered = quizState?.answered ?? null;
+        // Stable shuffle: generate once per question per attempt, reuse on re-renders
+        if (!STATE._quizDisplayQ) STATE._quizDisplayQ = {};
+        const _sk = `${mod.id}_${activeLevelName}_${qi}_${STATE._quizAttempt||0}`;
+        if (!STATE._quizDisplayQ[_sk]) STATE._quizDisplayQ[_sk] = getShuffledQuestion(q_raw);
+        const q = STATE._quizDisplayQ[_sk];
         const opts = q.opts.map((o, i) => {
           let cls = '';
           if (answered !== null) {
@@ -17787,12 +17792,17 @@ async function renderModuleContent(user, prog, modules, role) {
         <div class="text-dim">${score}/${mod.quizzes.length} richtig</div>
         <div class="flex gap-10 mt-16" style="justify-content:center">
           ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">✓ Abschließen</button>` : ''}
-          <button class="btn btn-outline" onclick="STATE.quizState=null;render()">Wiederholen</button>
+          <button class="btn btn-outline" onclick="resetQuiz()">Wiederholen</button>
         </div>
       </div></div>`;
     } else if (qi < mod.quizzes.length) {
-      const q = mod.quizzes[qi];
+      const q_raw = mod.quizzes[qi];
       const answered = quizState?.answered ?? null;
+      // Stable shuffle per question per attempt
+      if (!STATE._quizDisplayQ) STATE._quizDisplayQ = {};
+      const _sk2 = `${mod.id}_flat_${qi}_${STATE._quizAttempt||0}`;
+      if (!STATE._quizDisplayQ[_sk2]) STATE._quizDisplayQ[_sk2] = getShuffledQuestion(q_raw);
+      const q = STATE._quizDisplayQ[_sk2];
       const opts = q.opts.map((o, i) => {
         let cls = answered !== null ? (i === q.correct ? 'correct' : i === answered ? 'wrong' : '') : '';
         return `<div class="quiz-option ${cls}" onclick="${answered === null ? `answerQuiz(${i},${q.correct},${qi},${mod.quizzes.length})` : ''}">${escHtml(o)}</div>`;
@@ -17856,6 +17866,20 @@ async function getModuleTypeTipBox(moduleId, empId) {
     '</div></div>';
 }
 
+// Shuffle answer options while keeping correct index updated
+function getShuffledQuestion(q) {
+  const order = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    q: q.q,
+    opts: order.map(i => (q.opts || [])[i] || ''),
+    correct: order.indexOf(q.correct)
+  };
+}
+
 function answerQuiz(chosen, correct, qi, total) {
   if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false };
   STATE.quizState.answered = chosen;
@@ -17879,6 +17903,13 @@ function nextQuizQuestion(nextQi, total) {
     STATE.quizState.questionIndex = nextQi;
     STATE.quizState.answered = null;
   }
+  render();
+}
+
+function resetQuiz() {
+  // Increment attempt counter so answers get reshuffled on retry
+  STATE._quizAttempt = (STATE._quizAttempt || 0) + 1;
+  STATE.quizState = null;
   render();
 }
 
