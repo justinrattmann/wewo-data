@@ -13879,6 +13879,23 @@ function getModuleQuizCompletion(prog, moduleId) {
   return { passed, total: QUIZ_LEVEL_NAMES.length };
 }
 
+// Akkurate Quiz-Zusammenfassung fuer den Trainer-Editor (zaehlt alle 4 Stufen + Legacy)
+function moduleQuizSummary(m) {
+  const levels = getModuleQuizLevels(m.id);
+  const legacy = (m.quizzes || []).length;
+  if (levels) {
+    let total = legacy;
+    const present = [];
+    for (const ln of QUIZ_LEVEL_NAMES) {
+      const n = (levels[ln] || []).length;
+      total += n;
+      if (n > 0) present.push(QUIZ_LEVEL_LABELS[ln].split(' ')[0]);
+    }
+    return `${present.join('')} · ${total} Fragen`;
+  }
+  return legacy > 0 ? `${legacy} Quizfragen` : 'Quiz folgt';
+}
+
 
 const AD_MODULES = [
   {
@@ -14974,6 +14991,41 @@ async function getEmployeeProgress(id) {
 
 async function saveEmployeeProgress(id, progress) {
   await storageSet(`progress:${id}`, progress, true);
+}
+
+// ── Letzte Position ────────────────────────────────────────────
+// Eigener Firebase-Schluessel 'lastpos:<empId>'. Fasst progress:<id> NIE an.
+async function recordLastPosition() {
+  try {
+    const u = STATE.currentUser;
+    if (!u || (u.role !== 'ad' && u.role !== 'id') || !u.empId) return;
+    if (STATE.subPage !== 'module_content' || !STATE.selectedModule) return;
+    await storageSet('lastpos:' + u.empId, {
+      moduleId: STATE.selectedModule,
+      level: STATE.quizLevel || null,
+      role: u.role,
+      ts: Date.now()
+    }, true);
+  } catch (e) {}
+}
+async function getLastPosition(empId) {
+  try { return await storageGet('lastpos:' + empId, true); } catch (e) { return null; }
+}
+// Stufe wechseln + Position merken
+function pLevel(ln) {
+  STATE.quizLevel = ln;
+  STATE.quizState = null;
+  render();
+  recordLastPosition();
+}
+// "Weitermachen" — exakt zur zuletzt offenen Stelle
+async function resumeLastPosition(role) {
+  const u = STATE.currentUser; if (!u) return;
+  const lp = await getLastPosition(u.empId);
+  if (!lp || !lp.moduleId) { navigate(role, 'modules'); return; }
+  if (lp.level) STATE.quizLevel = lp.level;
+  STATE.quizState = null;
+  navigate(role, 'module_content', { subModule: lp.moduleId });
 }
 
 async function getCoachingSessions(employeeId) {
@@ -16804,7 +16856,7 @@ async function renderModuleList_Editor(role) {
           <span style="font-size:26px;width:36px;text-align:center">${m.icon||'📄'}</span>
           <div class="flex-1">
             <div class="font-bold" style="font-size:14px">${escHtml(m.title)}</div>
-            <div class="text-dim text-sm">${escHtml(m.desc||'')} · ${m.duration||''} · ${(m.quizzes||[]).length} Quizfragen</div>
+            <div class="text-dim text-sm">${escHtml(m.desc||'')} · ${m.duration||''} · ${moduleQuizSummary(m)}</div>
           </div>
           <div class="flex gap-6 items-center">
             <div class="flex flex-col gap-4">
@@ -17518,6 +17570,31 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
   const allTasks = await getTasks(user.empId);
   const openTasks = allTasks.filter(t => !t.done);
 
+  // Letzte Position (live, exakt) — liest nur, aendert keine Speicherstaende
+  const _lastPos = await getLastPosition(user.empId);
+  let _resumeCard = '';
+  if (_lastPos && _lastPos.moduleId) {
+    const _lm = modules.find(m => m.id === _lastPos.moduleId && !m.disabled);
+    if (_lm) {
+      const _lvl = _lastPos.level ? ' · ' + (QUIZ_LEVEL_LABELS[_lastPos.level] || '') : '';
+      _resumeCard = `
+        <div class="card mb-16" style="border-color:rgba(46,204,113,0.45);background:rgba(46,204,113,0.06)">
+          <div class="card-body">
+            <div class="flex items-center justify-between" style="gap:12px;flex-wrap:wrap">
+              <div class="flex items-center gap-12">
+                <span style="font-size:30px">▶️</span>
+                <div>
+                  <div class="text-dim text-sm" style="margin-bottom:3px">Hier warst du zuletzt dran</div>
+                  <div class="font-bold" style="font-size:16px">${_lm.icon} ${escHtml(_lm.title)}${_lvl}</div>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="resumeLastPosition('${role}')">Weitermachen →</button>
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
   // Next module to complete
   const nextModule = modules.find(m => !prog.modules?.[m.id]);
 
@@ -17530,6 +17607,7 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
       ${dt ? `<div class="badge" style="margin-left:auto;background:${typeColor(dt)}22;color:${typeColor(dt)};border:1px solid ${typeColor(dt)}44;font-size:13px;padding:6px 14px">${TYPES[dt].emoji} ${typeName(dt)}</div>` : ''}
     </div>
     <div class="page-content">
+      ${_resumeCard}
       <div class="stat-grid mb-24">
         <div class="stat-card">
           <div class="stat-value">${pct}%</div>
@@ -17632,6 +17710,9 @@ async function renderModuleList(user, prog, modules, role) {
   const rows = modules.map(m => {
     const isDone = prog.modules?.[m.id];
     const quiz = prog.quizzes?.[m.id];
+    const _lvls = getModuleQuizLevels(m.id);
+    const _passed = _lvls ? QUIZ_LEVEL_NAMES.filter(l => isLevelPassed(prog, m.id, l)).length : 0;
+    const _badges = _lvls ? QUIZ_LEVEL_NAMES.map(ln => { const p = isLevelPassed(prog, m.id, ln); const c = QUIZ_LEVEL_COLORS[ln]; return `<span title="${QUIZ_LEVEL_LABELS[ln]}" style="font-size:11px;padding:1px 5px;border-radius:4px;border:1px solid ${p?c+'88':'var(--border)'};background:${p?c+'22':'transparent'};color:${p?c:'var(--text-faint)'}">${QUIZ_LEVEL_LABELS[ln].split(' ')[0]}${p?' ✓':''}</span>`; }).join(' ') : '';
     return `
       <div class="mod-card ${isDone ? 'done' : ''}" onclick="navigate('${role}','module_content',{subModule:'${m.id}'})">
         ${isDone ? '<div class="mod-check">✓</div>' : ''}
@@ -17640,9 +17721,8 @@ async function renderModuleList(user, prog, modules, role) {
         <div class="mod-title">${escHtml(m.title)}</div>
         <div class="mod-meta">
           <span>⏱ ${m.duration}</span>
-          ${m.quizzes ? `<span>🧩 ${m.quizzes.length} Quiz${m.quizzes.length > 1 ? 'ze' : ''}</span>` : ''}
-          ${quiz ? `<span style="color:var(--green)">✓ ${quiz.correct}/${quiz.total}</span>` : ''}
         </div>
+        ${_lvls ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px">${_badges}<span style="font-size:11px;font-weight:600;color:${_passed===4?'var(--green)':'var(--text-dim)'};margin-left:2px">${_passed}/4 Stufen</span></div>` : `<div style="margin-top:8px"><span class="text-faint" style="font-size:11px">${m.quizzes&&m.quizzes.length?'Quiz verfügbar':'Quiz folgt'}</span></div>`}
       </div>
     `;
   });
@@ -17700,7 +17780,7 @@ async function renderModuleContent(user, prog, modules, role) {
       const passed = isLevelPassed(prog, mod.id, ln);
       const isActive = ln === activeLevelName;
       const color = QUIZ_LEVEL_COLORS[ln];
-      return `<button onclick="if(${unlocked}){STATE.quizLevel='${ln}';STATE.quizState=null;render()}" 
+      return `<button onclick="if(${unlocked}){pLevel('${ln}')}" 
         style="padding:8px 16px;border-radius:6px;border:2px solid ${isActive ? color : passed ? color+'44' : 'var(--border)'};
         background:${isActive ? color+'22' : 'transparent'};color:${unlocked ? (isActive ? color : passed ? color : 'var(--text-dim)') : 'var(--text-faint)'};
         cursor:${unlocked ? 'pointer' : 'not-allowed'};font-size:12px;font-weight:600;transition:.15s">
@@ -17729,7 +17809,7 @@ async function renderModuleContent(user, prog, modules, role) {
             <div class="text-dim mb-16">${score} von ${levelQuestions.length} Fragen richtig · ${Math.ceil(levelQuestions.length * QUIZ_PASS_PCT)} zum Bestehen nötig</div>
             <div class="flex gap-10" style="justify-content:center;flex-wrap:wrap">
               <button class="btn btn-outline" onclick="resetQuiz()">Wiederholen</button>
-              ${passed && nextLevel ? `<button class="btn btn-primary" onclick="STATE.quizLevel='${nextLevel}';STATE.quizState=null;render()">${QUIZ_LEVEL_LABELS[nextLevel]} starten →</button>` : ''}
+              ${passed && nextLevel ? `<button class="btn btn-primary" onclick="pLevel('${nextLevel}')">${QUIZ_LEVEL_LABELS[nextLevel]} starten →</button>` : ''}
               ${passed && activeLevelName === 'profi' ? '<span class="badge badge-green" style="font-size:13px;padding:8px 16px">🏆 Modul vollständig abgeschlossen!</span>' : ''}
             </div>
           </div>
@@ -19633,6 +19713,7 @@ function navigate(page, subPage = null, extra = {}) {
   }
   render();
   window.scrollTo(0, 0);
+  recordLastPosition();
 }
 
 // Override startRoleplay to set correct sub-page
