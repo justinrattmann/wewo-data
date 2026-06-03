@@ -17619,10 +17619,6 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
           <div class="stat-label">Module abgeschlossen</div>
           <div class="stat-delta">von ${modules.length} gesamt</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">${Object.keys(prog.quizzes || {}).length}</div>
-          <div class="stat-label">Quizze bestanden</div>
-        </div>
       </div>
 
       ${nextModule ? `
@@ -17983,12 +17979,18 @@ function getShuffledQuestion(q) {
   };
 }
 
-// Re-rendert und haelt die Scroll-Position (Teilnehmer bleibt bei der Frage statt nach oben zu springen)
+// Re-rendert und haelt die Scroll-Position. Wichtig: es scrollt der .main-Container
+// (overflow-y:auto), nicht das Fenster — daher dessen scrollTop sichern/wiederherstellen.
 function _renderKeepScroll() {
-  const _y = window.scrollY;
+  const _el = document.querySelector('.main');
+  const _y = _el ? _el.scrollTop : window.scrollY;
+  const restore = () => {
+    const m = document.querySelector('.main');
+    if (m) m.scrollTop = _y; else window.scrollTo(0, _y);
+  };
   const r = render();
-  if (r && r.then) r.then(() => requestAnimationFrame(() => window.scrollTo(0, _y)));
-  else requestAnimationFrame(() => window.scrollTo(0, _y));
+  if (r && r.then) r.then(() => { restore(); requestAnimationFrame(restore); });
+  else requestAnimationFrame(restore);
 }
 function answerQuiz(chosen, correct, qi, total) {
   if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false };
