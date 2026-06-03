@@ -17983,11 +17983,18 @@ function getShuffledQuestion(q) {
   };
 }
 
+// Re-rendert und haelt die Scroll-Position (Teilnehmer bleibt bei der Frage statt nach oben zu springen)
+function _renderKeepScroll() {
+  const _y = window.scrollY;
+  const r = render();
+  if (r && r.then) r.then(() => requestAnimationFrame(() => window.scrollTo(0, _y)));
+  else requestAnimationFrame(() => window.scrollTo(0, _y));
+}
 function answerQuiz(chosen, correct, qi, total) {
   if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false };
   STATE.quizState.answered = chosen;
   if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
-  render();
+  _renderKeepScroll();
 }
 
 function answerQuizLevel(chosen, correct, qi, total, levelName) {
@@ -17995,7 +18002,7 @@ function answerQuizLevel(chosen, correct, qi, total, levelName) {
   STATE.quizState.answered = chosen;
   STATE.quizState.levelName = levelName;
   if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
-  render();
+  _renderKeepScroll();
 }
 
 function nextQuizQuestion(nextQi, total) {
@@ -18006,7 +18013,7 @@ function nextQuizQuestion(nextQi, total) {
     STATE.quizState.questionIndex = nextQi;
     STATE.quizState.answered = null;
   }
-  render();
+  _renderKeepScroll();
 }
 
 function resetQuiz() {
