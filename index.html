@@ -749,6 +749,174 @@ body.is-loading .main { cursor: progress; }
 .pass-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 6px; border-radius: 6px; }
 .pass-eye:hover { color: var(--yellow); }
 
+/* ══ EFFEKTE & GAMIFICATION ══ */
+@keyframes fxUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.view-enter .page-header { animation: fxUp .35s var(--ease) backwards; }
+.view-enter .page-content > * { animation: fxUp .5s var(--ease) backwards; }
+.view-enter .page-content > *:nth-child(2) { animation-delay: .05s; }
+.view-enter .page-content > *:nth-child(3) { animation-delay: .1s; }
+.view-enter .page-content > *:nth-child(4) { animation-delay: .15s; }
+.view-enter .page-content > *:nth-child(n+5) { animation-delay: .2s; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > * { animation: fxUp .5s var(--ease) backwards; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > :nth-child(2) { animation-delay: .06s; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > :nth-child(3) { animation-delay: .12s; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > :nth-child(4) { animation-delay: .18s; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > :nth-child(5) { animation-delay: .24s; }
+.view-enter :is(.grid-2, .grid-3, .stat-grid, .ach-grid) > :nth-child(n+6) { animation-delay: .3s; }
+
+/* Hover: Spotlight folgt der Maus, leichte 3D-Neigung bei klickbaren Kacheln */
+@media (hover: hover) and (pointer: fine) {
+  :is(.card, .stat-card, .mod-card, .ach, .game-hero):hover {
+    background-image: radial-gradient(500px circle at var(--mx, 50%) var(--my, 50%), rgba(236,234,65,.065), transparent 42%),
+                      linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,0) 40%);
+  }
+  :is(.mod-card, .stat-card.cursor-pointer, .ach.earned):hover {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px);
+    border-color: rgba(236,234,65,.38);
+    box-shadow: 0 16px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(236,234,65,.08), 0 0 30px rgba(236,234,65,.06);
+  }
+  .stat-card.cursor-pointer, .ach { transition: transform .25s var(--ease), border-color .2s, box-shadow .25s; }
+  .nav-item:hover .nav-icon { transform: scale(1.18) rotate(-6deg); }
+  .insight:hover { padding-left: 22px; }
+  .quiz-option:hover { transform: translateX(4px); }
+  .role-btn:hover { transform: translateY(-2px); }
+  .lb-row:hover { background: rgba(255,255,255,.03); }
+}
+.nav-icon { transition: transform .25s var(--ease); }
+.insight { transition: background .15s, padding-left .2s var(--ease); }
+.quiz-option { transition: all .15s var(--ease); }
+
+/* Glanz über primären Buttons */
+.btn-primary { position: relative; overflow: hidden; isolation: isolate; }
+.btn-primary::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%);
+  transform: translateX(-120%); transition: transform .7s var(--ease);
+}
+.btn-primary:hover::after { transform: translateX(120%); }
+.logo-mark { position: relative; overflow: hidden; }
+.logo-mark::after {
+  content: ''; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.6) 50%, transparent 60%);
+  animation: logoShine 6s ease-in-out infinite;
+}
+@keyframes logoShine { 0%, 80% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* Quiz-Feedback */
+@keyframes popOk { 0% { transform: scale(1); } 40% { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(46,204,113,.18); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.quiz-option.correct { animation: popOk .45s var(--ease); }
+.quiz-option.wrong { animation: shake .42s ease; }
+
+/* XP-Widget in der Sidebar */
+.xp-widget {
+  margin: 12px 12px 4px; padding: 10px 12px; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, rgba(236,234,65,.10), rgba(236,234,65,.02));
+  border: 1px solid rgba(236,234,65,.18); transition: border-color .2s, transform .2s var(--ease);
+}
+.xp-widget:hover { border-color: rgba(236,234,65,.45); transform: translateY(-1px); }
+.xp-widget.collapsed { margin: 10px 8px 4px; padding: 8px 0; text-align: center; font-size: 18px; }
+.xp-widget-icon { font-size: 20px; }
+.xp-widget-rank { font-size: 12px; font-weight: 700; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xp-widget-xp { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.xp-bar { height: 6px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.xp-fill {
+  height: 100%; border-radius: 99px; transition: width .9s var(--ease);
+  background: linear-gradient(90deg, #c8c730, #ecea41 60%, #fffb8a);
+  box-shadow: 0 0 12px rgba(236,234,65,.45);
+}
+
+/* Spiel-Karte (Startseite / Erfolge) */
+.game-hero { border-color: rgba(236,234,65,.25) !important; background-image: radial-gradient(600px 220px at 0% 0%, rgba(236,234,65,.10), transparent 70%) !important; }
+.game-hero-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center; }
+.game-rank { font-family: var(--font-heading); font-size: 26px; color: var(--yellow); line-height: 1.15; margin: 2px 0 4px; }
+.game-xp { font-size: 13px; }
+.game-hero-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.mini-badge { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(236,234,65,.10); border: 1px solid rgba(236,234,65,.25); font-size: 15px; }
+.xp-ring { position: relative; flex-shrink: 0; }
+.xp-ring svg { transform: rotate(-90deg); display: block; }
+.xp-ring-bg { fill: none; stroke: rgba(255,255,255,.07); stroke-width: 8; }
+.xp-ring-fg { fill: none; stroke: var(--yellow); stroke-width: 8; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(236,234,65,.5)); animation: ringIn 1.1s var(--ease) backwards; }
+@keyframes ringIn { from { stroke-dashoffset: 1000; } }
+.xp-ring-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; animation: floaty 3.5s ease-in-out infinite; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.streak-box { text-align: center; padding: 10px 14px; border-radius: 12px; background: rgba(249,115,22,.07); border: 1px solid rgba(249,115,22,.2); }
+.streak-num { font-family: var(--font-heading); font-size: 26px; color: var(--orange); }
+.week-dots { display: flex; gap: 5px; margin-top: 8px; justify-content: center; }
+.week-dot { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.05); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.week-dot i { font-style: normal; font-size: 9px; color: var(--text-faint); }
+.week-dot.on { background: linear-gradient(180deg, #fb923c, #f97316); border-color: transparent; box-shadow: 0 0 10px rgba(249,115,22,.4); }
+.week-dot.on i { color: #fff; font-weight: 700; }
+.week-dot.today { outline: 2px solid rgba(255,255,255,.25); outline-offset: 1px; }
+
+/* Abzeichen */
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.ach {
+  position: relative; text-align: center; padding: 18px 12px 14px; border-radius: var(--radius-lg);
+  background: var(--panel); border: 1px solid var(--border); overflow: hidden;
+}
+.ach-icon { font-size: 34px; margin-bottom: 8px; display: inline-block; }
+.ach-title { font-weight: 700; font-size: 13.5px; }
+.ach-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; min-height: 30px; }
+.ach-state { font-size: 11px; color: var(--green); font-weight: 600; margin-top: 8px; }
+.ach-prog { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--text-faint); }
+.ach-prog .xp-bar { flex: 1; margin-top: 0; height: 4px; }
+.ach.earned { border-color: rgba(236,234,65,.3); background-image: radial-gradient(160px 90px at 50% 0%, rgba(236,234,65,.12), transparent 70%); }
+.ach.earned .ach-icon { filter: drop-shadow(0 0 10px rgba(236,234,65,.45)); animation: floaty 4s ease-in-out infinite; }
+.ach.locked .ach-icon { filter: grayscale(1); opacity: .35; }
+.ach.locked .ach-title { color: var(--text-dim); }
+
+/* Rangliste */
+.lb-row { display: flex; align-items: center; gap: 12px; padding: 9px 8px; border-radius: 10px; transition: background .15s; }
+.lb-row.me { background: rgba(236,234,65,.07); box-shadow: inset 0 0 0 1px rgba(236,234,65,.25); }
+.lb-medal { width: 28px; text-align: center; font-size: 20px; }
+.lb-pos { font-size: 13px; font-weight: 700; color: var(--text-faint); }
+.lb-bar { height: 4px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.lb-xp { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--yellow); min-width: 64px; text-align: right; }
+.lb-xp span { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+.xp-rules > div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.xp-rules > div:last-child { border-bottom: none; }
+.xp-rules b { color: var(--yellow); white-space: nowrap; }
+.card-rank { margin-left: auto; display: flex; flex-direction: column; align-items: center; font-size: 18px; line-height: 1; }
+.card-rank span { font-size: 10px; color: var(--text-dim); margin-top: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* XP-Pop, Konfetti, Level-Up */
+.xp-pop {
+  position: fixed; z-index: 10001; transform: translate(-50%, 0); pointer-events: none;
+  font-family: var(--font-heading); font-size: 20px; color: var(--yellow);
+  text-shadow: 0 0 18px rgba(236,234,65,.7), 0 2px 6px rgba(0,0,0,.6);
+  animation: xpPop 1.5s var(--ease) forwards;
+}
+@keyframes xpPop { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.7); } 20% { opacity: 1; transform: translate(-50%, -6px) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1); } }
+.fx-confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10002; }
+.levelup-overlay {
+  position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: radial-gradient(circle at 50% 40%, rgba(236,234,65,.18), rgba(5,6,7,.85) 60%);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadeIn .25s ease;
+}
+.levelup-card {
+  text-align: center; padding: 34px 30px; border-radius: 22px; max-width: 380px; width: 100%;
+  background: linear-gradient(180deg, #1d2226, #14181b); border: 1px solid rgba(236,234,65,.35);
+  box-shadow: 0 30px 90px rgba(0,0,0,.6), 0 0 60px rgba(236,234,65,.15);
+  animation: levelIn .55s cubic-bezier(.2,1.4,.4,1) backwards;
+}
+@keyframes levelIn { from { opacity: 0; transform: scale(.7) translateY(20px); } }
+.levelup-kicker { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--yellow); font-weight: 800; }
+.levelup-icon { font-size: 76px; margin: 10px 0 6px; animation: floaty 2.5s ease-in-out infinite; filter: drop-shadow(0 0 22px rgba(236,234,65,.5)); }
+.levelup-title { font-family: var(--font-heading); font-size: 26px; margin-bottom: 6px; }
+
+@media (max-width: 768px) {
+  .game-hero-grid { grid-template-columns: auto 1fr; gap: 16px; }
+  .streak-box { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; text-align: left; }
+  .streak-box > .text-dim { flex: 1; }
+  .week-dots { width: 100%; justify-content: space-between; margin-top: 6px; }
+  .week-dot { width: 34px; height: 26px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 26px; }
+  .game-rank { font-size: 22px; }
+  .ach-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
@@ -15481,7 +15649,7 @@ async function sendChatMessage() {
   if (msgs) msgs.scrollTop = msgs.scrollHeight;
 }
 
-async function saveRoleplayFeedback(empId, scenario, feedback, history) {
+async function saveRoleplayFeedback(empId, scenario, feedback, history, score = null) {
   if (!empId) return;
   const record = {
     id: 'rp_' + Date.now(),
@@ -15490,6 +15658,7 @@ async function saveRoleplayFeedback(empId, scenario, feedback, history) {
     scenarioTitle: scenario?.title,
     date: new Date().toISOString(),
     feedback,
+    score,
     messageCount: history?.length || 0
   };
   await storageSet(`roleplay:${empId}:${record.id}`, record, true);
@@ -15507,6 +15676,13 @@ async function endRoleplayAndGetFeedback() {
       feedbackSystem, 800
     );
     chatHistory.push({ role: 'feedback', content: feedback });
+    const empId = STATE.currentUser?.empId;
+    if (empId) {
+      const m = feedback.match(/(\d{1,2})\s*\/\s*10/);
+      saveRoleplayFeedback(empId, currentScenario, feedback, chatHistory, m ? parseInt(m[1]) : null)
+        .then(() => { xpPop(XP.roleplay); clearStorageCache(); })
+        .catch(() => {});
+    }
   } catch {
     chatHistory.push({ role: 'feedback', content: 'Feedback konnte nicht geladen werden. Bitte API-Key prüfen.' });
   }
@@ -15624,7 +15800,8 @@ async function renderTrainerDashboard() {
   // Alles in vier Requests: Mitarbeiter, Fortschritt, Sessions, Aufgaben
   const [allEmp, modsAd, modsId] = await Promise.all([
     getAllEmployees(), getModules('ad'), getModules('id'),
-    storageList('progress:'), storageList('session:'), storageList('tasks:')
+    storageList('progress:'), storageList('session:'), storageList('tasks:'),
+    storageList('practicelog:'), storageList('roleplay:')
   ]);
   const DAY = 86400000;
   const now = Date.now();
@@ -15638,7 +15815,8 @@ async function renderTrainerDashboard() {
     const done = mods.filter(m => prog.modules?.[m.id]).length;
     const pct = mods.length ? Math.round(done / mods.length * 100) : 0;
     const overdue = tasks.filter(t => !t.done && t.deadline && new Date(t.deadline).getTime() < now).length;
-    return { emp, prog, sessions, tasks, done, pct, overdue,
+    const game = await loadGame(emp, emp.role === 'ad' ? modsAd : modsId);
+    return { emp, prog, sessions, tasks, done, pct, overdue, game,
       lastSession: sessions[0] || null,
       daysNoCoaching: daysSince(sessions[0]?.date),
       daysNoLogin: daysSince(emp.lastLogin) };
@@ -15697,7 +15875,7 @@ async function renderTrainerDashboard() {
   }).join('')
     : `<div class="card-body"><div class="text-dim text-sm">Noch keine Sessions — <a class="text-yellow cursor-pointer" onclick="navigate('trainer','coaching_new')">erste Session starten →</a></div></div>`;
 
-  const cards = rows.slice().sort((a, b) => b.pct - a.pct).map(({ emp, pct, daysNoCoaching }) => {
+  const cards = rows.slice().sort((a, b) => b.game.xp - a.game.xp).map(({ emp, pct, daysNoCoaching, game }) => {
     const initials = emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     const dt = dominantType(emp.types);
     return `
@@ -15708,6 +15886,7 @@ async function renderTrainerDashboard() {
             <div class="font-bold truncate" style="font-size:14px">${escHtml(emp.name)}</div>
             <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'} ${dt ? `· <span style="color:${typeColor(dt)}">${typeName(dt)}</span>` : ''}</div>
           </div>
+          <div class="card-rank" title="Level ${game.rank.level} · ${game.rank.name}">${game.rank.icon}<span>${game.xp.toLocaleString('de-DE')} XP</span></div>
         </div>
         <div class="progress-wrap mb-8"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="flex justify-between"><span class="text-sm text-dim">${daysNoCoaching === null ? 'Noch kein Coaching' : 'Coaching vor ' + daysNoCoaching + ' T.'}</span><span class="text-sm font-bold text-yellow">${pct}%</span></div>
@@ -17826,6 +18005,8 @@ async function renderEmployeePortal() {
     getModules(role), getRoleplayScenarios(role), getEmployeeProgress(user.empId),
     getEmployee(user.empId), getTasks(user.empId)
   ]);
+  const game = await loadGame(empData || { id: user.empId }, modules);
+  STATE._pendingGame = { empId: user.empId, game };
   const roleLabel = role === 'ad' ? 'Außendienst' : 'Innendienst';
 
   const done = Object.values(prog.modules || {}).filter(v => v).length;
@@ -17842,6 +18023,7 @@ async function renderEmployeePortal() {
         <div class="logo-mark" style="font-size:16px; letter-spacing:0px;">W</div>
         ${!STATE.sidebarCollapsed ? `<div><div class="logo-text">WEWO</div><div class="logo-sub">${roleLabel}</div></div>` : ''}
       </div>
+      ${renderXpWidget(game, role)}
       <nav class="sidebar-nav">
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Mein Bereich'}</div>
         ${empNavItem('home', '🏠', 'Dashboard', page)}
@@ -17857,6 +18039,7 @@ async function renderEmployeePortal() {
         ${empNavItem('journal', '📝', 'Praxis-Tagebuch', page)}
         ${empNavItem('scripts', '📖', 'Skripte', page)}
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
+        ${empNavItem('achievements', '🏆', 'Erfolge & Rangliste', page)}
         ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
         ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
       </nav>
@@ -17872,7 +18055,8 @@ async function renderEmployeePortal() {
 
   let content = '';
   switch (page) {
-    case 'home': content = await renderEmpHome(user, prog, modules, pct, scenarios, role); break;
+    case 'home': content = await renderEmpHome(user, prog, modules, pct, scenarios, role, game); break;
+    case 'achievements': content = await renderAchievementsPage(user, game, role); break;
     case 'modules': content = await renderModuleList(user, prog, modules, role); break;
     case 'module_content': content = await renderModuleContent(user, prog, modules, role); break;
     case 'roleplay': content = renderRoleplaySelection(scenarios, role); break;
@@ -17882,7 +18066,7 @@ async function renderEmployeePortal() {
     case 'scripts': content = renderScriptLibrary(role); break;
     case 'progress': content = await renderEmpProgress(user, prog, modules, empData); break;
     case 'types': content = await renderTypesPage(user.empId); break;
-    default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
+    default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role, game);
   }
 
   return shellLayout(nav, content);
@@ -17953,7 +18137,7 @@ async function toggleEmpTask(empId, taskId) {
   await toggleTask(empId, taskId);
 }
 
-async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
+async function renderEmpHome(user, prog, modules, pct, scenarios, role, game) {
   const empData = await getEmployee(user.empId);
   const dt = dominantType(empData?.types);
   const done = Object.values(prog.modules || {}).filter(v => v).length;
@@ -18011,6 +18195,7 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
       ${dt ? `<div class="badge" style="margin-left:auto;background:${typeColor(dt)}22;color:${typeColor(dt)};border:1px solid ${typeColor(dt)}44;font-size:13px;padding:6px 14px">${TYPES[dt].emoji} ${typeName(dt)}</div>` : ''}
     </div>
     <div class="page-content">
+      ${game ? renderGameHero(game, role) : ''}
       ${_resumeCard}
       ${_commitCard}
       <div class="stat-grid mb-24">
@@ -18413,7 +18598,7 @@ function _renderKeepScroll() {
 function answerQuiz(chosen, correct, qi, total) {
   if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false };
   STATE.quizState.answered = chosen;
-  if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
+  if (chosen === correct) { STATE.quizState.score = (STATE.quizState.score || 0) + 1; STATE._fxBurst = true; }
   _renderKeepScroll();
 }
 
@@ -18421,7 +18606,7 @@ function answerQuizLevel(chosen, correct, qi, total, levelName) {
   if (!STATE.quizState) STATE.quizState = { questionIndex: qi, score: 0, answered: null, finished: false, levelName };
   STATE.quizState.answered = chosen;
   STATE.quizState.levelName = levelName;
-  if (chosen === correct) STATE.quizState.score = (STATE.quizState.score || 0) + 1;
+  if (chosen === correct) { STATE.quizState.score = (STATE.quizState.score || 0) + 1; STATE._fxBurst = true; }
   _renderKeepScroll();
 }
 
@@ -20092,6 +20277,388 @@ function logout() {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  GAMIFICATION — XP, Ränge, Erfolge, Streaks, Rangliste
+//  Alles wird aus vorhandenen Daten berechnet (keine neuen Speicherorte).
+// ══════════════════════════════════════════════════════════════
+const XP = {
+  module: 100, level: { leicht: 20, mittel: 30, schwer: 45, profi: 70 }, perfect: 15, legacyQuiz: 30,
+  task: 25, journal: 15, roleplay: 40, session: 40, commitYes: 40, commitPartial: 15, typeTest: 50
+};
+const RANKS = [
+  { xp: 0,    name: 'Einsteiger',    icon: '🔩' },
+  { xp: 150,  name: 'Macher',        icon: '🔧' },
+  { xp: 400,  name: 'Profi',         icon: '⚙️' },
+  { xp: 800,  name: 'Experte',       icon: '🛠️' },
+  { xp: 1400, name: 'Top-Verkäufer', icon: '🚀' },
+  { xp: 2200, name: 'Champion',      icon: '🏆' },
+  { xp: 3200, name: 'WEWO-Legende',  icon: '👑' }
+];
+
+function rankFor(xp) {
+  let i = 0;
+  while (i + 1 < RANKS.length && xp >= RANKS[i + 1].xp) i++;
+  const r = RANKS[i], next = RANKS[i + 1] || null;
+  return { ...r, level: i + 1, next, pct: next ? Math.round((xp - r.xp) / (next.xp - r.xp) * 100) : 100 };
+}
+
+const _dayKey = d => {
+  const x = new Date(d);
+  if (isNaN(x)) return null;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+};
+
+function computeGame({ emp, prog = {}, tasks = [], logs = [], roleplays = [], sessions = [], modules = [] }) {
+  const visible = modules.filter(m => !m.disabled);
+  const modsDone = visible.filter(m => prog.modules?.[m.id]).length;
+  let xp = 0;
+  const parts = {};
+  const add = (k, v) => { if (!v) return; xp += v; parts[k] = (parts[k] || 0) + v; };
+  const days = new Set();
+
+  add('Module', modsDone * XP.module);
+  let levelsPassed = 0, profiPassed = 0, perfect = 0;
+  for (const lv of Object.values(prog.quizLevels || {})) {
+    for (const [ln, r] of Object.entries(lv || {})) {
+      if (r?.date) days.add(_dayKey(r.date));
+      if (r?.lastAttempt?.date) days.add(_dayKey(r.lastAttempt.date));
+      if (!r?.passed) continue;
+      levelsPassed++;
+      if (ln === 'profi') profiPassed++;
+      add('Quiz-Level', XP.level[ln] || 20);
+      if (r.total && r.score === r.total) { perfect++; add('Fehlerfrei-Bonus', XP.perfect); }
+    }
+  }
+  add('Quiz', Object.keys(prog.quizzes || {}).length * XP.legacyQuiz);
+  const tasksDone = tasks.filter(t => t.done);
+  tasksDone.forEach(t => t.doneAt && days.add(_dayKey(t.doneAt)));
+  add('Aufgaben', tasksDone.length * XP.task);
+  logs.forEach(l => days.add(_dayKey(l.date)));
+  add('Praxis-Tagebuch', logs.length * XP.journal);
+  roleplays.forEach(r => days.add(_dayKey(r.date)));
+  add('Roleplay', roleplays.length * XP.roleplay);
+  add('Coaching', sessions.length * XP.session);
+  const commitYes = sessions.filter(s => s.commitmentFulfilled === 'yes').length;
+  add('Commitments', commitYes * XP.commitYes + sessions.filter(s => s.commitmentFulfilled === 'partial').length * XP.commitPartial);
+  if (emp?.types) add('Persönlichkeitstest', XP.typeTest);
+  days.delete(null);
+
+  // Aktuelle Serie (heute oder gestern noch aktiv) + längste Serie aller Zeiten
+  let streak = 0;
+  const d = new Date();
+  if (!days.has(_dayKey(d))) d.setDate(d.getDate() - 1);
+  while (days.has(_dayKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+  let bestStreak = 0, run = 0, prev = null;
+  for (const k of [...days].sort()) {
+    const t = new Date(k + 'T12:00:00').getTime();
+    run = prev !== null && Math.round((t - prev) / 86400000) === 1 ? run + 1 : 1;
+    bestStreak = Math.max(bestStreak, run);
+    prev = t;
+  }
+  const week = [];
+  for (let i = 6; i >= 0; i--) {
+    const x = new Date(); x.setDate(x.getDate() - i);
+    week.push({ active: days.has(_dayKey(x)), label: x.toLocaleDateString('de-DE', { weekday: 'short' }).slice(0, 2), today: i === 0 });
+  }
+
+  const b = (id, icon, title, desc, cur, goal) => ({ id, icon, title, desc, cur: Math.min(cur, goal), goal, earned: cur >= goal });
+  const badges = [
+    b('first_module', '📗', 'Erster Schritt',    'Erstes Modul abgeschlossen',      modsDone, 1),
+    b('five_modules', '📚', 'Wissenshungrig',    '5 Module abgeschlossen',          modsDone, 5),
+    b('all_modules',  '🎓', 'Absolvent',         'Alle Module abgeschlossen',       modsDone, Math.max(visible.length, 1)),
+    b('quiz_10',      '🧠', 'Quiz-Meister',      '10 Quiz-Level bestanden',         levelsPassed, 10),
+    b('first_profi',  '⭐', 'Profi-Liga',        'Erstes Profi-Level bestanden',    profiPassed, 1),
+    b('perfect',      '💎', 'Fehlerfrei',        'Ein Level mit voller Punktzahl',  perfect, 1),
+    b('roleplay_1',   '🎭', 'Bühnenreif',        'Erstes KI-Roleplay mit Feedback', roleplays.length, 1),
+    b('roleplay_5',   '🎤', 'Gesprächsprofi',    '5 KI-Roleplays absolviert',       roleplays.length, 5),
+    b('journal_5',    '📝', 'Reflektierer',      '5 Einträge im Praxis-Tagebuch',   logs.length, 5),
+    b('tasks_5',      '✅', 'Umsetzer',          '5 Aufgaben erledigt',             tasksDone.length, 5),
+    b('commit_3',     '🤝', 'Wort gehalten',     '3 Commitments erfüllt',           commitYes, 3),
+    b('streak_3',     '🔥', 'Am Ball',           '3 Tage in Folge aktiv',           bestStreak, 3),
+    b('streak_7',     '⚡', 'Unaufhaltsam',      '7 Tage in Folge aktiv',           bestStreak, 7),
+    b('type',         '🧬', 'Selbsterkenntnis',  'Persönlichkeitstyp ermittelt',    emp?.types ? 1 : 0, 1)
+  ];
+  return { xp, parts, rank: rankFor(xp), streak, bestStreak, week, badges,
+    earned: badges.filter(x => x.earned).length, modsDone, levelsPassed };
+}
+
+async function loadGame(emp, modules) {
+  const [prog, tasks, logs, rp, sessions] = await Promise.all([
+    getEmployeeProgress(emp.id), getTasks(emp.id), getPracticeLogs(emp.id),
+    storageGet('roleplay:' + emp.id, true), getCoachingSessions(emp.id)
+  ]);
+  return computeGame({ emp, prog, tasks, logs, roleplays: Object.values(rp || {}), sessions, modules });
+}
+
+// ── UI-Bausteine ───────────────────────────────────────────────
+function xpRing(game, size = 104) {
+  const r = (size - 10) / 2, c = 2 * Math.PI * r;
+  return `<div class="xp-ring" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="xp-ring-bg"/>
+      <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="xp-ring-fg"
+        style="stroke-dasharray:${c};--ring-off:${c * (1 - game.rank.pct / 100)};stroke-dashoffset:${c * (1 - game.rank.pct / 100)}"/>
+    </svg>
+    <div class="xp-ring-icon">${game.rank.icon}</div>
+  </div>`;
+}
+
+function renderXpWidget(game, role) {
+  if (STATE.sidebarCollapsed) {
+    return `<div class="xp-widget collapsed" onclick="navigate('${role}','achievements')" title="Level ${game.rank.level} · ${game.xp} XP">${game.rank.icon}</div>`;
+  }
+  return `<div class="xp-widget" onclick="navigate('${role}','achievements')" title="Zu deinen Erfolgen">
+    <div class="flex items-center gap-8">
+      <span class="xp-widget-icon">${game.rank.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div class="xp-widget-rank">Lvl ${game.rank.level} · ${game.rank.name}</div>
+        <div class="xp-widget-xp">${game.xp.toLocaleString('de-DE')} XP${game.streak ? ` · 🔥 ${game.streak}` : ''}</div>
+      </div>
+    </div>
+    <div class="xp-bar"><div class="xp-fill" style="width:${game.rank.pct}%"></div></div>
+  </div>`;
+}
+
+function renderGameHero(game, role) {
+  const next = game.rank.next;
+  const latest = game.badges.filter(x => x.earned).slice(-4);
+  const upcoming = game.badges.filter(x => !x.earned).sort((a, b) => (b.cur / b.goal) - (a.cur / a.goal))[0];
+  return `
+    <div class="card game-hero mb-16">
+      <div class="card-body">
+        <div class="game-hero-grid">
+          ${xpRing(game)}
+          <div style="min-width:0">
+            <div class="text-dim text-sm">Level ${game.rank.level}</div>
+            <div class="game-rank">${game.rank.name}</div>
+            <div class="game-xp"><span class="text-yellow font-bold">${game.xp.toLocaleString('de-DE')} XP</span>
+              ${next ? `<span class="text-dim"> · noch ${(next.xp - game.xp).toLocaleString('de-DE')} XP bis ${next.icon} ${next.name}</span>` : '<span class="text-dim"> · Höchster Rang erreicht!</span>'}</div>
+            <div class="xp-bar mt-8"><div class="xp-fill" style="width:${game.rank.pct}%"></div></div>
+          </div>
+          <div class="streak-box">
+            <div class="streak-num">${game.streak ? '🔥' : '💤'} ${game.streak}</div>
+            <div class="text-dim text-sm">${game.streak === 1 ? 'Tag' : 'Tage'} in Folge</div>
+            <div class="week-dots">${game.week.map(w => `<span class="week-dot ${w.active ? 'on' : ''} ${w.today ? 'today' : ''}" title="${w.label}"><i>${w.label}</i></span>`).join('')}</div>
+          </div>
+        </div>
+        <div class="game-hero-foot">
+          <div class="flex items-center gap-8 flex-wrap">
+            <span class="text-dim text-sm">Erfolge ${game.earned}/${game.badges.length}</span>
+            ${latest.map(x => `<span class="mini-badge" title="${escHtml(x.title)} — ${escHtml(x.desc)}">${x.icon}</span>`).join('')}
+          </div>
+          ${upcoming ? `<div class="text-sm text-dim">Als Nächstes: <strong style="color:var(--text)">${upcoming.icon} ${escHtml(upcoming.title)}</strong> (${upcoming.cur}/${upcoming.goal})</div>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="navigate('${role}','achievements')">Alle Erfolge →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function renderLeaderboard(currentEmpId, role) {
+  const [allEmp, modsAd, modsId] = await Promise.all([
+    getAllEmployees(), getModules('ad'), getModules('id'),
+    storageList('progress:'), storageList('tasks:'), storageList('practicelog:'), storageList('roleplay:'), storageList('session:')
+  ]);
+  const rows = await Promise.all(allEmp.map(async e => ({ e, g: await loadGame(e, e.role === 'ad' ? modsAd : modsId) })));
+  rows.sort((a, b) => b.g.xp - a.g.xp);
+  const medal = i => ['🥇', '🥈', '🥉'][i] || `<span class="lb-pos">${i + 1}</span>`;
+  const short = n => { const p = n.trim().split(/\s+/); return p.length > 1 ? `${p[0]} ${p[p.length - 1][0]}.` : p[0]; };
+  const max = Math.max(1, rows[0]?.g.xp || 1);
+  return rows.slice(0, 10).map(({ e, g }, i) => `
+    <div class="lb-row ${e.id === currentEmpId ? 'me' : ''}">
+      <div class="lb-medal">${medal(i)}</div>
+      <div class="flex-1" style="min-width:0">
+        <div class="flex items-center gap-8"><span class="font-bold truncate">${escHtml(short(e.name))}${e.id === currentEmpId ? ' <span class="text-yellow text-sm">(Du)</span>' : ''}</span>
+          <span class="text-dim text-sm" style="margin-left:auto;white-space:nowrap">${g.rank.icon} ${g.rank.name}</span></div>
+        <div class="lb-bar"><div class="xp-fill" style="width:${Math.round(g.xp / max * 100)}%"></div></div>
+      </div>
+      <div class="lb-xp">${g.xp.toLocaleString('de-DE')}<span> XP</span></div>
+    </div>`).join('') || '<div class="text-dim text-sm">Noch keine Daten</div>';
+}
+
+async function renderAchievementsPage(user, game, role) {
+  const parts = Object.entries(game.parts).sort((a, b) => b[1] - a[1]);
+  const board = await renderLeaderboard(user.empId, role);
+  return `
+    <div class="page-header">
+      <div><div class="page-title">🏆 Erfolge & Rangliste</div><div class="page-sub">Sammle XP mit allem, was du lernst und anwendest</div></div>
+    </div>
+    <div class="page-content">
+      ${renderGameHero(game, role)}
+      <div class="section-head"><div class="section-title">Abzeichen <span class="text-dim" style="font-family:inherit;font-size:13px;font-weight:500">· ${game.earned} von ${game.badges.length}</span></div></div>
+      <div class="ach-grid mb-24">
+        ${game.badges.map(x => `
+          <div class="ach ${x.earned ? 'earned' : 'locked'}">
+            <div class="ach-icon">${x.icon}</div>
+            <div class="ach-title">${escHtml(x.title)}</div>
+            <div class="ach-desc">${escHtml(x.desc)}</div>
+            ${x.earned ? '<div class="ach-state">✓ Freigeschaltet</div>'
+              : `<div class="ach-prog"><div class="xp-bar"><div class="xp-fill" style="width:${Math.round(x.cur / x.goal * 100)}%"></div></div><span>${x.cur}/${x.goal}</span></div>`}
+          </div>`).join('')}
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🏅 Team-Rangliste</span></div>
+          <div class="card-body">${board}</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚡ So sammelst du XP</span></div>
+          <div class="card-body">
+            ${parts.length ? `<div class="mb-16">${parts.map(([k, v]) => `<div class="flex justify-between text-sm mb-6"><span class="text-dim">${k}</span><strong>+${v} XP</strong></div>`).join('')}</div><div class="divider" style="margin:12px 0"></div>` : ''}
+            <div class="xp-rules">
+              <div><span>📚 Modul abschließen</span><b>+${XP.module}</b></div>
+              <div><span>🧩 Quiz-Level (Leicht → Profi)</span><b>+${XP.level.leicht}–${XP.level.profi}</b></div>
+              <div><span>💎 Level fehlerfrei</span><b>+${XP.perfect}</b></div>
+              <div><span>🎭 KI-Roleplay mit Feedback</span><b>+${XP.roleplay}</b></div>
+              <div><span>📝 Praxis-Tagebuch-Eintrag</span><b>+${XP.journal}</b></div>
+              <div><span>✅ Aufgabe erledigt</span><b>+${XP.task}</b></div>
+              <div><span>🎯 Coaching-Session</span><b>+${XP.session}</b></div>
+              <div><span>🤝 Commitment erfüllt</span><b>+${XP.commitYes}</b></div>
+              <div><span>🧬 Persönlichkeitstest</span><b>+${XP.typeTest}</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Feiern: XP-Zuwachs, neue Abzeichen, Level-Up ───────────────
+function processGameCelebration(empId, game) {
+  const key = 'wewo_game_' + empId;
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(key) || 'null'); } catch {}
+  const earnedIds = game.badges.filter(x => x.earned).map(x => x.id);
+  try { localStorage.setItem(key, JSON.stringify({ xp: game.xp, level: game.rank.level, badges: earnedIds })); } catch {}
+  if (!prev) return; // erster Besuch: nur merken, nicht feiern
+  const gained = game.xp - (prev.xp || 0);
+  const newBadges = game.badges.filter(x => x.earned && !(prev.badges || []).includes(x.id));
+  if (gained > 0) xpPop(gained);
+  if (game.rank.level > (prev.level || 1)) {
+    setTimeout(() => showLevelUp(game.rank), 350);
+  } else if (newBadges.length) {
+    confetti({ count: 90 });
+    newBadges.forEach((x, i) => setTimeout(() => toast(`${x.icon} Abzeichen freigeschaltet: ${x.title}`), 300 + i * 400));
+  }
+}
+
+function xpPop(amount) {
+  const el = document.createElement('div');
+  el.className = 'xp-pop';
+  el.textContent = `+${amount} XP`;
+  const anchor = document.querySelector('.xp-widget');
+  if (anchor && anchor.offsetParent) {
+    const r = anchor.getBoundingClientRect();
+    el.style.left = (r.left + r.width / 2) + 'px';
+    el.style.top = r.top + 'px';
+  } else {
+    el.style.left = '50%'; el.style.top = '72px';
+  }
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+function showLevelUp(rank) {
+  document.getElementById('_levelup')?.remove();
+  const el = document.createElement('div');
+  el.id = '_levelup';
+  el.className = 'levelup-overlay';
+  el.innerHTML = `<div class="levelup-card">
+    <div class="levelup-kicker">Level-Up!</div>
+    <div class="levelup-icon">${rank.icon}</div>
+    <div class="levelup-title">Level ${rank.level} · ${rank.name}</div>
+    <div class="text-dim text-sm">${rank.next ? `Nächstes Ziel: ${rank.next.icon} ${rank.next.name} bei ${rank.next.xp.toLocaleString('de-DE')} XP` : 'Du hast den höchsten Rang erreicht. Legende!'}</div>
+    <button class="btn btn-primary mt-16" onclick="document.getElementById('_levelup')?.remove()">Weiter so →</button>
+  </div>`;
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+  confetti({ count: 180 });
+  setTimeout(() => confetti({ count: 80, x: innerWidth * 0.2 }), 250);
+  setTimeout(() => confetti({ count: 80, x: innerWidth * 0.8 }), 450);
+}
+
+// ── Konfetti (leichtgewichtig, ohne Bibliothek) ────────────────
+function confetti({ x = innerWidth / 2, y = innerHeight * 0.35, count = 120, power = 1 } = {}) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  const c = document.createElement('canvas');
+  c.className = 'fx-confetti';
+  c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+  document.body.appendChild(c);
+  const ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const colors = ['#ecea41', '#f3f15a', '#ffffff', '#2ecc71', '#3b82f6', '#f97316'];
+  const ps = Array.from({ length: count }, () => {
+    const a = Math.random() * Math.PI * 2, v = (4 + Math.random() * 8) * power;
+    return { x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6 * power, w: 5 + Math.random() * 6, h: 3 + Math.random() * 5,
+      r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3, color: colors[(Math.random() * colors.length) | 0], life: 1 };
+  });
+  const t0 = performance.now();
+  (function frame(t) {
+    const elapsed = t - t0;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const p of ps) {
+      p.vy += 0.28; p.vx *= 0.985; p.vy *= 0.985;
+      p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      p.life = Math.max(0, 1 - elapsed / 2400);
+      ctx.save(); ctx.globalAlpha = p.life; ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+    }
+    if (elapsed < 2400) requestAnimationFrame(frame); else c.remove();
+  })(t0);
+}
+
+function burstAt(el, count = 26) {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  confetti({ x: r.left + r.width / 2, y: r.top + r.height / 2, count, power: 0.55 });
+}
+
+// ── Seiten-Effekte: Hochzählen, Balken-Animation, Hover-Spotlight ─
+function runViewEnterFx(root) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.querySelectorAll('.stat-value, .game-xp .text-yellow').forEach(el => {
+    if (el.children.length) return;
+    const m = el.textContent.trim().match(/^(\d[\d.]*)(\D.*)?$/);
+    if (!m) return;
+    // "1.234" = Tausenderpunkt → animieren; "4.5" = Dezimalzahl → unverändert lassen
+    const thousands = /^\d{1,3}(\.\d{3})+$/.test(m[1]);
+    if (m[1].includes('.') && !thousands) return;
+    const target = parseInt(m[1].replace(/\./g, ''), 10);
+    if (!(target >= 2)) return;
+    const suffix = m[2] || '';
+    const fmt = n => (thousands ? n.toLocaleString('de-DE') : String(n)) + suffix;
+    const t0 = performance.now(), dur = 800;
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(Math.round(target * e));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+  root.querySelectorAll('.progress-fill, .type-bar-fill, .xp-fill').forEach(el => {
+    const w = el.style.width;
+    if (!w || w === '0%') return;
+    el.style.transition = 'none';
+    el.style.width = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transition = 'width .9s cubic-bezier(.2,.8,.2,1)';
+      el.style.width = w;
+    }));
+  });
+}
+
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.addEventListener('pointermove', e => {
+    const el = e.target.closest?.('.card, .stat-card, .mod-card, .ach, .role-btn, .game-hero');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    el.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+    el.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+    el.style.setProperty('--ry', ((px - .5) * 6).toFixed(2) + 'deg');
+    el.style.setProperty('--rx', ((.5 - py) * 6).toFixed(2) + 'deg');
+  }, { passive: true });
+}
+
+// ══════════════════════════════════════════════════════════════
 //  MAIN RENDER + INIT
 // ══════════════════════════════════════════════════════════════
 
@@ -20139,11 +20706,17 @@ async function render() {
     else html = renderLoginPage();
 
     if (seq !== _renderSeq) return; // inzwischen neuer Render gestartet
+    if (role === 'trainer') STATE._pendingGame = null;
     app.innerHTML = html;
     _lastViewKey = viewKey;
     const main = app.querySelector('.main');
-    if (main) main.scrollTop = sameView ? prevScroll : 0;
+    if (main) {
+      main.scrollTop = sameView ? prevScroll : 0;
+      if (!sameView) { main.classList.add('view-enter'); runViewEnterFx(main); }
+    }
     if (document.getElementById('chat-area')) renderChatArea();
+    if (STATE._fxBurst) { STATE._fxBurst = false; burstAt(document.querySelector('.quiz-option.correct')); }
+    if (STATE._pendingGame) { const g = STATE._pendingGame; STATE._pendingGame = null; processGameCelebration(g.empId, g.game); }
   } catch (e) {
     if (seq !== _renderSeq) return;
     console.error('Render error:', e);
