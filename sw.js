@@ -1,6 +1,6 @@
-// WEWO Training – Service Worker
-// App-Shell offline verfügbar machen; Daten laufen weiterhin live über Firebase.
-const CACHE = 'wewo-v2';
+﻿// WEWO Training â€“ Service Worker
+// App-Shell offline verfÃ¼gbar machen; Daten laufen weiterhin live Ã¼ber Firebase.
+const CACHE = 'wewo-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   // Firebase-Datenbank & APIs nie cachen
   if (url.hostname.includes('firebasedatabase.app') || url.hostname.includes('googleapis.com') && !url.hostname.startsWith('fonts')) return;
 
-  // Eigene Seite: Network-first → immer neueste Version, offline aus Cache
+  // Eigene Seite: Network-first â†’ immer neueste Version, offline aus Cache
   if (url.origin === location.origin) {
     e.respondWith(
       fetch(req).then(res => {

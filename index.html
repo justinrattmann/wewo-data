@@ -713,6 +713,42 @@ body.is-loading .main { cursor: progress; }
   .main { padding-bottom: env(safe-area-inset-bottom); }
 }
 
+/* Fehlende Hilfsklassen (wurden im Markup bereits verwendet) */
+.mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; }
+.mb-4 { margin-bottom: 4px; } .mb-6 { margin-bottom: 6px; } .mb-10 { margin-bottom: 10px; } .mb-14 { margin-bottom: 14px; } .mb-20 { margin-bottom: 20px; }
+.gap-4 { gap: 4px; } .gap-6 { gap: 6px; } .gap-10 { gap: 10px; }
+.p-12 { padding: 12px; } .flex-wrap { flex-wrap: wrap; } .cursor-pointer { cursor: pointer; }
+.text-faint { color: var(--text-faint); }
+.empty-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text); }
+.empty-sub { color: var(--text-dim); font-size: 13px; }
+.tab-header { display: flex; gap: 4px; padding: 4px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tab-header::-webkit-scrollbar { display: none; }
+.tab-header .tab { border: none; background: transparent; font-family: inherit; }
+.tab-header .tab.active { background: var(--yellow); color: var(--black); }
+
+/* Insights (Dashboard) */
+.insight-list { display: flex; flex-direction: column; }
+.insight {
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s;
+}
+.insight:last-child { border-bottom: none; }
+.insight:hover { background: rgba(255,255,255,.025); }
+.insight-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.insight-main { flex: 1; min-width: 0; }
+.insight-title { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insight-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.insight-tag { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+.stat-hint { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; }
+.commit-card { border-color: rgba(236,234,65,.35) !important; background-image: linear-gradient(135deg, rgba(236,234,65,.08), transparent 60%) !important; }
+.commit-quote { font-family: var(--font-heading); font-size: 17px; line-height: 1.45; color: var(--text); }
+.emp-manage-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.emp-manage-row:last-child { border-bottom: none; }
+.pass-field { position: relative; flex: 1; }
+.pass-field .input { padding-right: 44px; }
+.pass-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 6px; border-radius: 6px; }
+.pass-eye:hover { color: var(--yellow); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
@@ -15538,9 +15574,11 @@ async function renderTrainerPortal() {
         <div class="nav-section">${STATE.sidebarCollapsed?'':'Team'}</div>
         ${navItem('ad_list','🚗','Außendienst', page)}
         ${navItem('id_list','📱','Innendienst', page)}
+        ${navItem('comparison','📈','Teamvergleich', page)}
         <div class="nav-section">${STATE.sidebarCollapsed?'':'Coaching'}</div>
         ${navItem('coaching_new','📋','Neue Session', page)}
         ${navItem('coaching_history','🗂️','Verlauf', page)}
+        ${navItem('scripts','📖','Skript-Bibliothek', page)}
         <div class="nav-section">${STATE.sidebarCollapsed?'':'System'}</div>
         ${navItem('admin','⚙️','Admin', page)}
         ${navItem('content_editor','📝','Inhalte', page)}
@@ -15564,6 +15602,8 @@ async function renderTrainerPortal() {
     case 'coaching_new': content = await renderCoachingNew(); break;
     case 'coaching_session': content = await renderCoachingSession(); break;
     case 'coaching_history': content = await renderCoachingHistory(); break;
+    case 'comparison': content = await renderEmployeeComparison(); break;
+    case 'scripts': content = renderScriptLibrary(STATE.scriptRole || 'ad', true); break;
     case 'admin': content = await renderAdmin(); break;
     case 'content_editor': content = await renderContentEditor(); break;
     default: content = await renderTrainerDashboard();
@@ -15581,45 +15621,105 @@ function navItem(id, icon, label, current) {
 }
 
 async function renderTrainerDashboard() {
-  const [allEmp] = await Promise.all([getAllEmployees(), storageList('progress:')]);
-  const adEmps = allEmp.filter(e => e.role === 'ad');
-  const idEmps = allEmp.filter(e => e.role === 'id');
-  
-  // Load progress for all
-  let totalProgress = 0, count = 0;
-  const progressData = [];
-  for (const emp of allEmp) {
-    const prog = await getEmployeeProgress(emp.id);
-    const done = Object.values(prog.modules || {}).filter(v => v).length;
-    const total = emp.role === 'ad' ? AD_MODULES.length : ID_MODULES.length;
-    const pct = total > 0 ? Math.round(done/total*100) : 0;
-    progressData.push({ emp, prog, done, total, pct });
-    totalProgress += pct; count++;
+  // Alles in vier Requests: Mitarbeiter, Fortschritt, Sessions, Aufgaben
+  const [allEmp, modsAd, modsId] = await Promise.all([
+    getAllEmployees(), getModules('ad'), getModules('id'),
+    storageList('progress:'), storageList('session:'), storageList('tasks:')
+  ]);
+  const DAY = 86400000;
+  const now = Date.now();
+  const daysSince = iso => iso ? Math.floor((now - new Date(iso).getTime()) / DAY) : null;
+
+  const rows = await Promise.all(allEmp.map(async emp => {
+    const [prog, sessions, tasks] = await Promise.all([
+      getEmployeeProgress(emp.id), getCoachingSessions(emp.id), getTasks(emp.id)
+    ]);
+    const mods = (emp.role === 'ad' ? modsAd : modsId).filter(m => !m.disabled);
+    const done = mods.filter(m => prog.modules?.[m.id]).length;
+    const pct = mods.length ? Math.round(done / mods.length * 100) : 0;
+    const overdue = tasks.filter(t => !t.done && t.deadline && new Date(t.deadline).getTime() < now).length;
+    return { emp, prog, sessions, tasks, done, pct, overdue,
+      lastSession: sessions[0] || null,
+      daysNoCoaching: daysSince(sessions[0]?.date),
+      daysNoLogin: daysSince(emp.lastLogin) };
+  }));
+
+  const adCount = allEmp.filter(e => e.role === 'ad').length;
+  const idCount = allEmp.length - adCount;
+  const avgProgress = rows.length ? Math.round(rows.reduce((a, r) => a + r.pct, 0) / rows.length) : 0;
+  const allSessions = rows.flatMap(r => r.sessions).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sessions30 = allSessions.filter(s => now - new Date(s.date).getTime() < 30 * DAY);
+  const scored = sessions30.filter(s => s.overallScore);
+  const avgScore = scored.length ? (scored.reduce((a, s) => a + s.overallScore, 0) / scored.length).toFixed(1) : null;
+  const openTasks = rows.reduce((a, r) => a + r.tasks.filter(t => !t.done).length, 0);
+  const overdueTotal = rows.reduce((a, r) => a + r.overdue, 0);
+
+  // ── Wer braucht Aufmerksamkeit? (wichtigster Grund pro Person) ──
+  const attention = [];
+  for (const r of rows) {
+    const reasons = [];
+    if (r.overdue) reasons.push({ w: 3, color: 'var(--red)', tag: `${r.overdue} überfällig`, text: 'Aufgaben überfällig' });
+    if (r.daysNoCoaching === null) reasons.push({ w: 2, color: 'var(--orange)', tag: 'Kein Coaching', text: 'Noch nie gecoacht' });
+    else if (r.daysNoCoaching > 30) reasons.push({ w: 2, color: 'var(--orange)', tag: `${r.daysNoCoaching} Tage`, text: `Letztes Coaching vor ${r.daysNoCoaching} Tagen` });
+    if (r.daysNoLogin === null) reasons.push({ w: 1, color: 'var(--text-dim)', tag: 'Nie eingeloggt', text: 'Hat sich noch nie angemeldet' });
+    else if (r.daysNoLogin > 14) reasons.push({ w: 1, color: 'var(--text-dim)', tag: `${r.daysNoLogin} Tage`, text: `Seit ${r.daysNoLogin} Tagen nicht in der App` });
+    if (r.lastSession?.overallScore && r.lastSession.overallScore < 5) reasons.push({ w: 2, color: 'var(--red)', tag: `Score ${r.lastSession.overallScore}`, text: 'Niedriger Score in der letzten Session' });
+    if (!reasons.length) continue;
+    reasons.sort((a, b) => b.w - a.w);
+    attention.push({ r, reasons, weight: reasons.reduce((a, x) => a + x.w, 0) });
   }
-  const avgProgress = count > 0 ? Math.round(totalProgress/count) : 0;
-  
-  const cards = progressData.slice(0,6).map(({emp, pct}) => {
-    const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  attention.sort((a, b) => b.weight - a.weight);
+
+  const attentionHtml = attention.length ? attention.slice(0, 6).map(({ r, reasons }) => `
+    <div class="insight" onclick="navigate('trainer','employee_detail',{selectedEmployee:'${r.emp.id}'})">
+      <span class="insight-dot" style="background:${reasons[0].color}"></span>
+      <div class="insight-main">
+        <div class="insight-title">${escHtml(r.emp.name)}</div>
+        <div class="insight-sub">${reasons.map(x => x.text).join(' · ')}</div>
+      </div>
+      <span class="insight-tag" style="color:${reasons[0].color};background:color-mix(in srgb, ${reasons[0].color} 14%, transparent)">${reasons[0].tag}</span>
+    </div>`).join('')
+    : `<div class="card-body"><div class="text-dim text-sm">✨ Alles im grünen Bereich — niemand braucht gerade besondere Aufmerksamkeit.</div></div>`;
+
+  const recentHtml = allSessions.length ? allSessions.slice(0, 5).map(s => {
+    const st = SESSION_TYPE_FIELDS[s.sessionType];
+    const sc = s.overallScore;
+    const col = !sc ? 'var(--text-dim)' : sc >= 7 ? 'var(--green)' : sc >= 4 ? 'var(--yellow)' : 'var(--red)';
+    return `
+    <div class="insight" onclick="openSessionModal('${s.id}','${s.employeeId}')">
+      <span style="font-size:18px;width:22px;text-align:center">${st?.icon || '📋'}</span>
+      <div class="insight-main">
+        <div class="insight-title">${escHtml(s.employeeName || '—')}</div>
+        <div class="insight-sub">${formatDate(s.date)} · ${escHtml(st?.label || s.sessionType || '')}${s.commitment ? ' · „' + escHtml(s.commitment.slice(0, 50)) + (s.commitment.length > 50 ? '…' : '') + '“' : ''}</div>
+      </div>
+      <span class="insight-tag" style="color:${col};background:color-mix(in srgb, ${col} 14%, transparent)">${sc ? sc + '/10' : '—'}</span>
+    </div>`;
+  }).join('')
+    : `<div class="card-body"><div class="text-dim text-sm">Noch keine Sessions — <a class="text-yellow cursor-pointer" onclick="navigate('trainer','coaching_new')">erste Session starten →</a></div></div>`;
+
+  const cards = rows.slice().sort((a, b) => b.pct - a.pct).map(({ emp, pct, daysNoCoaching }) => {
+    const initials = emp.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     const dt = dominantType(emp.types);
     return `
       <div class="mod-card" onclick="navigate('trainer','employee_detail',{selectedEmployee:'${emp.id}'})">
         <div class="flex items-center gap-12 mb-12">
-          <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'}">${initials}</div>
-          <div>
-            <div class="font-bold" style="font-size:14px">${escHtml(emp.name)}</div>
+          <div class="avatar" style="background:${dt ? typeColor(dt) + '33' : 'var(--surface)'};color:${dt ? typeColor(dt) : 'var(--text-dim)'}">${initials}</div>
+          <div style="min-width:0">
+            <div class="font-bold truncate" style="font-size:14px">${escHtml(emp.name)}</div>
             <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'} ${dt ? `· <span style="color:${typeColor(dt)}">${typeName(dt)}</span>` : ''}</div>
           </div>
         </div>
         <div class="progress-wrap mb-8"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="flex justify-between"><span class="text-sm text-dim">Fortschritt</span><span class="text-sm font-bold text-yellow">${pct}%</span></div>
-      </div>
-    `;
+        <div class="flex justify-between"><span class="text-sm text-dim">${daysNoCoaching === null ? 'Noch kein Coaching' : 'Coaching vor ' + daysNoCoaching + ' T.'}</span><span class="text-sm font-bold text-yellow">${pct}%</span></div>
+      </div>`;
   }).join('');
-  
+
+  const hour = new Date().getHours();
+  const greet = hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
+
   return `
     <div class="page-header">
-      <button class="btn btn-ghost btn-icon" id="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" style="display:none">☰</button>
-      <div><div class="page-title">Dashboard</div><div class="page-sub">Gesamtübersicht Team</div></div>
+      <div><div class="page-title">${greet}, Justin</div><div class="page-sub">${new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })} · ${allEmp.length} Mitarbeiter im Team</div></div>
       <div class="flex gap-8" style="margin-left:auto">
         <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">+ Neue Coaching Session</button>
         <button class="btn btn-outline btn-sm" onclick="navigate('trainer','admin')">Mitarbeiter anlegen</button>
@@ -15627,20 +15727,24 @@ async function renderTrainerDashboard() {
     </div>
     <div class="page-content">
       <div class="stat-grid mb-24">
-        <div class="stat-card"><div class="stat-value">${adEmps.length}</div><div class="stat-label">Außendienst-Mitarbeiter</div></div>
-        <div class="stat-card"><div class="stat-value">${idEmps.length}</div><div class="stat-label">Innendienst-Mitarbeiter</div></div>
-        <div class="stat-card"><div class="stat-value">${avgProgress}%</div><div class="stat-label">Ø Team-Fortschritt</div></div>
-        <div class="stat-card"><div class="stat-value">${allEmp.length}</div><div class="stat-label">Aktive Mitarbeiter</div></div>
-      </div>
-      
-      <div class="section-head mb-16">
-        <div class="section-title">Team-Übersicht</div>
-        <div class="flex gap-8">
-          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','ad_list')">Alle AD →</button>
-          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','id_list')">Alle ID →</button>
+        <div class="stat-card cursor-pointer" onclick="navigate('trainer','comparison')">
+          <div class="stat-value">${avgProgress}%</div><div class="stat-label">Ø Lernfortschritt</div>
+          <div class="progress-wrap mt-8"><div class="progress-fill" style="width:${avgProgress}%"></div></div>
+        </div>
+        <div class="stat-card cursor-pointer" onclick="navigate('trainer','coaching_history')">
+          <div class="stat-value">${sessions30.length}</div><div class="stat-label">Coachings (30 Tage)</div>
+          <div class="stat-hint">${allSessions.length} insgesamt</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgScore ?? '—'}</div><div class="stat-label">Ø Coaching-Score (30 Tage)</div>
+          <div class="stat-hint">Skala 1–10</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${openTasks}</div><div class="stat-label">Offene Aufgaben</div>
+          ${overdueTotal ? `<div class="stat-delta" style="color:var(--red)">${overdueTotal} überfällig</div>` : '<div class="stat-hint">Keine überfällig</div>'}
         </div>
       </div>
-      
+
       ${allEmp.length === 0 ? `
         <div class="empty-state">
           <div class="empty-icon">👥</div>
@@ -15648,7 +15752,26 @@ async function renderTrainerDashboard() {
           <div class="text-dim mb-16">Lege jetzt deinen ersten AD oder ID Mitarbeiter an</div>
           <button class="btn btn-primary" onclick="navigate('trainer','admin')">Mitarbeiter anlegen</button>
         </div>
-      ` : `<div class="grid-3">${cards}</div>`}
+      ` : `
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔔 Braucht Aufmerksamkeit</span>${attention.length ? `<span class="badge badge-red" style="margin-left:auto">${attention.length}</span>` : ''}</div>
+          <div class="insight-list">${attentionHtml}</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🗂️ Letzte Sessions</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="navigate('trainer','coaching_history')">Alle →</button></div>
+          <div class="insight-list">${recentHtml}</div>
+        </div>
+      </div>
+
+      <div class="section-head mb-16">
+        <div class="section-title">Team <span class="text-dim" style="font-family:inherit;font-size:13px;font-weight:500">· ${adCount} AD · ${idCount} ID</span></div>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','ad_list')">Außendienst →</button>
+          <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','id_list')">Innendienst →</button>
+        </div>
+      </div>
+      <div class="grid-3">${cards}</div>`}
     </div>
   `;
 }
@@ -15682,7 +15805,7 @@ async function renderEmployeeList(role) {
         </td>
         <td>${done}/${modules.length} Module</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">Coaching starten</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();startCoachingFor('${emp.id}')">Coaching starten</button>
         </td>
       </tr>
     `;
@@ -15717,9 +15840,9 @@ async function renderEmployeeDetail() {
   if (!emp) return `<div class="page-content"><div class="empty-state"><div>Mitarbeiter nicht gefunden</div></div></div>`;
 
   // Always use getModules() — reads from Firebase, auto-merges new defaults
-  const modules = await getModules(emp.role);
-  const prog = await getEmployeeProgress(emp.id);
-  const sessions = await getCoachingSessions(emp.id);
+  const [modules, prog, sessions] = await Promise.all([
+    getModules(emp.role), getEmployeeProgress(emp.id), getCoachingSessions(emp.id)
+  ]);
   const activeTab = STATE.empDetailTab || 'overview';
 
   const visibleModules = modules.filter(m => !m.disabled);
@@ -15843,7 +15966,7 @@ async function renderEmployeeDetail() {
     <div class="card">
       <div class="card-header">
         <span class="card-title">Coaching-Sessions — ${sessions.length} gesamt</span>
-        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">+ Neue Session</button>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="startCoachingFor('${emp.id}')">+ Neue Session</button>
       </div>
       ${renderScoreChart(sessions)}
       ${sessions.length === 0
@@ -15860,20 +15983,26 @@ async function renderEmployeeDetail() {
           </table>`}
     </div>`;
 
-  // ── Tab: Aufgaben ────────────────────────────────────────────
-  const tasksTabHtml = await renderTasksTab(emp.id);
+  // ── Tabs, die eigene Daten brauchen, nur bei Bedarf laden ─────
+  const tasksTabHtml = activeTab === 'tasks' ? await renderTasksTab(emp.id) : '';
+  const commitTabHtml = activeTab === 'commitments' ? await renderCommitmentTimeline(emp.id) : '';
+  const journalTabHtml = activeTab === 'journal' ? await renderTrainerJournalView(emp.id) : '';
 
   // ── Tab-Header ───────────────────────────────────────────────
   const tabHeader = `<div class="tab-header mb-16">
     <button class="tab ${activeTab==='overview'?'active':''}" onclick="STATE.empDetailTab='overview';render()">Übersicht</button>
     <button class="tab ${activeTab==='modules'?'active':''}" onclick="STATE.empDetailTab='modules';render()">Module</button>
     <button class="tab ${activeTab==='sessions'?'active':''}" onclick="STATE.empDetailTab='sessions';render()">Sessions ${sessions.length>0?'('+sessions.length+')':''}</button>
+    <button class="tab ${activeTab==='commitments'?'active':''}" onclick="STATE.empDetailTab='commitments';render()">Commitments</button>
     <button class="tab ${activeTab==='tasks'?'active':''}" onclick="STATE.empDetailTab='tasks';render()">Aufgaben</button>
+    <button class="tab ${activeTab==='journal'?'active':''}" onclick="STATE.empDetailTab='journal';render()">Praxis-Tagebuch</button>
   </div>`;
 
   const tabContent = activeTab==='modules' ? modulesTab
     : activeTab==='sessions' ? sessionsTab
     : activeTab==='tasks' ? tasksTabHtml
+    : activeTab==='commitments' ? `<div class="card"><div class="card-body">${commitTabHtml}</div></div>`
+    : activeTab==='journal' ? journalTabHtml
     : overviewTab;
 
   return `
@@ -15887,10 +16016,10 @@ async function renderEmployeeDetail() {
         </div>
       </div>
       <div class="flex gap-8" style="margin-left:auto">
-        <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_session',{selectedEmployee:'${emp.id}'})">+ Coaching</button>
+        <button class="btn btn-primary btn-sm" onclick="startCoachingFor('${emp.id}')">+ Coaching</button>
         <button class="btn btn-outline btn-sm" onclick="exportEmployeePDF('${emp.id}')">📄 PDF</button>
         <button class="btn btn-outline btn-sm" onclick="openEditEmployee('${emp.id}')">✏️ Profil</button>
-        <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteEmployee('${emp.id}')">🗑</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteEmployee('${emp.id}')" title="Mitarbeiter löschen">🗑</button>
       </div>
     </div>
     <div class="page-content">
@@ -16153,7 +16282,7 @@ function _showSessionModal(s, emp, allSessions, editMode) {
 
   // Field rows — edit mode uses all role fields, view mode shows all saved fields
   // Data may be stored in s.fields (after editing) or s.observations (original session form)
-  const roleFields = (s.employeeRole === 'id' ? COACHING_LIB.fields_id : COACHING_LIB.fields_ad) || [];
+  const roleFields = getSessionFields(s.sessionType, s.employeeRole || emp?.role || 'ad') || [];
   const fieldHtml = editMode
     ? roleFields.map(f => {
         // Prefer s.fields (edited values), fall back to s.observations (original scores) and s.notes
@@ -16453,12 +16582,8 @@ function _showDeleteConfirm(sessionId, employeeId, sessionLabel) {
 }
 
 // Legacy alias
-async function viewSession(sessionId, employeeId) {
-  return openSessionModal(sessionId, employeeId);
-}
-
 async function renderAdmin() {
-  const allEmp = await getAllEmployees();
+  const [allEmp, trainerPass] = await Promise.all([getAllEmployees(), storageGet('trainer:password', true)]);
   
   return `
     <div class="page-header">
@@ -16509,13 +16634,17 @@ async function renderAdmin() {
         <div class="card">
           <div class="card-header"><span class="card-title">Mitarbeiter verwalten</span></div>
           <div class="card-body">
-            ${allEmp.length === 0 ? '<div class="text-dim text-sm">Noch keine Mitarbeiter</div>' : allEmp.map(emp => `
-              <div class="flex items-center gap-12 mb-12">
-                <div class="flex-1">
-                  <div class="font-bold">${escHtml(emp.name)}</div>
-                  <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'}</div>
+            ${allEmp.length === 0 ? '<div class="text-dim text-sm">Noch keine Mitarbeiter</div>' : allEmp
+              .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+              .map(emp => `
+              <div class="emp-manage-row">
+                <div class="flex-1" style="min-width:0">
+                  <div class="font-bold truncate">${escHtml(emp.name)}</div>
+                  <div class="text-dim text-sm">${emp.role === 'ad' ? 'Außendienst' : 'Innendienst'} · Login: ${formatDate(emp.lastLogin)}</div>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="resetPassword('${emp.id}')">🔑 Reset PW</button>
+                <button class="btn btn-ghost btn-sm" onclick="openEditEmployee('${emp.id}')" title="Profil bearbeiten">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="resetPassword('${emp.id}')" title="Passwort auf WEWO zurücksetzen">🔑</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteEmployee('${emp.id}')" title="Löschen">🗑</button>
               </div>
             `).join('')}
           </div>
@@ -16526,11 +16655,15 @@ async function renderAdmin() {
         <div class="card-header"><span class="card-title">⚙️ Einstellungen</span></div>
         <div class="card-body">
           <div class="form-group">
-            <label class="form-label">Trainer-Passwort ändern</label>
+            <label class="form-label">Trainer-Passwort</label>
             <div class="flex gap-8">
-              <input class="input" id="new-trainer-pass" type="password" placeholder="Neues Passwort">
-              <button class="btn btn-outline" onclick="changeTrainerPass()">Ändern</button>
+              <div class="pass-field">
+                <input class="input" id="new-trainer-pass" type="password" value="${escHtml(trainerPass || TRAINER_PASS_DEFAULT)}" autocomplete="new-password">
+                <button class="pass-eye" type="button" onclick="togglePassVisible('new-trainer-pass', this)" aria-label="Passwort anzeigen">👁</button>
+              </div>
+              <button class="btn btn-outline" onclick="changeTrainerPass()">Speichern</button>
             </div>
+            <div class="text-sm text-dim mt-8">Aktuelles Passwort — mit 👁 anzeigen, überschreiben und speichern zum Ändern.</div>
           </div>
           <div class="form-group">
             <label class="form-label">Anthropic API-Key (für Live-Roleplay)</label>
@@ -16539,6 +16672,11 @@ async function renderAdmin() {
               <button class="btn btn-outline" onclick="saveApiKey()">Speichern</button>
             </div>
             <div class="text-sm text-dim mt-8">Der API-Key wird lokal gespeichert und für das Live-Roleplay benötigt. Er wird nie an Dritte übertragen.</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Datensicherung</label>
+            <div><button class="btn btn-outline" onclick="exportBackup()">⬇ Komplett-Backup herunterladen (JSON)</button></div>
+            <div class="text-sm text-dim mt-8">Sichert alle Mitarbeiter, Sessions, Fortschritte und Inhalte in einer Datei.</div>
           </div>
         </div>
       </div>
@@ -16620,11 +16758,16 @@ async function deleteTask(empId, taskId) {
 }
 
 async function deleteEmployee(empId) {
-  if (!confirm('Mitarbeiter wirklich löschen? Alle Daten gehen verloren.')) return;
-  await storageDel(`employee:${empId}`, true);
-  await storageDel(`progress:${empId}`, true);
-  toast('Mitarbeiter gelöscht');
-  navigate('trainer', 'admin');
+  const emp = await getEmployee(empId);
+  const name = emp?.name || 'Diesen Mitarbeiter';
+  if (!confirm(`${name} wirklich löschen?\n\nEntfernt werden Profil, Lernfortschritt, Coaching-Sessions, Aufgaben, Praxis-Tagebuch und Roleplay-Auswertungen. Das kann nicht rückgängig gemacht werden.`)) return;
+  // Alle Knoten, die zu diesem Mitarbeiter gehören
+  const keys = ['employee', 'progress', 'session', 'tasks', 'lastpos', 'practicelog', 'roleplay'].map(n => `${n}:${empId}`);
+  await Promise.all(keys.map(k => storageDel(k, true)));
+  closeDialog();
+  toast(`${name} gelöscht`);
+  STATE.empDetailTab = null;
+  navigate('trainer', emp?.role === 'id' ? 'id_list' : emp?.role === 'ad' ? 'ad_list' : 'admin');
 }
 
 async function resetEmployeeProgress(empId) {
@@ -16637,6 +16780,7 @@ async function resetEmployeeProgress(empId) {
 async function resetPassword(empId) {
   const emp = await getEmployee(empId);
   if (!emp) return;
+  if (!confirm(`Passwort von ${emp.name} auf "WEWO" zurücksetzen?`)) return;
   emp.password = 'WEWO';
   await saveEmployee(emp);
   toast(`Passwort für ${emp.name} auf "WEWO" zurückgesetzt`);
@@ -16644,10 +16788,18 @@ async function resetPassword(empId) {
 
 async function changeTrainerPass() {
   const el = document.getElementById('new-trainer-pass');
-  if (!el?.value) { toast('Bitte neues Passwort eingeben', 'warning'); return; }
-  await storageSet('trainer:password', el.value, true);
-  toast('Trainer-Passwort geändert ✓');
-  el.value = '';
+  const val = el?.value.trim();
+  if (!val) { toast('Bitte ein Passwort eingeben', 'warning'); return; }
+  if (val.length < 4) { toast('Mindestens 4 Zeichen', 'warning'); return; }
+  if (!await storageSet('trainer:password', val, true)) { toast('Speichern fehlgeschlagen', 'error'); return; }
+  toast('Trainer-Passwort gespeichert ✓');
+}
+
+function togglePassVisible(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+  if (btn) btn.style.color = el.type === 'text' ? 'var(--yellow)' : '';
 }
 
 function saveApiKey() {
@@ -16674,9 +16826,120 @@ async function exportBackup() {
   }
 }
 
-function openEditEmployee(empId) {
-  STATE.selectedEmployee = empId;
-  navigate('trainer', 'admin');
+// ── Generischer Dialog ─────────────────────────────────────────
+function showDialog(title, bodyHtml, footerHtml = '') {
+  closeDialog();
+  const el = document.createElement('div');
+  el.id = '_dialog';
+  el.className = 'modal-overlay';
+  el.innerHTML = `<div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header"><div class="modal-title">${title}</div>
+      <button class="btn btn-ghost btn-icon" onclick="closeDialog()" aria-label="Schließen">✕</button></div>
+    <div class="modal-body">${bodyHtml}</div>
+    ${footerHtml ? `<div class="modal-footer">${footerHtml}</div>` : ''}
+  </div>`;
+  el.addEventListener('click', e => { if (e.target === el) closeDialog(); });
+  document.body.appendChild(el);
+  el.querySelector('input, select, textarea')?.focus();
+}
+function closeDialog() { document.getElementById('_dialog')?.remove(); }
+
+async function openEditEmployee(empId) {
+  const emp = await getEmployee(empId);
+  if (!emp) { toast('Mitarbeiter nicht gefunden', 'error'); return; }
+  const t = emp.types || {};
+  showDialog(`✏️ Profil bearbeiten`, `
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="input" id="ee-name" value="${escHtml(emp.name)}">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Rolle</label>
+        <select class="select" id="ee-role">
+          <option value="ad" ${emp.role==='ad'?'selected':''}>Außendienst (AD)</option>
+          <option value="id" ${emp.role==='id'?'selected':''}>Innendienst (ID)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Passwort</label>
+        <div class="pass-field">
+          <input class="input" id="ee-pass" type="password" value="${escHtml(emp.password || '')}" autocomplete="new-password">
+          <button class="pass-eye" type="button" onclick="togglePassVisible('ee-pass', this)" aria-label="Passwort anzeigen">👁</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Persönlichkeitstyp in %</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${['C','I','S','G'].map(k => `
+          <div class="flex items-center gap-8">
+            <span style="color:${typeColor(k)};font-weight:700;flex:1">${TYPES[k].emoji} ${typeName(k)}</span>
+            <input class="input" id="ee-type-${k}" type="number" min="0" max="100" value="${t[k] ?? ''}" placeholder="0" style="width:80px">
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Trainer-Notizen</label>
+      <textarea class="textarea" id="ee-notes" rows="3">${escHtml(emp.trainerNotes || '')}</textarea>
+    </div>`,
+    `<button class="btn btn-ghost" style="color:var(--red);margin-right:auto" onclick="deleteEmployee('${emp.id}')">🗑 Löschen</button>
+     <button class="btn btn-outline" onclick="closeDialog()">Abbrechen</button>
+     <button class="btn btn-primary" onclick="saveEditEmployee('${emp.id}')">Speichern</button>`);
+}
+
+async function saveEditEmployee(empId) {
+  const emp = await getEmployee(empId);
+  if (!emp) return;
+  const name = document.getElementById('ee-name')?.value.trim();
+  if (!name) { toast('Name darf nicht leer sein', 'warning'); return; }
+  const types = {}; let sum = 0;
+  for (const k of ['C','I','S','G']) {
+    const v = Math.max(0, Math.min(100, parseInt(document.getElementById(`ee-type-${k}`)?.value) || 0));
+    types[k] = v; sum += v;
+  }
+  emp.name = name;
+  emp.role = document.getElementById('ee-role')?.value || emp.role;
+  emp.password = document.getElementById('ee-pass')?.value.trim() || emp.password;
+  emp.types = sum > 0 ? types : null;
+  emp.trainerNotes = document.getElementById('ee-notes')?.value || '';
+  await saveEmployee(emp);
+  closeDialog();
+  toast(sum > 0 && sum !== 100 ? `Gespeichert ✓ (Typ-Summe ${sum}%, ideal 100%)` : 'Profil gespeichert ✓');
+  render();
+}
+
+// ── Coaching für einen bestimmten Mitarbeiter vorbereiten ──────
+function startCoachingFor(empId) {
+  STATE.coachingEmpId = empId;
+  navigate('trainer', 'coaching_new');
+}
+
+// ── Praxis-Tagebuch: Seite für Mitarbeiter, Lesesicht für Trainer ─
+async function renderJournalPage(user) {
+  return `
+    <div class="page-header">
+      <div><div class="page-title">📝 Praxis-Tagebuch</div><div class="page-sub">Was hast du angewendet — und was nimmst du mit?</div></div>
+    </div>
+    <div class="page-content" style="max-width:820px">
+      <div class="info-box" style="margin-top:0"><p>Kurz nach jedem Kundengespräch notieren: <strong>Welche Technik?</strong> · <strong>Wie hat der Kunde reagiert?</strong> · <strong>Was mache ich nächstes Mal anders?</strong> Dein Trainer sieht die Einträge und kann im Coaching darauf eingehen.</p></div>
+      ${await renderPracticeLogSection(user.empId)}
+    </div>`;
+}
+
+async function renderTrainerJournalView(empId) {
+  const logs = await getPracticeLogs(empId);
+  if (!logs.length) return `<div class="card"><div class="card-body"><div class="empty-state" style="padding:32px 12px">
+    <div class="empty-icon">📝</div><div class="empty-title">Noch keine Einträge</div>
+    <div class="empty-sub">Der Mitarbeiter dokumentiert hier seine Praxiserfahrungen.</div></div></div></div>`;
+  return `<div class="card">
+    <div class="card-header"><span class="card-title">Praxis-Tagebuch</span><span class="badge badge-gray" style="margin-left:auto">${logs.length} Einträge</span></div>
+    <div class="card-body">${logs.map(l => `
+      <div style="padding:12px 14px;background:var(--surface);border-radius:var(--radius);margin-bottom:8px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:6px">${formatDate(l.date)}</div>
+        <div style="font-size:13.5px;line-height:1.6;white-space:pre-line">${escHtml(l.text)}</div>
+      </div>`).join('')}
+    </div></div>`;
 }
 
 
@@ -16734,13 +16997,15 @@ async function loadAndStartRoleplay(role, scenarioId) {
 
 // ── Employee Comparison ──────────────────────────────────────────
 async function renderEmployeeComparison() {
-  const allEmp = await getAllEmployees();
+  const [allEmp, modsAd, modsId] = await Promise.all([
+    getAllEmployees(), getModules('ad'), getModules('id'), storageList('progress:'), storageList('session:')
+  ]);
   if (!allEmp.length) return '<div class="page-content"><div class="empty-state"><div class="empty-icon">👥</div><div>Keine Mitarbeiter vorhanden</div></div></div>';
 
   const rows = await Promise.all(allEmp.map(async emp => {
     const prog = await getEmployeeProgress(emp.id);
     const sessions = await getCoachingSessions(emp.id);
-    const modules = emp.role === 'ad' ? await getModules('ad') : await getModules('id');
+    const modules = emp.role === 'ad' ? modsAd : modsId;
     const total = modules.filter(m => !m.disabled).length;
     const done = Object.values(prog.modules || {}).filter(v => v).length;
     const pct = total > 0 ? Math.round((done/total)*100) : 0;
@@ -16784,13 +17049,13 @@ async function renderEmployeeComparison() {
 
   return `
     <div class="page-header">
-      <div><div class="page-title">👥 Teamvergleich</div><div class="page-sub">${allEmp.length} Mitarbeiter</div></div>
+      <div><div class="page-title">📈 Teamvergleich</div><div class="page-sub">${allEmp.length} Mitarbeiter · sortiert nach Lernfortschritt</div></div>
     </div>
     <div class="page-content">
       <div class="card">
-        <table style="width:100%;border-collapse:collapse">
+        <table class="table">
           <thead>
-            <tr style="border-bottom:1px solid var(--border);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">
+            <tr>
               <th style="padding:10px 16px;text-align:left;font-weight:600">Mitarbeiter</th>
               <th style="padding:10px 16px;text-align:left;font-weight:600">Lernfortschritt</th>
               <th style="padding:10px 16px;text-align:left;font-weight:600">Coaching-Score Ø</th>
@@ -16867,7 +17132,7 @@ async function renderTasksTab(empId) {
 }
 
 // ── Script Library ────────────────────────────────────────────
-function renderScriptLibrary(role) {
+function renderScriptLibrary(role, trainerView = false) {
   const adScripts = [
     { cat: 'Türöffner / Kaltakquise', items: [
       { title: 'Arme-Sau-Technik', script: 'Hallo Herr XY, ich sag es Ihnen ganz ehrlich — das ist ein Akquise-Anruf. Ich bin die arme Sau die sich heute ans Telefon setzen darf. Wie schaffen wir es dennoch, dass mein Kollege Herr X am [Tag] bei Ihnen vorbeikommen kann?' },
@@ -16939,7 +17204,13 @@ function renderScriptLibrary(role) {
       <div><div class="page-title">📖 Skript-Bibliothek</div>
       <div class="page-sub">Alle Formulierungen auf einen Blick</div></div>
     </div>
-    <div class="page-content">${cats}</div>
+    <div class="page-content">
+      ${trainerView ? `<div class="tabs mb-16" style="display:inline-flex">
+        <div class="tab ${role==='ad'?'active':''}" onclick="STATE.scriptRole='ad';render()">🚗 Außendienst</div>
+        <div class="tab ${role==='id'?'active':''}" onclick="STATE.scriptRole='id';render()">📞 Innendienst</div>
+      </div>` : ''}
+      ${cats}
+    </div>
   `;
 }
 
@@ -17583,6 +17854,8 @@ async function renderEmployeePortal() {
             : (openTaskCount > 0 ? `<span style="position:absolute;top:6px;right:6px;background:var(--yellow);color:#000;border-radius:999px;font-size:9px;font-weight:700;padding:0 4px;line-height:1.6">${openTaskCount}</span>` : '')
           }
         </div>
+        ${empNavItem('journal', '📝', 'Praxis-Tagebuch', page)}
+        ${empNavItem('scripts', '📖', 'Skripte', page)}
         <div class="nav-section">${STATE.sidebarCollapsed ? '' : 'Fortschritt'}</div>
         ${empNavItem('progress', '📊', 'Mein Fortschritt', page)}
         ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
@@ -17604,7 +17877,9 @@ async function renderEmployeePortal() {
     case 'module_content': content = await renderModuleContent(user, prog, modules, role); break;
     case 'roleplay': content = renderRoleplaySelection(scenarios, role); break;
     case 'active_roleplay': content = renderActiveRoleplay(); break;
-    case 'tasks': content = await renderEmpTasks(user); break;
+    case 'tasks': content = await renderEmpTasks(user, modules); break;
+    case 'journal': content = await renderJournalPage(user); break;
+    case 'scripts': content = renderScriptLibrary(role); break;
     case 'progress': content = await renderEmpProgress(user, prog, modules, empData); break;
     case 'types': content = await renderTypesPage(user.empId); break;
     default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
@@ -17621,21 +17896,9 @@ function empNavItem(id, icon, label, current) {
   </div>`;
 }
 
-async function empNavItemTasks(empId, page, collapsed) {
-  const tasks = await getTasks(empId);
-  const openCount = tasks.filter(t => !t.done).length;
-  const active = page === 'tasks' ? 'active' : '';
-  const badge = openCount > 0
-    ? `<span style="background:var(--yellow);color:#000;border-radius:999px;font-size:11px;font-weight:700;padding:1px 7px;margin-left:auto;line-height:1.6">${openCount}</span>`
-    : '';
-  return `<div class="nav-item ${active}" onclick="navigate('${STATE.currentUser.role}','tasks')" style="position:relative">
-    <span class="nav-icon">✅</span>
-    ${!collapsed ? `<span style="flex:1">Aufgaben</span>${badge}` : (openCount > 0 ? `<span style="position:absolute;top:6px;right:6px;background:var(--yellow);color:#000;border-radius:999px;font-size:9px;font-weight:700;padding:0 4px;line-height:1.6">${openCount}</span>` : '')}
-  </div>`;
-}
-
-async function renderEmpTasks(user) {
+async function renderEmpTasks(user, modules = []) {
   const tasks = await getTasks(user.empId);
+  const modTitle = id => modules.find(m => m.id === id)?.title || id;
   const open = tasks.filter(t => !t.done);
   const done = tasks.filter(t => t.done);
 
@@ -17649,7 +17912,7 @@ async function renderEmpTasks(user) {
         </div>
         <div class="flex-1">
           <div style="font-size:14px;font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${escHtml(t.title)}</div>
-          ${t.module ? `<div class="text-dim text-sm">📚 ${escHtml(t.module)}</div>` : ''}
+          ${t.module ? `<div class="text-dim text-sm cursor-pointer" onclick="navigate('${user.role}','module_content',{subModule:'${escJs(t.module)}'})">📚 ${escHtml(modTitle(t.module))} →</div>` : ''}
           ${deadlineStr ? `<div class="text-sm" style="color:${overdue ? 'var(--red)' : 'var(--text-dim)'}">📅 ${deadlineStr}${overdue ? ' · Überfällig!' : ''}</div>` : ''}
         </div>
         ${t.done ? `<span class="badge badge-green">Erledigt</span>` : `<button class="btn btn-ghost btn-sm" onclick="toggleEmpTask('${user.empId}','${t.id}')">Erledigen</button>`}
@@ -17722,8 +17985,22 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
     }
   }
 
+  // Aktuelles Commitment aus der letzten Coaching-Session
+  const _sessions = await getCoachingSessions(user.empId);
+  const _lastWithCommit = _sessions.find(s => s.commitment);
+  const _commitCard = _lastWithCommit ? `
+    <div class="card commit-card mb-16">
+      <div class="card-body">
+        <div class="text-dim text-sm mb-8">🎯 Dein Commitment aus dem Coaching vom ${formatDate(_lastWithCommit.date)}</div>
+        <div class="commit-quote">„${escHtml(_lastWithCommit.commitment)}“</div>
+        <div class="flex gap-8 mt-12 flex-wrap">
+          <button class="btn btn-outline btn-sm" onclick="navigate('${role}','journal')">📝 Fortschritt im Praxis-Tagebuch festhalten</button>
+        </div>
+      </div>
+    </div>` : '';
+
   // Next module to complete
-  const nextModule = modules.find(m => !prog.modules?.[m.id]);
+  const nextModule = modules.find(m => !m.disabled && !prog.modules?.[m.id]);
 
   return `
     <div class="page-header">
@@ -17735,6 +18012,7 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
     </div>
     <div class="page-content">
       ${_resumeCard}
+      ${_commitCard}
       <div class="stat-grid mb-24">
         <div class="stat-card">
           <div class="stat-value">${pct}%</div>
@@ -17745,6 +18023,16 @@ async function renderEmpHome(user, prog, modules, pct, scenarios, role) {
           <div class="stat-value">${done}</div>
           <div class="stat-label">Module abgeschlossen</div>
           <div class="stat-delta">von ${modules.length} gesamt</div>
+        </div>
+        <div class="stat-card cursor-pointer" onclick="navigate('${role}','tasks')">
+          <div class="stat-value">${openTasks.length}</div>
+          <div class="stat-label">Offene Aufgaben</div>
+          ${openTasks.some(t => t.deadline && new Date(t.deadline) < new Date()) ? '<div class="stat-delta" style="color:var(--red)">Davon überfällig!</div>' : '<div class="stat-hint">Alles im Plan</div>'}
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${_sessions.length}</div>
+          <div class="stat-label">Coaching-Sessions</div>
+          <div class="stat-hint">${_sessions[0] ? 'Zuletzt ' + formatDate(_sessions[0].date) : 'Noch keine'}</div>
         </div>
       </div>
 
@@ -18019,7 +18307,8 @@ async function renderModuleContent(user, prog, modules, role) {
         <div style="font-weight:700;margin:8px 0">${passed ? 'Bestanden!' : 'Nicht bestanden'}</div>
         <div class="text-dim">${score}/${mod.quizzes.length} richtig</div>
         <div class="flex gap-10 mt-16" style="justify-content:center">
-          ${!isDone ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">✓ Abschließen</button>` : ''}
+          ${!isDone && passed ? `<button class="btn btn-primary" onclick="markModuleDone('${mod.id}','${user.empId}',${score},${mod.quizzes.length})">✓ Abschließen</button>` : ''}
+          ${!passed ? `<div class="text-dim text-sm" style="width:100%">Mindestens ${Math.ceil(mod.quizzes.length * 0.6)} richtige Antworten zum Abschließen nötig.</div>` : ''}
           <button class="btn btn-outline" onclick="resetQuiz()">Wiederholen</button>
         </div>
       </div></div>`;
@@ -18743,13 +19032,14 @@ async function renderCoachingNew() {
             <span class="badge ${getAmpelClass(last.overallScore)}" style="margin-left:auto">${last.overallScore || '—'}/10</span>
           </div>
           <div class="card-body" style="font-size:12px;color:var(--text-dim)">
-            <strong>Typ:</strong> ${last.sessionType || '—'} &nbsp;|&nbsp;
+            <strong>Typ:</strong> ${escHtml(SESSION_TYPE_FIELDS[last.sessionType]?.label || last.sessionType || '—')} &nbsp;|&nbsp;
             <strong>Commitment:</strong> ${escHtml(last.commitment || 'Keines')}
           </div>
         </div>`;
     }
   }
-  const empOptions = allEmp.map(e => `<option value="${e.id}" data-role="${e.role}">${escHtml(e.name)} (${e.role === 'ad' ? 'AD' : 'ID'})</option>`).join('');
+  const preEmp = allEmp.find(e => e.id === STATE.coachingEmpId);
+  const empOptions = allEmp.map(e => `<option value="${e.id}" data-role="${e.role}" ${e.id === STATE.coachingEmpId ? 'selected' : ''}>${escHtml(e.name)} (${e.role === 'ad' ? 'AD' : 'ID'})</option>`).join('');
 
   const adSessionTypes = [
     { v: 'feldbegleitung_akquise', l: '📞 Feldbegleitung — Akquise' },
@@ -18767,11 +19057,12 @@ async function renderCoachingNew() {
       <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter und Session-Typ auswählen</div></div>
     </div>
     <div class="page-content">
+      <div style="max-width:600px">${lastSessionHtml}</div>
       <div class="card" style="max-width:600px">
         <div class="card-body">
           <div class="form-group">
             <label class="form-label">Mitarbeiter</label>
-            <select class="select" id="coaching-emp-select" onchange="updateSessionTypes()">
+            <select class="select" id="coaching-emp-select" onchange="STATE.coachingEmpId=this.value;render()">
               <option value="">— Mitarbeiter wählen —</option>
               ${empOptions}
             </select>
@@ -18779,7 +19070,7 @@ async function renderCoachingNew() {
           <div class="form-group">
             <label class="form-label">Session-Typ</label>
             <select class="select" id="coaching-type-select">
-              ${adSessionTypes.map(t => `<option value="${t.v}">${t.l}</option>`).join('')}
+              ${(preEmp?.role === 'id' ? idSessionTypes : adSessionTypes).map(t => `<option value="${t.v}">${t.l}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -19895,6 +20186,7 @@ function confirmLogout() {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('_dialog')) return closeDialog();
   if (document.querySelector('.shell.nav-open')) return toggleMobileNav(false);
   if (STATE.modalOpen) closeModal();
 });
