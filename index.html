@@ -21,32 +21,37 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://wewo-training-default-rtdb.europe-west1.firebasedatabase.app">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sanchez&display=swap" rel="stylesheet">
 <style>
 /* ══ WEWO DESIGN SYSTEM ══ */
 :root {
-  --black: #0d0f10;
-  --dark: #161a1d;
-  --panel: #1e2328;
-  --surface: #252b30;
-  --border: #2e3236;
-  --border-bright: #3a4047;
+  --black: #0b0d0e;
+  --dark: #121517;
+  --panel: #171b1e;
+  --surface: #1f2428;
+  --border: #262b30;
+  --border-bright: #343a40;
   --yellow: #ecea41;
   --yellow-dim: #c8c730;
-  --yellow-glow: rgba(236,234,65,0.10);
+  --yellow-glow: rgba(236,234,65,0.09);
   --red: #e63946;
   --green: #2ecc71;
   --blue: #3b82f6;
   --orange: #f97316;
-  --text: #e8e8e8;
-  --text-dim: #888;
-  --text-faint: #555;
-  --radius: 6px;
-  --radius-lg: 10px;
-  --shadow: 0 4px 20px rgba(0,0,0,0.5);
+  --text: #ececec;
+  --text-dim: #9aa0a6;
+  --text-faint: #636a71;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.45);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.25);
   --shadow-y: 0 2px 8px rgba(236,234,65,0.15);
+  --ring: 0 0 0 3px rgba(236,234,65,0.22);
+  --ease: cubic-bezier(.2,.8,.2,1);
   --font-heading: 'Sanchez', Georgia, serif;
   font-family: 'Helvetica Neue', Helvetica, system-ui, -apple-system, sans-serif;
 }
@@ -548,6 +553,169 @@ input[type=range]::-webkit-slider-thumb {
 }
 .logo-text { letter-spacing: 0.5px; }
 .page-title { font-size: 21px; }
+
+/* ══ DESIGN-REFRESH — feinere Oberflächen, klare Zustände, Mobile-first-Details ══ */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(1200px 600px at 0% -10%, rgba(236,234,65,0.045), transparent 60%),
+    var(--black);
+}
+::selection { background: rgba(236,234,65,.85); color: #000; }
+:focus-visible { outline: none; box-shadow: var(--ring); }
+.stat-value, .slider-val, .type-bar-pct, .nav-badge { font-variant-numeric: tabular-nums; }
+
+/* Sidebar */
+.sidebar { background: linear-gradient(180deg, #131619 0%, #0f1214 100%); }
+.sidebar-header { padding: 18px 16px; }
+.logo-mark { border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,.2), 0 4px 14px rgba(236,234,65,.18); }
+.sidebar-nav { padding: 10px 0; }
+.nav-section { padding: 14px 20px 6px; font-size: 10px; letter-spacing: 1.2px; }
+.nav-item {
+  margin: 1px 10px; padding: 9px 12px; border-radius: var(--radius);
+  border-left: none; font-weight: 500; transition: background .15s var(--ease), color .15s var(--ease);
+}
+.nav-item.active { background: var(--yellow-glow); color: var(--yellow); font-weight: 600; }
+.nav-item.active::before {
+  content: ''; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--yellow);
+}
+.sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+.user-chip { position: relative; border: 1px solid var(--border); transition: border-color .15s, background .15s; }
+.user-chip:hover { border-color: rgba(230,57,70,.45); background: rgba(230,57,70,.06); }
+.logout-icon { margin-left: auto; flex-shrink: 0; color: var(--text-faint); transition: color .15s; }
+.user-chip:hover .logout-icon { color: var(--red); }
+
+/* Seitenkopf */
+.page-header {
+  background: rgba(18,21,23,.82);
+  -webkit-backdrop-filter: saturate(140%) blur(14px); backdrop-filter: saturate(140%) blur(14px);
+  flex-wrap: wrap; row-gap: 10px;
+}
+.page-title { letter-spacing: -.2px; }
+
+/* Karten */
+.card, .stat-card, .mod-card, .obs-item {
+  background-image: linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,0) 40%);
+  box-shadow: var(--shadow-sm);
+}
+.card-header { padding: 16px 20px; }
+.card-body { padding: 20px; }
+.stat-card { position: relative; overflow: hidden; padding: 20px; transition: border-color .2s var(--ease); }
+.stat-card::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, var(--yellow), transparent 70%); opacity: .55;
+}
+.stat-card:hover { border-color: var(--border-bright); }
+.stat-label { font-size: 12.5px; margin-top: 8px; }
+.mod-card { transition: transform .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s; }
+.mod-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.mod-card:active { transform: translateY(0) scale(.99); }
+
+/* Buttons */
+.btn { transition: background .15s var(--ease), border-color .15s, color .15s, transform .1s, box-shadow .15s; letter-spacing: .1px; }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn-primary { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.4); }
+.btn-primary:hover { background: #f3f15a; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 18px rgba(236,234,65,.22); }
+.btn-outline { border-color: var(--border-bright); }
+
+/* Formulare */
+.input, .textarea, .select { background: #1a1e22; border-color: var(--border-bright); padding: 10px 12px; transition: border-color .15s, box-shadow .15s, background .15s; }
+.input:hover, .textarea:hover, .select:hover { border-color: #444b52; }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--yellow); box-shadow: var(--ring); background: #1d2125; }
+.select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px;
+}
+
+/* Tabs, Tabellen, Akkordeon */
+.tabs { scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; border-radius: 6px; transition: background .15s var(--ease), color .15s; }
+.table th { background: rgba(255,255,255,.015); }
+.accordion-item { border-radius: var(--radius-lg); }
+
+/* Modal & Toast */
+.modal-overlay { background: rgba(5,6,7,.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fadeIn .18s ease; }
+.modal { border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+.modal-header { border-radius: 18px 18px 0 0; z-index: 1; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.toast {
+  border-radius: 12px; background: rgba(30,35,40,.92);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  font-size: 13.5px; bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+/* Ladezustände */
+.app-loading { display: flex; align-items: center; justify-content: center; height: 100vh; height: 100dvh; }
+body.is-loading::before {
+  content: ''; position: fixed; top: 0; left: 0; height: 2px; z-index: 10000; width: 40%;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  animation: loadbar 1s var(--ease) infinite;
+}
+@keyframes loadbar { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+body.is-loading .main { cursor: progress; }
+
+/* Login */
+.login-page { background: radial-gradient(900px 500px at 50% 0%, rgba(236,234,65,.08), transparent 60%), var(--black); }
+.login-box { border-radius: 20px; background: rgba(23,27,30,.85); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.login-logo .mark { border-radius: 16px; font-family: var(--font-heading); }
+.role-btn { border-width: 1px; border-radius: 12px; transition: border-color .15s, background .15s, transform .1s; }
+.role-btn:active { transform: scale(.97); }
+.role-btn.selected { box-shadow: inset 0 0 0 1px var(--yellow); }
+
+/* Mobile Kopfzeile & Drawer (nur ≤ 768px sichtbar) */
+.mobile-topbar, .sidebar-backdrop { display: none; }
+@media (max-width: 768px) {
+  #sidebar-toggle { display: none !important; }
+  .mobile-topbar {
+    display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20;
+    padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top));
+    background: rgba(11,13,14,.86); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-btn {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); color: var(--yellow); font-size: 16px; }
+  .topbar-brand .logo-mark { width: 26px; height: 26px; font-size: 13px; }
+  .page-header { position: static; padding: 18px 16px 14px; }
+  .page-header .btn { flex: 1 1 auto; justify-content: center; }
+  .sidebar { width: 280px; min-width: 280px; box-shadow: 0 0 60px rgba(0,0,0,.6); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .shell.nav-open .sidebar { transform: translateX(0); }
+  .sidebar-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.55);
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .shell.nav-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+  .nav-item { padding: 12px; font-size: 14.5px; }
+  .btn-sm { padding: 9px 14px; }
+  .score-btn { width: 38px; height: 38px; }
+  .table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .chat-bubble { max-width: 88%; }
+  .chat-container { height: calc(100dvh - 160px); }
+  /* Modals als Bottom-Sheet */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { max-height: 92dvh; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom); animation: sheetIn .28s var(--ease); }
+  .modal-header { border-radius: 20px 20px 0 0; }
+  .modal-footer { flex-wrap: wrap; }
+  .modal-footer .btn { flex: 1 1 auto; justify-content: center; }
+  .toast { left: 16px; right: 16px; max-width: none; }
+  .login-box { padding: 28px 22px; }
+}
+@keyframes sheetIn { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* PWA im Standalone-Modus: Safe-Areas kommen über Topbar/Sidebar, nicht über den Body */
+@media (display-mode: standalone) and (max-width: 768px) {
+  body { padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+  .main { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
 </style>
 </head>
 <body>
@@ -13863,10 +14031,13 @@ const QUIZ_PASS_PCT = 0.7; // 70% to pass
 
 function getModuleQuizLevels(moduleId) {
   const base = QUIZ_LEVELS[moduleId];
-  const override = STATE._quizLevelOverrides?.[moduleId];
-  if (!base && !override) return null;
+  // Nur Level mit Fragen übernehmen — leere Overrides dürfen nichts überschreiben
+  const raw = STATE._quizLevelOverrides?.[moduleId];
+  const override = raw && Object.fromEntries(Object.entries(raw).filter(([, qs]) => Array.isArray(qs) && qs.length));
+  const hasOverride = override && Object.keys(override).length > 0;
+  if (!base && !hasOverride) return null;
   if (!base) return override;
-  if (!override) return base;
+  if (!hasOverride) return base;
   // Merge: override wins per level
   return { ...base, ...override };
 }
@@ -14948,13 +15119,61 @@ function _draftKey() {
   return `wewo_session_draft_${STATE.currentUser?.id || STATE.currentUser?.name || 'default'}`;
 }
 
+// ── Lese-Cache ─────────────────────────────────────────────────
+// Ein geladener Knoten (z. B. 'employee') bedient auch alle Unter-Abfragen
+// ('employee/emp_1') ohne weiteren Netzwerk-Request. Gleichzeitige Abfragen
+// desselben Pfads teilen sich einen Request. Schreiben invalidiert betroffene
+// Pfade; Seitenwechsel (navigate) und TTL leeren den Cache, damit Änderungen
+// von anderen Geräten sichtbar werden.
+const _cache = new Map();     // path → { val, t }
+const _inflight = new Map();  // path → Promise
+const CACHE_TTL = 60000;
+let _cacheGen = 0;
+const _clone = v => (v === null || typeof v !== 'object') ? v : structuredClone(v);
+
+function _cacheLookup(path) {
+  const parts = path.split('/');
+  for (let i = parts.length; i >= 1; i--) {
+    const e = _cache.get(parts.slice(0, i).join('/'));
+    if (!e || Date.now() - e.t > CACHE_TTL) continue;
+    let v = e.val;
+    for (const k of parts.slice(i)) v = (v && typeof v === 'object') ? v[k] : undefined;
+    return { hit: true, val: v === undefined ? null : v };
+  }
+  return { hit: false };
+}
+
+function _cacheInvalidate(path) {
+  _cacheGen++;
+  for (const p of [..._cache.keys()]) {
+    if (p === path || p.startsWith(path + '/') || path.startsWith(p + '/')) _cache.delete(p);
+  }
+}
+
+function clearStorageCache() { _cacheGen++; _cache.clear(); }
+
+async function _readPath(path) {
+  const c = _cacheLookup(path);
+  if (c.hit) return _clone(c.val);
+  if (!_inflight.has(path)) {
+    const gen = _cacheGen;
+    _inflight.set(path, db.ref(path).get()
+      .then(snap => {
+        const v = snap.exists() ? snap.val() : null;
+        if (gen === _cacheGen) _cache.set(path, { val: v, t: Date.now() });
+        return v;
+      })
+      .finally(() => _inflight.delete(path)));
+  }
+  return _clone(await _inflight.get(path));
+}
+
 async function storageGet(key, shared = false) {
   if (key === 'session_draft') {
     try { return JSON.parse(localStorage.getItem(_draftKey()) || 'null'); } catch { return null; }
   }
   try {
-    const snap = await db.ref(keyToPath(key)).get();
-    return snap.exists() ? snap.val() : null;
+    return await _readPath(keyToPath(key));
   } catch (e) { console.error('storageGet', key, e); return null; }
 }
 
@@ -14962,20 +15181,19 @@ async function storageSet(key, val, shared = false) {
   if (key === 'session_draft') {
     try { localStorage.setItem(_draftKey(), JSON.stringify(val)); return true; } catch { return false; }
   }
+  const path = keyToPath(key);
+  _cacheInvalidate(path);
   try {
-    await db.ref(keyToPath(key)).set(val);
+    await db.ref(path).set(val);
     return true;
   } catch (e) { console.error('storageSet', key, e); return false; }
 }
 
 async function storageList(prefix, shared = false) {
   // prefix 'employee:' → read node 'employee', return keys as 'employee:key'
-  const parts = prefix.split(':').filter(p => p !== '');
-  const path = parts.join('/');
+  const path = prefix.split(':').filter(p => p !== '').join('/');
   try {
-    const snap = await db.ref(path).get();
-    if (!snap.exists()) return [];
-    const val = snap.val();
+    const val = await _readPath(path);
     if (typeof val !== 'object' || val === null) return [];
     return Object.keys(val).map(k => prefix + k);
   } catch (e) { return []; }
@@ -14985,7 +15203,9 @@ async function storageDel(key, shared = false) {
   if (key === 'session_draft') {
     localStorage.removeItem(_draftKey()); return;
   }
-  try { await db.ref(keyToPath(key)).remove(); } catch (e) {}
+  const path = keyToPath(key);
+  _cacheInvalidate(path);
+  try { await db.ref(path).remove(); } catch (e) {}
 }
 
 // ── User Management ────────────────────────────────────────────
@@ -15061,7 +15281,7 @@ async function getCoachingSessions(employeeId) {
 }
 
 async function saveCoachingSession(session) {
-  await storageSet(`session:${session.employeeId}:${session.id}`, session, true);
+  return await storageSet(`session:${session.employeeId}:${session.id}`, session, true);
 }
 
 // ── Auth ───────────────────────────────────────────────────────
@@ -15069,7 +15289,7 @@ const TRAINER_PASS_DEFAULT = 'WEWO2024';
 
 async function loginTrainer(pass) {
   const stored = await storageGet('trainer:password', true) || TRAINER_PASS_DEFAULT;
-  if (pass === stored || pass === TRAINER_PASS_DEFAULT) {
+  if (pass === stored) {
     STATE.currentUser = { role: 'trainer', name: 'Justin Rattmann', id: 'trainer' };
     saveSession();
     return true;
@@ -15093,7 +15313,7 @@ async function loginEmployee(name, pass, role) {
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span><span>${msg}</span>`;
+  el.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</span><span>${escHtml(msg)}</span>`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
@@ -15168,7 +15388,11 @@ async function loadApiKey() {
 }
 
 function escHtml(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+// Für Werte in JS-Strings innerhalb von onclick="…'WERT'…"
+function escJs(s) {
+  return escHtml(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]+/g, ' '));
 }
 
 // ── Anthropic API — Live Roleplay ──────────────────────────────
@@ -15322,9 +15546,10 @@ async function renderTrainerPortal() {
         ${navItem('content_editor','📝','Inhalte', page)}
       </nav>
       <div class="sidebar-footer">
-        <div class="user-chip" onclick="logout()">
+        <div class="user-chip" onclick="confirmLogout()" title="Abmelden">
           <div class="user-avatar" style="background:var(--yellow);color:var(--black)">JR</div>
           ${!STATE.sidebarCollapsed ? `<div class="user-info"><div class="user-name">Justin Rattmann</div><div class="user-role">Trainer</div></div>` : ''}
+          ${!STATE.sidebarCollapsed ? `<svg class="logout-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>` : ''}
         </div>
       </div>
     </div>
@@ -15344,7 +15569,7 @@ async function renderTrainerPortal() {
     default: content = await renderTrainerDashboard();
   }
   
-  return `<div class="shell">${nav}<div class="main">${content}</div></div>`;
+  return shellLayout(nav, content);
 }
 
 function navItem(id, icon, label, current) {
@@ -15356,7 +15581,7 @@ function navItem(id, icon, label, current) {
 }
 
 async function renderTrainerDashboard() {
-  const allEmp = await getAllEmployees();
+  const [allEmp] = await Promise.all([getAllEmployees(), storageList('progress:')]);
   const adEmps = allEmp.filter(e => e.role === 'ad');
   const idEmps = allEmp.filter(e => e.role === 'id');
   
@@ -15429,7 +15654,7 @@ async function renderTrainerDashboard() {
 }
 
 async function renderEmployeeList(role) {
-  const allEmp = await getAllEmployees();
+  const [allEmp] = await Promise.all([getAllEmployees(), storageList('progress:')]);
   const emps = allEmp.filter(e => e.role === role);
   const label = role === 'ad' ? 'Außendienst' : 'Innendienst';
   const modules = role === 'ad' ? AD_MODULES : ID_MODULES;
@@ -15553,7 +15778,7 @@ async function renderEmployeeDetail() {
         <div class="card-body">
           <textarea class="textarea" id="trainer-notes-textarea" rows="5"
             placeholder="Beobachtungen, Stärken, Entwicklungsfelder..."
-            oninput="onNotesChange('${emp.id}')">${escHtml(emp.trainerNotes || '')}</textarea>
+>${escHtml(emp.trainerNotes || '')}</textarea>
           <button class="btn btn-outline btn-sm mt-8" onclick="saveTrainerNotes('${emp.id}')">Speichern</button>
         </div>
       </div>
@@ -15653,7 +15878,7 @@ async function renderEmployeeDetail() {
 
   return `
     <div class="page-header">
-      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','${emp.role==='ad'?'ad':'id'}');STATE.empDetailTab=null">← Zurück</button>
+      <button class="btn btn-ghost btn-sm" onclick="STATE.empDetailTab=null;navigate('trainer','${emp.role==='ad'?'ad_list':'id_list'}')">← Zurück</button>
       <div class="flex items-center gap-12">
         <div class="avatar" style="background:${dt?typeColor(dt)+'33':'var(--surface)'};color:${dt?typeColor(dt):'var(--text-dim)'};width:44px;height:44px;font-size:17px">${initials}</div>
         <div>
@@ -15724,140 +15949,13 @@ async function startCoachingSession() {
     measures: {},
     commitment: '',
     lastCommitment: '',
+    overallScore: 5,
     phase: 'observation'
   };
   
   await storageSet('session_draft', sessionDraft, false);
   STATE.selectedEmployee = emp.id;
   navigate('trainer', 'coaching_session', { selectedEmployee: emp.id });
-}
-
-async function renderCoachingSession() {
-  const draft = await storageGet('session_draft', false);
-  if (!draft) return `<div class="page-content"><div class="empty-state"><div>Keine aktive Session — <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">Neue Session starten</button></div></div></div>`;
-  
-  const emp = await getEmployee(draft.employeeId);
-  const fields = emp?.role === 'ad' ? COACHING_LIB.fields_ad : COACHING_LIB.fields_id;
-  
-  const dt = dominantType(emp?.types);
-  
-  // Observation fields
-  const obsFields = fields.map(f => {
-    const score = draft.observations[f.id] || 0;
-    const scoreButtons = [1,2,3,4,5,6,7,8,9,10].map(n => {
-      let cls = '';
-      if (score === n) cls = n >= 7 ? 'selected-green' : n >= 4 ? 'selected-yellow' : 'selected-red';
-      return `<button class="score-btn ${cls}" onclick="setObsScore('${f.id}',${n},this)">${n}</button>`;
-    }).join('');
-    const ampelCls = score ? getAmpelClass(score) : '';
-    return `
-      <div class="obs-item">
-        <div class="obs-item-header">
-          <div class="flex items-center gap-8">
-            ${score ? `<span class="ampel ${ampelCls}"></span>` : ''}
-            <span class="obs-item-title">${escHtml(f.label)}</span>
-            <span class="text-sm text-dim">${escHtml(f.group)}</span>
-          </div>
-          ${score ? `<span class="font-bold" style="color:${score>=7?'var(--green)':score>=4?'var(--yellow)':'var(--red)'}">${score}/10</span>` : ''}
-        </div>
-        <div class="obs-score-row">${scoreButtons}</div>
-        <textarea class="textarea mt-8" style="min-height:48px" placeholder="Beobachtung (optional)..."
-          onchange="setObsNote('${f.id}',this.value)">${escHtml(draft.notes?.[f.id]||'')}</textarea>
-      </div>
-    `;
-  }).join('');
-  
-  // Measures based on low scores
-  const lowScores = Object.entries(draft.observations).filter(([k,v]) => v && v < 7).sort((a,b) => a[1]-b[1]).slice(0,3);
-  const measuresHtml = lowScores.length > 0 ? lowScores.map(([fieldId, score]) => {
-    const field = fields.find(f => f.id === fieldId);
-    const libKey = COACHING_LIB.massnahmen[fieldId] ? fieldId : 'default';
-    const mass = dt && COACHING_LIB.massnahmen[libKey] ? COACHING_LIB.massnahmen[libKey][dt] : null;
-    return `
-      <div class="card mb-12">
-        <div class="card-body">
-          <div class="flex items-center gap-8 mb-8">
-            <span class="ampel ${getAmpelClass(score)}"></span>
-            <span class="font-bold">${escHtml(field?.label||fieldId)}</span>
-            <span class="badge badge-red">Score: ${score}/10</span>
-          </div>
-          ${mass ? `<div class="tip-box"><p>💡 <strong>Maßnahme für ${typeName(dt)}:</strong> ${escHtml(mass)}</p></div>` : ''}
-          <div class="form-group mt-8">
-            <label class="form-label">Eigene Maßnahme / Feedforward-Frage</label>
-            <textarea class="textarea" style="min-height:60px" placeholder="Was konkret bis zum nächsten Mal?"
-              onchange="setMeasure('${fieldId}',this.value)">${escHtml(draft.measures?.[fieldId]||'')}</textarea>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('') : '<div class="tip-box"><p>✅ Alle bewerteten Felder im grünen Bereich — oder noch keine Scores eingetragen.</p></div>';
-  
-  return `
-    <div class="page-header">
-      <button class="btn btn-ghost btn-sm" onclick="navigate('trainer','coaching_new')">← Zurück</button>
-      <div><div class="page-title">Coaching Session</div><div class="page-sub">${escHtml(draft.employeeName)} · ${escHtml(draft.sessionType)} · ${formatDate(draft.date)}</div></div>
-      <div class="flex gap-8" style="margin-left:auto">
-        <button class="btn btn-primary btn-sm" onclick="saveCoachingSessionFinal()">Session abschließen</button>
-      </div>
-    </div>
-    <div class="page-content">
-      <div class="tabs mb-20">
-        <div class="tab active" id="tab-obs" onclick="switchCoachingTab('obs')">📋 Beobachtung</div>
-        <div class="tab" id="tab-measures" onclick="switchCoachingTab('measures')">⚡ Maßnahmen</div>
-        <div class="tab" id="tab-commitment" onclick="switchCoachingTab('commitment')">🎯 Commitment</div>
-      </div>
-      
-      <div id="coaching-tab-obs">
-        <div class="grid-2 mb-16">
-          ${dt ? `<div class="info-box"><p>Mitarbeitertyp: <strong style="color:${typeColor(dt)}">${TYPES[dt].emoji} ${typeName(dt)}</strong> — ${escHtml(TYPES[dt].desc)}</p></div>` : ''}
-          <div class="api-notice">Scores: <span class="hl-green">7-10 = Grün ✓</span> · <span class="hl-yellow" style="background:rgba(236,234,65,0.15)">4-6 = Gelb ⚡</span> · <span class="hl-red">1-3 = Rot ✗</span></div>
-        </div>
-        <div class="obs-grid">${obsFields}</div>
-      </div>
-      
-      <div id="coaching-tab-measures" style="display:none">
-        <div class="section-head mb-16">
-          <div class="section-title">Entwicklungsfelder & Maßnahmen</div>
-        </div>
-        ${measuresHtml}
-      </div>
-      
-      <div id="coaching-tab-commitment" style="display:none">
-        <div class="card" style="max-width:600px">
-          <div class="card-header"><span class="card-title">🎯 Commitment</span></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label class="form-label">Letzte Session — Was war das Commitment?</label>
-              <input class="input" value="${escHtml(draft.lastCommitment||'')}" placeholder="Commitment aus der letzten Session..." onchange="setDraftField('lastCommitment',this.value)">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Erfüllt?</label>
-              <div class="flex gap-8">
-                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','yes');this.style.borderColor='var(--green)';this.style.color='var(--green)'">✅ Ja, erfüllt</button>
-                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','no');this.style.borderColor='var(--red)';this.style.color='var(--red)'">❌ Nicht erfüllt</button>
-                <button class="btn btn-outline btn-sm" onclick="setDraftField('commitmentFulfilled','partial');this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'">⚡ Teilweise</button>
-              </div>
-            </div>
-            <div class="divider"></div>
-            <div class="form-group">
-              <label class="form-label">Neues Commitment — 1 konkrete Sache bis zum nächsten Mal</label>
-              <textarea class="textarea" rows="3" placeholder='z.B. "Vor jedem Termin BATNA berechnen und auf Zettel schreiben"'
-                onchange="setDraftField('commitment',this.value)">${escHtml(draft.commitment||'')}</textarea>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Gesamtbewertung Session (1-10)</label>
-              <div class="flex items-center gap-12">
-                <input type="range" min="1" max="10" value="${draft.overallScore||5}" 
-                  oninput="setDraftField('overallScore',+this.value);document.getElementById('overall-score-val').textContent=this.value">
-                <span id="overall-score-val" class="slider-val">${draft.overallScore||5}</span>
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="saveCoachingSessionFinal()">Session speichern ✓</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 }
 
 async function switchCoachingTab(tab) {
@@ -15982,13 +16080,14 @@ async function setDraftField(key, val) {
 async function saveCoachingSessionFinal() {
   const draft = await storageGet('session_draft', false);
   if (!draft) return;
-  await saveCoachingSession(draft);
+  if (!await saveCoachingSession(draft)) { toast('Speichern fehlgeschlagen — Entwurf bleibt erhalten', 'error'); return; }
   await storageDel('session_draft', false);
   toast('Session gespeichert ✓');
   navigate('trainer', 'employee_detail', { selectedEmployee: draft.employeeId });
 }
 
 async function renderCoachingHistory() {
+  await storageList('session:'); // lädt alle Sessions in einem Request (Cache)
   const allEmp = await getAllEmployees();
   let allSessions = [];
   for (const emp of allEmp) {
@@ -15998,13 +16097,13 @@ async function renderCoachingHistory() {
   allSessions.sort((a,b) => new Date(b.date) - new Date(a.date));
   
   const rows = allSessions.map(s => `
-    <tr style="cursor:pointer" onclick="openSessionModal ? openSessionModal('${s.id}','${s.employeeId}') : null">
+    <tr style="cursor:pointer" onclick="openSessionModal('${s.id}','${s.employeeId}')">
       <td style="padding:10px 12px;font-size:12px;color:var(--text-dim)">${formatDate(s.date)}</td>
       <td style="padding:10px 12px"><span class="font-bold">${escHtml(s.employeeName||'—')}</span></td>
       <td style="padding:10px 12px;font-size:13px">${escHtml(s.sessionType||'—')}</td>
       <td style="padding:10px 12px">${s.overallScore ? `<span class="badge ${getAmpelClass(s.overallScore)}">${s.overallScore}/10</span>` : '—'}</td>
       <td style="padding:10px 12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${escHtml(s.commitment||'—')}</td>
-      <td style="padding:10px 12px">
+      <td style="padding:10px 12px;white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-ghost btn-sm" onclick="openSessionModal('${s.id}','${s.employeeId}')">👁 Ansehen</button>
         <button class="btn btn-ghost btn-sm" onclick="openSessionEdit('${s.id}','${s.employeeId}')">✏️ Bearbeiten</button>
       </td>
@@ -16018,7 +16117,7 @@ async function renderCoachingHistory() {
     <div class="page-content">
       ${allSessions.length === 0 ? `<div class="empty-state"><div class="empty-icon">🗂️</div><div>Noch keine Sessions abgeschlossen</div></div>` : `
         <div class="card"><table class="table">
-          <thead><tr><th>Datum</th><th>Mitarbeiter</th><th>Typ</th><th>Bewertung</th><th>Commitment</th></tr></thead>
+          <thead><tr><th>Datum</th><th>Mitarbeiter</th><th>Typ</th><th>Bewertung</th><th>Commitment</th><th></th></tr></thead>
           <tbody>${rows}</tbody>
         </table></div>
       `}
@@ -16198,7 +16297,7 @@ function _showSessionModal(s, emp, allSessions, editMode) {
           ? `<button class="btn btn-primary btn-sm" onclick="_saveSessionEdits('${oid}','${oeid}')">💾 Speichern</button>
              <button class="btn btn-ghost btn-sm" onclick="openSessionModal('${oid}','${oeid}')">Abbrechen</button>`
           : `<button class="btn btn-outline btn-sm" onclick="openSessionEdit('${oid}','${oeid}')">✏️ Bearbeiten</button>
-             <button class="btn btn-danger btn-sm" onclick="_showDeleteConfirm('${oid}','${oeid}','${escHtml(emp?.name||'')} — ${formatDate(s.date)}')">🗑 Löschen</button>`}
+             <button class="btn btn-danger btn-sm" onclick="_showDeleteConfirm('${oid}','${oeid}','${escJs(emp?.name||'')} — ${formatDate(s.date)}')">🗑 Löschen</button>`}
         <button class="btn btn-ghost btn-sm" style="font-size:16px;line-height:1;padding:4px 8px" onclick="document.getElementById('_session_overlay').remove()">✕</button>
       </div>
       <!-- Navigation -->
@@ -16291,7 +16390,8 @@ async function _saveSessionEdits(sessionId, employeeId) {
   document.querySelectorAll('[data-fscore]').forEach(el => {
     const k = el.dataset.fscore;
     s.fields[k] = s.fields[k] || {};
-    s.fields[k].score = parseInt(el.value);
+    const n = parseInt(el.value);
+    if (Number.isFinite(n)) s.fields[k].score = n; else delete s.fields[k].score;
   });
   document.querySelectorAll('[data-fnote]').forEach(el => {
     const k = el.dataset.fnote;
@@ -16304,14 +16404,14 @@ async function _saveSessionEdits(sessionId, employeeId) {
   const fl = document.getElementById('_es_fulfilled');
   const st = document.getElementById('_es_stype');
   const al = document.getElementById('_es_anlass');
-  if (sc) s.overallScore = sc.value ? parseInt(sc.value) : null;
+  if (sc) { const n = parseInt(sc.value); s.overallScore = Number.isFinite(n) ? n : null; }
   if (cm) s.commitment = cm.value;
   if (rf) s.reflectionNotes = rf.value;
   if (fl) s.commitmentFulfilled = fl.value;
   if (st) s.sessionType = st.value;
   if (al) s.anlass = al.value;
   s.lastEdited = new Date().toISOString();
-  await saveCoachingSession(s);
+  if (!await saveCoachingSession(s)) { toast('Speichern fehlgeschlagen — bitte erneut versuchen', 'error'); return; }
   toast('Session gespeichert ✓');
   document.getElementById('_session_overlay')?.remove();
   openSessionModal(sessionId, employeeId);
@@ -16585,13 +16685,13 @@ function openEditEmployee(empId) {
 // ══════════════════════════════════════════════════════════════
 
 async function getModules(role) {
-  const defaults = role === 'ad' ? JSON.parse(JSON.stringify(AD_MODULES)) : JSON.parse(JSON.stringify(ID_MODULES));
+  const defaults = role === 'ad' ? AD_MODULES : ID_MODULES;
   const data = await storageGet(`modules:${role}`, true);
-  if (!data || !Array.isArray(data) || data.length === 0) return defaults;
+  if (!data || !Array.isArray(data) || data.length === 0) return structuredClone(defaults);
 
   // Auto-merge: add new default modules that don't exist in stored data yet
   const storedIds = new Set(data.map(m => m.id));
-  const newModules = defaults.filter(m => !storedIds.has(m.id));
+  const newModules = structuredClone(defaults.filter(m => !storedIds.has(m.id)));
   if (newModules.length > 0) {
     const merged = [...data, ...newModules].sort((a, b) => (a.num ?? 99) - (b.num ?? 99));
     await storageSet(`modules:${role}`, merged, true); // save merged back
@@ -16607,12 +16707,12 @@ async function saveModules(role, modules) {
 }
 
 async function getRoleplayScenarios(role) {
-  const defaults = JSON.parse(JSON.stringify(ROLEPLAY_SCENARIOS[role] || []));
+  const defaults = ROLEPLAY_SCENARIOS[role] || [];
   const data = await storageGet(`scenarios:${role}`, true);
-  if (!data || !Array.isArray(data) || data.length === 0) return defaults;
+  if (!data || !Array.isArray(data) || data.length === 0) return structuredClone(defaults);
   // Auto-merge new default scenarios
   const storedIds = new Set(data.map(s => s.id));
-  const newScenarios = defaults.filter(s => !storedIds.has(s.id));
+  const newScenarios = structuredClone(defaults.filter(s => !storedIds.has(s.id)));
   if (newScenarios.length > 0) {
     const merged = [...data, ...newScenarios];
     await storageSet(`scenarios:${role}`, merged, true);
@@ -17184,19 +17284,22 @@ function buildQuizRow(q, qi) {
 function addQuizRow_we() {
   const container = document.getElementById('we-quiz-rows');
   if (!container) return;
-  const qi = container.querySelectorAll('[id^="wq-row-"]').length;
+  const rows = container.querySelectorAll('[id^="wq-row-"]');
+  // Eindeutiger Index (IDs werden nach dem Löschen nicht umnummeriert)
+  const qi = Math.max(-1, ...[...rows].map(r => parseInt(r.id.slice(7)) || 0)) + 1;
   container.insertAdjacentHTML('beforeend', buildQuizRow({q:'',opts:['','','',''],correct:0}, qi));
-  // Update tab label
+  const n = rows.length + 1;
+  const badge = document.getElementById(`wq-row-${qi}`)?.querySelector('.badge-yellow');
+  if (badge) badge.textContent = `Frage ${n}`;
   const btn = document.getElementById('wetab-quiz');
-  if (btn) btn.textContent = `🧩 Quiz (${qi+1} Fragen)`;
+  if (btn) btn.textContent = `🧩 Quiz (${n} Fragen)`;
 }
 
 function removeQuizRow_we(qi) {
   const el = document.getElementById(`wq-row-${qi}`);
   if (el) el.remove();
-  // Renumber
+  // Nur die Anzeige neu nummerieren — IDs bleiben stabil
   document.querySelectorAll('[id^="wq-row-"]').forEach((row, i) => {
-    row.id = `wq-row-${i}`;
     const badge = row.querySelector('.badge-yellow');
     if (badge) badge.textContent = `Frage ${i+1}`;
   });
@@ -17204,7 +17307,8 @@ function removeQuizRow_we(qi) {
 
 function collectQuizzes_we() {
   const quizzes = [];
-  document.querySelectorAll('[id^="wq-row-"]').forEach((row, qi) => {
+  document.querySelectorAll('[id^="wq-row-"]').forEach(row => {
+    const qi = row.id.slice(7);
     const q = document.getElementById(`wq-q-${qi}`)?.value?.trim();
     if (!q) return;
     const opts = [0,1,2,3].map(oi => document.getElementById(`wq-opt-${qi}-${oi}`)?.value?.trim()||'');
@@ -17301,8 +17405,8 @@ async function addNewModule(role) {
   await saveModules(role, modules);
   toast('Neues Modul angelegt ✓');
   STATE.contentTab = role==='ad' ? 'ad_modules' : 'id_modules';
-  render();
-  setTimeout(() => openWysiwyg(role, modules.length - 1), 400);
+  await render();
+  openWysiwyg(role, modules.length - 1);
 }
 
 // ── Scenario Editor ────────────────────────────────────────────
@@ -17433,8 +17537,8 @@ async function addNewScenario(role) {
     system: 'Du spielst einen Einkäufer. Spreche ausschließlich Deutsch.'
   });
   await saveRoleplayScenarios(role, scenarios);
-  render();
-  setTimeout(() => openScenarioEdit(role, scenarios.length - 1), 400);
+  await render();
+  openScenarioEdit(role, scenarios.length - 1);
 }
 
 
@@ -17446,19 +17550,19 @@ async function renderEmployeePortal() {
   const user = STATE.currentUser;
   const role = user.role; // 'ad' or 'id'
   const page = STATE.subPage || 'home';
-  const modules = await getModules(role);
-  const scenarios = await getRoleplayScenarios(role);
+  // Alles parallel laden (vorher fünf Requests nacheinander)
+  const [modules, scenarios, prog, empData, allTasksNav] = await Promise.all([
+    getModules(role), getRoleplayScenarios(role), getEmployeeProgress(user.empId),
+    getEmployee(user.empId), getTasks(user.empId)
+  ]);
   const roleLabel = role === 'ad' ? 'Außendienst' : 'Innendienst';
 
-  const prog = await getEmployeeProgress(user.empId);
   const done = Object.values(prog.modules || {}).filter(v => v).length;
   const activeMods = modules.filter(m => !m.disabled && !m.locked);
   const pct = activeMods.length ? Math.round(done / activeMods.length * 100) : 0;
 
   const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  const empData = await getEmployee(user.empId);
   const dt = dominantType(empData?.types);
-  const allTasksNav = await getTasks(user.empId);
   const openTaskCount = allTasksNav.filter(t => !t.done).length;
 
   const nav = `
@@ -17484,9 +17588,10 @@ async function renderEmployeePortal() {
         ${empNavItem('types', '🧠', 'Persönlichkeitstypen', page)}
       </nav>
       <div class="sidebar-footer">
-        <div class="user-chip" onclick="logout()">
+        <div class="user-chip" onclick="confirmLogout()" title="Abmelden">
           <div class="user-avatar" style="background:${dt ? typeColor(dt) + '33' : 'var(--surface)'};color:${dt ? typeColor(dt) : 'var(--text-dim)'};">${initials}</div>
           ${!STATE.sidebarCollapsed ? `<div class="user-info"><div class="user-name">${escHtml(user.name)}</div><div class="user-role">${roleLabel}</div></div>` : ''}
+          ${!STATE.sidebarCollapsed ? `<svg class="logout-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>` : ''}
         </div>
       </div>
     </div>
@@ -17505,7 +17610,7 @@ async function renderEmployeePortal() {
     default: content = await renderEmpHome(user, prog, modules, pct, scenarios, role);
   }
 
-  return `<div class="shell">${nav}<div class="main">${content}</div></div>`;
+  return shellLayout(nav, content);
 }
 
 function empNavItem(id, icon, label, current) {
@@ -17833,9 +17938,11 @@ async function renderModuleContent(user, prog, modules, role) {
           </div>
         </div>
       `;
-      // Auto-save result
-      saveQuizLevelResult(mod.id, user.empId, activeLevelName, score, levelQuestions.length);
-      // Don't call render() here to avoid loop - it was already saved
+      // Ergebnis genau einmal speichern (render() kann mehrfach laufen)
+      if (!STATE.quizState.saved) {
+        STATE.quizState.saved = true;
+        saveQuizLevelResult(mod.id, user.empId, activeLevelName, score, levelQuestions.length);
+      }
     } else if (levelQuestions.length > 0) {
       const isUnlocked = isLevelUnlocked(prog, mod.id, activeLevelName);
       if (!isUnlocked) {
@@ -18052,14 +18159,16 @@ async function saveQuizLevelResult(moduleId, empId, levelName, score, total) {
   prog.quizLevels = prog.quizLevels || {};
   prog.quizLevels[moduleId] = prog.quizLevels[moduleId] || {};
   const passed = score >= Math.ceil(total * QUIZ_PASS_PCT);
-  prog.quizLevels[moduleId][levelName] = { score, total, passed, date: new Date().toISOString() };
+  const prev = prog.quizLevels[moduleId][levelName];
+  const attempt = { score, total, passed, date: new Date().toISOString() };
+  // Ein bestandenes Level wird durch einen schlechteren Versuch nie wieder gesperrt
+  prog.quizLevels[moduleId][levelName] = (prev?.passed && !passed) ? { ...prev, lastAttempt: attempt } : attempt;
   // Auto-complete module when Profi passed
   if (levelName === 'profi' && passed) {
     prog.modules = prog.modules || {};
     prog.modules[moduleId] = true;
   }
   await saveEmployeeProgress(empId, prog);
-  STATE.quizState = null;
   if (passed) {
     const nextIdx = QUIZ_LEVEL_NAMES.indexOf(levelName) + 1;
     const nextLevel = QUIZ_LEVEL_NAMES[nextIdx];
@@ -18718,13 +18827,19 @@ function updateSessionTypes() {
   typeSel.innerHTML = types.map(t => `<option value="${t.v}">${t.l}</option>`).join('');
 }
 
-// Override renderCoachingSession to use session-type-specific fields
 async function renderCoachingSession() {
   let draft = await storageGet('session_draft', false);
   // Sicherheitscheck: Draft muss zum eingeloggten Trainer gehören (via _draftKey), sonst verwerfen
   if (draft && STATE.selectedEmployee && draft.employeeId !== STATE.selectedEmployee) {
-    await storageDel('session_draft', false);
-    draft = null;
+    return `<div class="page-content"><div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="font-bold mb-8">Es läuft noch eine Session mit ${escHtml(draft.employeeName || 'einem anderen Mitarbeiter')}</div>
+      <div class="text-dim mb-16">Möchtest du sie fortsetzen oder verwerfen?</div>
+      <div class="flex gap-8" style="justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="STATE.selectedEmployee='${escJs(draft.employeeId)}';render()">Fortsetzen</button>
+        <button class="btn btn-danger" onclick="if(confirm('Laufende Session wirklich verwerfen?')){storageDel('session_draft').then(()=>navigate('trainer','coaching_new'))}">Verwerfen</button>
+      </div>
+    </div></div>`;
   }
   if (!draft) return `<div class="page-content"><div class="empty-state"><div>Keine aktive Session — <button class="btn btn-primary btn-sm" onclick="navigate('trainer','coaching_new')">Neue Session starten</button></div></div></div>`;
 
@@ -18993,7 +19108,7 @@ function exportSessionPDF() {
             <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">
               <span style="font-weight:700;color:${score>=7?'#2ecc71':score>=4?'#ecea41':'#e63946'}">${score}/10</span>
             </td>
-            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555">${note||'—'}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555">${escHtml(note||'—')}</td>
           </tr>
         `;
       }).filter(Boolean).join('');
@@ -19001,11 +19116,11 @@ function exportSessionPDF() {
       const measures = Object.entries(draft.measures||{}).map(([fieldId, measure]) => {
         if (!measure) return '';
         const field = fields.find(f => f.id === fieldId);
-        return `<div style="margin-bottom:10px"><strong>${field?.label||fieldId}:</strong> ${measure}</div>`;
+        return `<div style="margin-bottom:10px"><strong>${field?.label||fieldId}:</strong> ${escHtml(measure)}</div>`;
       }).join('');
 
       win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Coaching Session — ${draft.employeeName}</title>
+<html><head><meta charset="UTF-8"><title>Coaching Session — ${escHtml(draft.employeeName)}</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
   h1 { font-size: 22px; margin-bottom: 4px; }
@@ -19021,10 +19136,10 @@ function exportSessionPDF() {
 <div class="logo">WEWO Training Platform</div>
 <h1>Coaching Session Report</h1>
 <div class="meta">
-  Mitarbeiter: <strong>${draft.employeeName}</strong> &nbsp;|&nbsp;
+  Mitarbeiter: <strong>${escHtml(draft.employeeName)}</strong> &nbsp;|&nbsp;
   Datum: <strong>${formatDate(draft.date)}</strong> &nbsp;|&nbsp;
   Typ: <strong>${sessionTypeInfo.icon} ${sessionTypeInfo.label}</strong>
-  ${draft.anlass ? ` &nbsp;|&nbsp; Anlass: <strong>${draft.anlass}</strong>` : ''}
+  ${draft.anlass ? ` &nbsp;|&nbsp; Anlass: <strong>${escHtml(draft.anlass)}</strong>` : ''}
   ${dt ? ` &nbsp;|&nbsp; Haupttyp: <strong style="color:${typeColor(dt)}">${typeName(dt)}</strong>` : ''}
   ${emp?.types ? `<br>Typ-Verteilung: ${Object.entries(emp.types).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${typeName(k)} ${v}%`).join(' · ')}` : ''}
 </div>
@@ -19039,11 +19154,11 @@ ${measures ? `<h2>⚡ Maßnahmen</h2><div>${measures}</div>` : ''}
 
 <h2>🎯 Commitment</h2>
 <div class="commitment-box">
-  ${draft.lastCommitment ? `<div style="margin-bottom:8px"><strong>Letztes Commitment:</strong> ${draft.lastCommitment} &nbsp;
+  ${draft.lastCommitment ? `<div style="margin-bottom:8px"><strong>Letztes Commitment:</strong> ${escHtml(draft.lastCommitment)} &nbsp;
     <span style="color:${draft.commitmentFulfilled==='yes'?'#2ecc71':draft.commitmentFulfilled==='no'?'#e63946':'#ecea41'}">
       ${draft.commitmentFulfilled==='yes'?'✅ Erfüllt':draft.commitmentFulfilled==='partial'?'⚡ Teilweise':'❌ Nicht erfüllt'}
     </span></div>` : ''}
-  <div><strong>Neues Commitment:</strong> ${draft.commitment||'—'}</div>
+  <div><strong>Neues Commitment:</strong> ${escHtml(draft.commitment||'—')}</div>
   ${draft.overallScore ? `<div style="margin-top:8px"><strong>Gesamtbewertung:</strong> ${draft.overallScore}/10</div>` : ''}
 </div>
 
@@ -19073,7 +19188,7 @@ async function exportEmployeePDF(empId) {
     const isDone = prog.modules?.[m.id];
     const quiz = prog.quizzes?.[m.id];
     return `<tr>
-      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:13px">${m.icon} ${m.title}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:13px">${m.icon} ${escHtml(m.title)}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-size:13px">
         ${isDone ? '<span style="color:#2ecc71;font-weight:700">✓ Abgeschlossen</span>' : '<span style="color:#999">Ausstehend</span>'}
       </td>
@@ -19089,7 +19204,7 @@ async function exportEmployeePDF(empId) {
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${formatDate(s.date)}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${SESSION_TYPE_FIELDS[s.sessionType]?.label||s.sessionType||'—'}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:${s.overallScore>=7?'#2ecc71':s.overallScore>=4?'#ecea41':'#e63946'}">${s.overallScore||'—'}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${s.commitment||'—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px">${escHtml(s.commitment||'—')}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:12px;color:${cf==='yes'?'#2ecc71':cf==='no'?'#e63946':'#ecea41'}">
         ${cf==='yes'?'✅ Erfüllt':cf==='partial'?'⚡ Teilweise':cf==='no'?'❌ Nicht erfüllt':'—'}
       </td>
@@ -19101,7 +19216,7 @@ async function exportEmployeePDF(empId) {
     : null;
 
   win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Mitarbeiterprofil — ${emp?.name}</title>
+<html><head><meta charset="UTF-8"><title>Mitarbeiterprofil — ${escHtml(emp?.name)}</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px; color: #222; }
   h1 { font-size: 22px; } h2 { font-size: 16px; border-bottom: 2px solid #ecea41; padding-bottom: 6px; margin-top: 28px; margin-bottom: 14px; }
@@ -19116,7 +19231,7 @@ async function exportEmployeePDF(empId) {
 </style>
 </head><body>
 <div class="logo">WEWO Training Platform</div>
-<h1>Mitarbeiterprofil: ${emp?.name}</h1>
+<h1>Mitarbeiterprofil: ${escHtml(emp?.name)}</h1>
 <div class="meta">
   Rolle: <strong>${emp?.role==='ad'?'Außendienst':'Innendienst'}</strong> &nbsp;|&nbsp;
   ${dt ? `Haupttyp: <strong style="color:${typeColor(dt)}">${typeName(dt)}</strong> &nbsp;|&nbsp;` : ''}
@@ -19500,7 +19615,7 @@ async function finishPersonalityTest(empId) {
     // Mark module as done
     const prog = await getEmployeeProgress(empId);
     prog.modules = prog.modules || {};
-    const empRole = STATE.employees?.find(e => e.id === empId)?.role || 'ad';
+    const empRole = emp?.role || STATE.currentUser?.role || 'ad';
     prog.modules[`persoenlichkeit_${empRole}`] = true;
     await saveEmployeeProgress(empId, prog);
   }
@@ -19665,6 +19780,9 @@ function showLoginError(msg) {
 }
 
 function logout() {
+  clearStorageCache();
+  STATE._quizOverridesLoaded = false;
+  STATE._quizLevelOverrides = null;
   try { localStorage.removeItem('wewo_session'); } catch {}
   STATE.currentUser = null;
   STATE.page = 'login';
@@ -19686,55 +19804,103 @@ function logout() {
 //  MAIN RENDER + INIT
 // ══════════════════════════════════════════════════════════════
 
+// Render-Steuerung: Nur der jüngste Render darf ins DOM schreiben (verhindert,
+// dass ein langsamer, älterer Render einen neueren überschreibt).
+let _renderSeq = 0;
+let _lastViewKey = null;
+const isMobileView = () => window.matchMedia('(max-width: 768px)').matches;
+
 async function render() {
   const app = document.getElementById('app');
   if (!app) return;
+  const seq = ++_renderSeq;
 
-  // Show loading for async renders
   if (!STATE.currentUser) {
+    _lastViewKey = null;
     app.innerHTML = renderLoginPage();
     return;
   }
 
-  app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh"><div class="loading-spin"></div></div>';
+  // Auf dem Handy ist die Sidebar ein Drawer — immer mit Beschriftung
+  if (isMobileView()) STATE.sidebarCollapsed = false;
+
+  // Gleiche Ansicht → Scroll-Position behalten; neue Ansicht → nach oben
+  const viewKey = [STATE.page, STATE.subPage, STATE.selectedEmployee, STATE.selectedModule, STATE.quizLevel].join('|');
+  const sameView = viewKey === _lastViewKey;
+  const prevScroll = app.querySelector('.main')?.scrollTop || 0;
+
+  // Vollbild-Spinner nur beim allerersten Laden; danach dezenter Ladebalken oben
+  if (!app.querySelector('.shell')) {
+    app.innerHTML = '<div class="app-loading"><div class="loading-spin"></div></div>';
+  } else {
+    document.body.classList.add('is-loading');
+  }
 
   try {
-    let html = '';
-    const role = STATE.currentUser.role;
-    const page = STATE.page;
-
-    if (role === 'trainer') {
-      html = await renderTrainerPortal();
-    } else if (role === 'ad' || role === 'id') {
-      if (page === 'roleplay') {
-        // Active roleplay page
-        html = await renderEmployeePortal();
-        app.innerHTML = html;
-        // Initialize chat area after DOM update
-        setTimeout(() => renderChatArea(), 50);
-        return;
-      } else {
-        html = await renderEmployeePortal();
-      }
-    } else {
-      html = renderLoginPage();
+    if (!STATE._quizOverridesLoaded) {
+      await Promise.all([loadQuizLevelOverrides('ad'), loadQuizLevelOverrides('id')]);
+      STATE._quizOverridesLoaded = true;
     }
+    const role = STATE.currentUser.role;
+    let html;
+    if (role === 'trainer') html = await renderTrainerPortal();
+    else if (role === 'ad' || role === 'id') html = await renderEmployeePortal();
+    else html = renderLoginPage();
 
+    if (seq !== _renderSeq) return; // inzwischen neuer Render gestartet
     app.innerHTML = html;
+    _lastViewKey = viewKey;
+    const main = app.querySelector('.main');
+    if (main) main.scrollTop = sameView ? prevScroll : 0;
+    if (document.getElementById('chat-area')) renderChatArea();
   } catch (e) {
+    if (seq !== _renderSeq) return;
     console.error('Render error:', e);
     app.innerHTML = `<div class="page-content"><div class="empty-state">
       <div class="empty-icon">⚠️</div>
       <div class="font-bold mb-8">Fehler beim Laden</div>
-      <div class="text-dim">${escHtml(e.message || 'Unbekannter Fehler')}</div>
-      <button class="btn btn-primary mt-16" onclick="render()">Neu laden</button>
+      <div class="text-dim mb-16">${escHtml(e.message || 'Unbekannter Fehler')}</div>
+      <button class="btn btn-primary" onclick="render()">Neu laden</button>
     </div></div>`;
+  } finally {
+    if (seq === _renderSeq) document.body.classList.remove('is-loading');
   }
 }
 
-// Override navigate to handle module sub-state
-const _navigate = navigate;
+// ── App-Gerüst: Sidebar + mobile Kopfzeile + Drawer-Hintergrund ──
+function shellLayout(nav, content) {
+  return `<div class="shell">
+    ${nav}
+    <div class="sidebar-backdrop" onclick="toggleMobileNav(false)"></div>
+    <div class="main">
+      <div class="mobile-topbar">
+        <button class="topbar-btn" onclick="toggleMobileNav(true)" aria-label="Menü öffnen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="topbar-brand"><span class="logo-mark">W</span><span>WEWO</span></div>
+      </div>
+      ${content}
+    </div>
+  </div>`;
+}
+
+function toggleMobileNav(open) {
+  const shell = document.querySelector('.shell');
+  if (shell) shell.classList.toggle('nav-open', open);
+}
+
+function confirmLogout() {
+  if (confirm('Wirklich abmelden?')) logout();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('.shell.nav-open')) return toggleMobileNav(false);
+  if (STATE.modalOpen) closeModal();
+});
+
 function navigate(page, subPage = null, extra = {}) {
+  clearStorageCache();
   STATE.page = page;
   STATE.subPage = subPage;
   if (extra.selectedEmployee !== undefined) STATE.selectedEmployee = extra.selectedEmployee;
@@ -19747,8 +19913,6 @@ function navigate(page, subPage = null, extra = {}) {
   recordLastPosition();
 }
 
-// Override startRoleplay to set correct sub-page
-const _startRoleplay = startRoleplay;
 async function startRoleplay(scenario) {
   if (!scenario) return;
   currentScenario = scenario;

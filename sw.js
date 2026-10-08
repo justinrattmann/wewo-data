@@ -1,6 +1,6 @@
 // WEWO Training – Service Worker
 // App-Shell offline verfügbar machen; Daten laufen weiterhin live über Firebase.
-const CACHE = 'wewo-v1';
+const CACHE = 'wewo-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
