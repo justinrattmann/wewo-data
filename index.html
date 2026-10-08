@@ -2,8 +2,22 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WEWO Training Platform</title>
+<!-- PWA / App-Installation -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0f10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="WEWO">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<script>
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -484,6 +498,14 @@ input[type=range]::-webkit-slider-thumb {
   .page-header { padding: 14px 16px; }
   .main { width: 100%; }
   #sidebar-toggle { display: flex !important; }
+  .sidebar { height: 100dvh; }
+  input, select, textarea { font-size: 16px !important; } /* verhindert iOS-Auto-Zoom */
+}
+
+/* PWA: Safe-Areas (Notch / Home-Indicator) im App-Modus */
+@media (display-mode: standalone) {
+  body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 }
 
 /* UTIL */
