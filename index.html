@@ -15489,10 +15489,31 @@ async function _readPath(path) {
   return _clone(await _inflight.get(path));
 }
 
-async function storageGet(key, shared = false) {
-  if (key === 'session_draft') {
-    try { return JSON.parse(localStorage.getItem(_draftKey()) || 'null'); } catch { return null; }
+// ── Session-Entwurf: lokal UND in Firebase (draft/<trainer>) ──
+// Vorher nur localStorage → ging verloren beim Wechsel zwischen Safari und
+// installierter App bzw. zwischen Geräten. Der neuere Stand gewinnt.
+const _draftRemotePath = () => 'draft/' + String(STATE.currentUser?.id || STATE.currentUser?.name || 'default').replace(/[.#$\[\]\/]/g, '_');
+function _draftHasData(d) {
+  if (!d) return false;
+  const any = o => Object.values(o || {}).some(v => v !== '' && v != null);
+  return any(d.observations) || any(d.measures) || any(d.notes) || any(d.causes) || !!d.commitment;
+}
+async function _readDraft() {
+  let local = null, remote = null;
+  try { local = JSON.parse(localStorage.getItem(_draftKey()) || 'null'); } catch {}
+  if (!_isOffline) {
+    try {
+      const snap = await Promise.race([db.ref(_draftRemotePath()).get(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2500))]);
+      remote = snap.exists() ? snap.val() : null;
+    } catch {}
   }
+  if (!local) return remote;
+  if (!remote) return local;
+  return (remote._ts || 0) > (local._ts || 0) ? remote : local;
+}
+
+async function storageGet(key, shared = false) {
+  if (key === 'session_draft') return _readDraft();
   try {
     return await _readPath(keyToPath(key));
   } catch (e) { console.error('storageGet', key, e); return null; }
@@ -15500,7 +15521,11 @@ async function storageGet(key, shared = false) {
 
 async function storageSet(key, val, shared = false) {
   if (key === 'session_draft') {
-    try { localStorage.setItem(_draftKey(), JSON.stringify(val)); return true; } catch { return false; }
+    const clean = JSON.parse(JSON.stringify({ ...val, _ts: Date.now() }));
+    let ok = false;
+    try { localStorage.setItem(_draftKey(), JSON.stringify(clean)); ok = true; } catch {}
+    db.ref(_draftRemotePath()).set(clean).catch(e => console.warn('Entwurf-Sync', e));
+    return ok;
   }
   const path = keyToPath(key);
   _cacheInvalidate(path);
@@ -15522,7 +15547,9 @@ async function storageList(prefix, shared = false) {
 
 async function storageDel(key, shared = false) {
   if (key === 'session_draft') {
-    localStorage.removeItem(_draftKey()); return;
+    try { localStorage.removeItem(_draftKey()); } catch {}
+    try { await db.ref(_draftRemotePath()).remove(); } catch {}
+    return;
   }
   const path = keyToPath(key);
   _cacheInvalidate(path);
@@ -16022,6 +16049,7 @@ async function renderTrainerDashboard() {
       </div>
     </div>
     <div class="page-content">
+      ${await renderDraftResumeCard()}
       <div class="stat-grid mb-24">
         <div class="stat-card cursor-pointer" onclick="navigate('trainer','comparison')">
           <div class="stat-value">${avgProgress}%</div><div class="stat-label">Ø Lernfortschritt</div>
@@ -16378,6 +16406,17 @@ async function startCoachingSession() {
     phase: 'observation'
   };
   
+  const existing = await storageGet('session_draft', false);
+  if (_draftHasData(existing)) {
+    const nObs = Object.values(existing.observations || {}).filter(Boolean).length;
+    const nMeas = Object.values(existing.measures || {}).filter(Boolean).length;
+    const ok = confirm(`Achtung: Es gibt eine laufende, noch nicht gespeicherte Session mit ${existing.employeeName || 'einem Mitarbeiter'} vom ${formatDate(existing.date)} (${nObs} Bewertungen, ${nMeas} Maßnahmen).\n\nOK = diese Session VERWERFEN und neu starten\nAbbrechen = laufende Session fortsetzen`);
+    if (!ok) {
+      STATE.selectedEmployee = existing.employeeId;
+      navigate('trainer', 'coaching_session', { selectedEmployee: existing.employeeId });
+      return;
+    }
+  }
   await storageSet('session_draft', sessionDraft, false);
   STATE.selectedEmployee = emp.id;
   navigate('trainer', 'coaching_session', { selectedEmployee: emp.id });
@@ -17206,9 +17245,34 @@ async function saveEditEmployee(empId) {
 }
 
 // ── Coaching für einen bestimmten Mitarbeiter vorbereiten ──────
-function startCoachingFor(empId) {
+async function startCoachingFor(empId) {
+  const draft = await storageGet('session_draft', false);
+  if (draft && draft.employeeId === empId && _draftHasData(draft)) {
+    toast('Laufende Session fortgesetzt');
+    navigate('trainer', 'coaching_session', { selectedEmployee: empId });
+    return;
+  }
   STATE.coachingEmpId = empId;
   navigate('trainer', 'coaching_new');
+}
+
+// Hinweis-Karte: laufende Session fortsetzen (Dashboard + Neue Session)
+async function renderDraftResumeCard() {
+  const d = await storageGet('session_draft', false);
+  if (!_draftHasData(d)) return '';
+  const nObs = Object.values(d.observations || {}).filter(Boolean).length;
+  const nMeas = Object.values(d.measures || {}).filter(Boolean).length;
+  return `<div class="card mb-16" style="border-color:rgba(249,115,22,.45);background-image:linear-gradient(135deg,rgba(249,115,22,.12),transparent 60%)">
+    <div class="card-body flex items-center gap-12 flex-wrap">
+      <span style="font-size:30px">⏸️</span>
+      <div class="flex-1" style="min-width:200px">
+        <div class="text-dim text-sm">Laufende Session — noch nicht gespeichert</div>
+        <div class="font-bold" style="font-size:16px">${escHtml(d.employeeName || 'Mitarbeiter')} · ${formatDate(d.date)}</div>
+        <div class="text-dim text-sm">${nObs} Bewertungen · ${nMeas} Maßnahmen${d.commitment ? ' · Commitment eingetragen' : ''}</div>
+      </div>
+      <button class="btn btn-primary" onclick="STATE.selectedEmployee='${escJs(d.employeeId)}';navigate('trainer','coaching_session',{selectedEmployee:'${escJs(d.employeeId)}'})">Fortsetzen →</button>
+    </div>
+  </div>`;
 }
 
 // ── Praxis-Tagebuch: Seite für Mitarbeiter, Lesesicht für Trainer ─
@@ -19389,7 +19453,7 @@ async function renderCoachingNew() {
       <div><div class="page-title">Neue Coaching Session</div><div class="page-sub">Mitarbeiter und Session-Typ auswählen</div></div>
     </div>
     <div class="page-content">
-      <div style="max-width:600px">${lastSessionHtml}</div>
+      <div style="max-width:600px">${await renderDraftResumeCard()}${lastSessionHtml}</div>
       <div class="card" style="max-width:600px">
         <div class="card-body">
           <div class="form-group">
